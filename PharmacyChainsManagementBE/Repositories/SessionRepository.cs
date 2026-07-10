@@ -47,4 +47,12 @@ public class SessionRepository : ISessionRepository
 
         _context.Set<UserSession>().UpdateRange(activeSessions);
     }
+
+    public async Task<UserSession?> GetLastSessionByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return await _context.Set<UserSession>()
+            .Where(s => s.UserId == userId)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }

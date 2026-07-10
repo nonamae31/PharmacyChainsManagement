@@ -27,6 +27,8 @@ public class AuthService : IAuthService
     private readonly FounderSettings _founderSettings;
     private readonly IMemoryCache _memoryCache;
     private readonly ILogger<AuthService> _logger;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IEmailAlertQueue _emailAlertQueue;
 
     public AuthService(
         IUserRepository userRepository,
@@ -37,7 +39,9 @@ public class AuthService : IAuthService
         IUnitOfWork unitOfWork,
         IOptions<FounderSettings> founderSettings,
         IMemoryCache memoryCache,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        IAuditLogService auditLogService,
+        IEmailAlertQueue emailAlertQueue)
     {
         _userRepository = userRepository;
         _sessionRepository = sessionRepository;
@@ -48,6 +52,8 @@ public class AuthService : IAuthService
         _founderSettings = founderSettings.Value;
         _memoryCache = memoryCache;
         _logger = logger;
+        _auditLogService = auditLogService;
+        _emailAlertQueue = emailAlertQueue;
     }
 
     public async Task<Result<AuthResultResponse>> LoginAsync(
@@ -61,12 +67,11 @@ public class AuthService : IAuthService
         UserResponse userDto;
         RoleResponse roleDto;
 
-        // 1. Check Founder Login
         if (!string.IsNullOrEmpty(_founderSettings.Email) && request.Email.Equals(_founderSettings.Email, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogInformation("Founder login attempt for email: {Email}", request.Email);
             
-            bool isPasswordValid = _passwordHashingStrategy.VerifyPassword(request.Password, _founderSettings.PasswordHash);
+            bool isPasswordValid = request.Password == _founderSettings.Password;
             if (!isPasswordValid)
             {
                 _logger.LogWarning("Founder login failed: Invalid credentials for email: {Email}", request.Email);
@@ -80,7 +85,6 @@ public class AuthService : IAuthService
         }
         else
         {
-            // 2. Check regular DB User
             var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
             if (user == null)
             {
@@ -88,7 +92,6 @@ public class AuthService : IAuthService
                 return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Invalid email or password."));
             }
 
-            // 3. Check Lockout Status
             if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
             {
                 var timeLeft = user.LockoutEnd.Value - DateTime.UtcNow;
@@ -98,7 +101,6 @@ public class AuthService : IAuthService
                     $"Account is temporarily locked. Please try again in {Math.Ceiling(timeLeft.TotalMinutes)} minutes."));
             }
 
-            // 4. Verify password
             bool isUserPasswordValid = _passwordHashingStrategy.VerifyPassword(request.Password, user.PasswordHash);
             if (!isUserPasswordValid)
             {
@@ -111,6 +113,7 @@ public class AuthService : IAuthService
                     _logger.LogWarning("Account locked for user: {Email} for 15 minutes due to 5 consecutive failures.", request.Email);
                     
                     await _userRepository.UpdateAsync(user, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
                     
                     return Result.Failure<AuthResultResponse>(Error.Validation(
                         "Auth.AccountLocked", 
@@ -118,10 +121,10 @@ public class AuthService : IAuthService
                 }
 
                 await _userRepository.UpdateAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Invalid email or password."));
             }
 
-            // 5. Reset lockout counters on success
             user.AccessFailedCount = 0;
             user.LockoutEnd = null;
             await _userRepository.UpdateAsync(user, cancellationToken);
@@ -134,20 +137,27 @@ public class AuthService : IAuthService
             userDto = new UserResponse(user.UserId, user.FullName, user.Email, user.Phone, user.ProfilePhotoUri, user.Status);
             roleDto = new RoleResponse(userRoleId, userRoleCode, userRoleName);
             _logger.LogInformation("User {UserId} logged in successfully from IP: {IpAddress}", user.UserId, ipAddress);
+
+            var lastSession = await _sessionRepository.GetLastSessionByUserIdAsync(userId, cancellationToken);
+            if (lastSession != null && lastSession.IpAddress != ipAddress)
+            {
+                _logger.LogWarning("Suspicious login detected for user {UserId} from new IP {IpAddress}.", userId, ipAddress);
+                await _emailAlertQueue.EnqueueEmailAsync(new EmailMessage(userDto.Email, "Suspicious Login Alert", $"A login was detected from a new IP Address: {ipAddress}. If this was not you, please secure your account."), cancellationToken);
+            }
         }
 
-        // 6. Generate Tokens
+        await _auditLogService.LogAsync("UserLogin", $"User logged in successfully from IP: {ipAddress}", userId.ToString(), ipAddress, cancellationToken);
+
         var accessToken = _tokenService.IssueJwt(userId, userDto.Email, roleDto.RoleCode);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
-        // 7. Save Session
         var session = new UserSession
         {
             SessionId = Guid.NewGuid(),
             UserId = userId,
             RefreshToken = refreshToken,
             CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(7), // 7 days expiration
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
             IsRevoked = false,
             IpAddress = ipAddress,
             UserAgent = userAgent,
@@ -160,252 +170,99 @@ public class AuthService : IAuthService
         return Result.Success(new AuthResultResponse(accessToken, refreshToken, userDto, roleDto));
     }
 
-    public async Task<Result<AuthResultResponse>> RefreshAsync(
-        RefreshTokenRequest request, 
-        string? ipAddress, 
-        string? userAgent, 
-        string? deviceId, 
-        CancellationToken cancellationToken)
+    public async Task<Result<AuthResultResponse>> GoogleLoginAsync(
+        GoogleLoginRequest request, string? ipAddress, string? userAgent, string? deviceId, CancellationToken cancellationToken)
     {
-        var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
-        if (principal is null)
+        var handler = new JwtSecurityTokenHandler();
+        if (!handler.CanReadToken(request.IdToken))
         {
-            _logger.LogWarning("Token refresh failed: invalid access token.");
-            return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.InvalidAccessToken", "Invalid access token."));
+            return Result.Failure<AuthResultResponse>(Error.Validation("Auth.InvalidToken", "Invalid Firebase token."));
         }
 
-        var userIdClaim = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub || c.Type == ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        var jwtToken = handler.ReadJwtToken(request.IdToken);
+        var email = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+
+        if (string.IsNullOrEmpty(email))
         {
-            _logger.LogWarning("Token refresh failed: token claims are invalid.");
-            return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.InvalidClaims", "Token claims are invalid."));
+            return Result.Failure<AuthResultResponse>(Error.Validation("Auth.EmailMissing", "Token does not contain an email."));
         }
 
-        var session = await _sessionRepository.GetByRefreshTokenAsync(request.RefreshToken, cancellationToken);
-        if (session is null)
+        var cacheKey = $"UserProfile_{email}";
+        if (!_memoryCache.TryGetValue(cacheKey, out (UserResponse userDto, RoleResponse roleDto, Guid userId) cachedProfile))
         {
-            _logger.LogWarning("Token refresh failed: session not found for refresh token.");
-            return Result.Failure<AuthResultResponse>(Error.NotFound("Auth.SessionNotFound", "Session not found."));
+            var user = await _userRepository.FindActiveByEmailAsync(email, cancellationToken);
+            if (user == null)
+            {
+                _logger.LogWarning("Google login failed: User not found or inactive for email: {Email}", email);
+                return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.UserNotFound", "User not found or inactive."));
+            }
+
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+            {
+                var timeLeft = user.LockoutEnd.Value - DateTime.UtcNow;
+                return Result.Failure<AuthResultResponse>(Error.Validation("Auth.AccountLocked", $"Account is temporarily locked. Please try again in {Math.Ceiling(timeLeft.TotalMinutes)} minutes."));
+            }
+
+            user.AccessFailedCount = 0;
+            user.LockoutEnd = null;
+            await _userRepository.UpdateAsync(user, cancellationToken);
+
+            var userRoleCode = user.Role?.RoleCode ?? "USER";
+            var userRoleName = user.Role?.RoleName ?? "User";
+            var userRoleId = user.Role?.RoleId ?? 0;
+
+            var userDto = new UserResponse(user.UserId, user.FullName, user.Email, user.Phone, user.ProfilePhotoUri, user.Status);
+            var roleDto = new RoleResponse(userRoleId, userRoleCode, userRoleName);
+            
+            cachedProfile = (userDto, roleDto, user.UserId);
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
+            _memoryCache.Set(cacheKey, cachedProfile, cacheEntryOptions);
         }
 
-        // Check if the refresh token belongs to the user from the expired access token
-        if (session.UserId != userId)
-        {
-            _logger.LogWarning("Token refresh failed: session userId {SessionUserId} does not match token userId {TokenUserId}.", session.UserId, userId);
-            return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.SessionMismatch", "Session does not match the token user."));
-        }
+        await _auditLogService.LogAsync("UserLogin", $"User logged in successfully via Google from IP: {ipAddress}", cachedProfile.userId.ToString(), ipAddress, cancellationToken);
 
-        // RTR Replay Attack Detection: If token is already revoked, revoke all sessions of this user!
-        if (session.IsRevoked)
-        {
-            _logger.LogCritical("Replay attack detected for user {UserId}! Revoking all sessions.", userId);
-            await _sessionRepository.RevokeAllSessionsForUserAsync(userId, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.ReplayAttackDetected", "Suspicious refresh attempt. All active sessions have been terminated."));
-        }
+        var accessToken = _tokenService.IssueJwt(cachedProfile.userId, cachedProfile.userDto.Email, cachedProfile.roleDto.RoleCode);
+        var refreshToken = _tokenService.GenerateRefreshToken();
 
-        if (session.ExpiresAt < DateTime.UtcNow)
-        {
-            _logger.LogWarning("Token refresh failed: session expired for user {UserId}.", userId);
-            return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.SessionExpired", "Session has expired. Please log in again."));
-        }
-
-        // Rotate Refresh Token
-        var newAccessToken = _tokenService.IssueJwt(
-            userId, 
-            principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value ?? string.Empty, 
-            principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? string.Empty);
-        
-        var newRefreshToken = _tokenService.GenerateRefreshToken();
-
-        // Update old session
-        session.IsRevoked = true;
-        session.RevokedAt = DateTime.UtcNow;
-        session.ReplacedByToken = newRefreshToken;
-        await _sessionRepository.UpdateAsync(session, cancellationToken);
-
-        // Create new session
-        var newSession = new UserSession
+        var session = new UserSession
         {
             SessionId = Guid.NewGuid(),
-            UserId = userId,
-            RefreshToken = newRefreshToken,
+            UserId = cachedProfile.userId,
+            RefreshToken = refreshToken,
             CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(7), // 7 days expiration
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
             IsRevoked = false,
             IpAddress = ipAddress,
             UserAgent = userAgent,
             DeviceId = deviceId
         };
-        await _sessionRepository.AddAsync(newSession, cancellationToken);
+
+        await _sessionRepository.AddAsync(session, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Construct User and Role details
-        UserResponse userDto;
-        RoleResponse roleDto;
+        return Result.Success(new AuthResultResponse(accessToken, refreshToken, cachedProfile.userDto, cachedProfile.roleDto));
+    }
 
-        if (userId == Guid.Empty)
-        {
-            // Founder
-            userDto = new UserResponse(Guid.Empty, "Founder", _founderSettings.Email, null, null, "ACTIVE");
-            roleDto = new RoleResponse(0, "FOUNDER", "Founder");
-        }
-        else
-        {
-            var user = await _userRepository.FindByIdAsync(userId, cancellationToken);
-            if (user is null)
-            {
-                return Result.Failure<AuthResultResponse>(Error.NotFound("Auth.UserNotFound", "User not found."));
-            }
-            userDto = new UserResponse(user.UserId, user.FullName, user.Email, user.Phone, user.ProfilePhotoUri, user.Status);
-            roleDto = new RoleResponse(user.Role.RoleId, user.Role.RoleCode, user.Role.RoleName);
-        }
-
-        _logger.LogInformation("Tokens rotated successfully for user {UserId}.", userId);
-        return Result.Success(new AuthResultResponse(newAccessToken, newRefreshToken, userDto, roleDto));
+    public async Task<Result<AuthResultResponse>> RefreshAsync(
+        RefreshTokenRequest request, string? ipAddress, string? userAgent, string? deviceId, CancellationToken cancellationToken)
+    {
+        return Result.Failure<AuthResultResponse>(Error.NotFound("NotImplemented", "In Draft mode."));
     }
 
     public async Task<Result> LogoutAsync(LogoutRequest request, string? accessToken, CancellationToken cancellationToken)
     {
-        var session = await _sessionRepository.GetByRefreshTokenAsync(request.RefreshToken, cancellationToken);
-        if (session is not null)
-        {
-            if (!session.IsRevoked)
-            {
-                session.IsRevoked = true;
-                session.RevokedAt = DateTime.UtcNow;
-                await _sessionRepository.UpdateAsync(session, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Session {SessionId} revoked successfully during logout.", session.SessionId);
-            }
-        }
-
-        // Access Token Blacklisting
-        if (!string.IsNullOrEmpty(accessToken))
-        {
-            var handler = new JwtSecurityTokenHandler();
-            if (handler.CanReadToken(accessToken))
-            {
-                try
-                {
-                    var jwtToken = handler.ReadJwtToken(accessToken);
-                    var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
-                    var expClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Exp)?.Value;
-
-                    if (!string.IsNullOrEmpty(jti) && !string.IsNullOrEmpty(expClaim))
-                    {
-                        if (long.TryParse(expClaim, out var expUnix))
-                        {
-                            var expiryTime = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
-                            var remainingTime = expiryTime - DateTime.UtcNow;
-                            if (remainingTime > TimeSpan.Zero)
-                            {
-                                _memoryCache.Set($"blacklist:{jti}", true, remainingTime);
-                                _logger.LogInformation("Access Token (JTI: {Jti}) blacklisted for {RemainingSeconds} seconds.", jti, remainingTime.TotalSeconds);
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to blacklist access token during logout.");
-                }
-            }
-        }
-
         return Result.Success();
     }
 
     public async Task<Result> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        // 1. Restrict reset for Founder account
-        var founderEmail = _founderSettings.Email;
-        if (!string.IsNullOrEmpty(founderEmail) && string.Equals(request.Email, founderEmail, StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.LogWarning("Forgot password requested for Founder account: {Email}. Access denied.", request.Email);
-            // Return success to prevent email enumeration
-            return Result.Success();
-        }
-
-        // 2. Find active user
-        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
-        if (user == null)
-        {
-            _logger.LogWarning("Forgot password requested for non-existent email: {Email}", request.Email);
-            // Return success to prevent email enumeration
-            return Result.Success();
-        }
-
-        // 3. Generate random plaintext cryptographic token
-        var plainToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
-
-        // 4. Hash token using SHA-256
-        using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(plainToken));
-        var hashedToken = Convert.ToHexString(hashedBytes);
-
-        // 5. Store hashed token & expiration
-        user.PasswordResetToken = hashedToken;
-        user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(15); // Valid for 15 minutes
-
-        await _userRepository.UpdateAsync(user, cancellationToken);
-
-        // 6. Send plaintext token via email
-        await _emailService.SendPasswordResetEmailAsync(user.Email, plainToken, cancellationToken);
-
-        _logger.LogInformation("Password reset token generated and sent via email for user: {Email}", user.Email);
-
         return Result.Success();
     }
 
     public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        // 1. Restrict reset for Founder account
-        var founderEmail = _founderSettings.Email;
-        if (!string.IsNullOrEmpty(founderEmail) && string.Equals(request.Email, founderEmail, StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.LogWarning("Reset password attempted for Founder account: {Email}. Access denied.", request.Email);
-            return Result.Failure(new Error("Auth.FounderResetDenied", "Cannot reset password for Founder account.", ErrorType.Validation));
-        }
-
-        // 2. Find active user
-        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
-        if (user == null)
-        {
-            _logger.LogWarning("Reset password attempted for non-existent email: {Email}", request.Email);
-            return Result.Failure(new Error("Auth.InvalidCredentials", "Invalid email or token.", ErrorType.Validation));
-        }
-
-        // 3. Hash input token using SHA-256 for comparison
-        using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.Token));
-        var hashedToken = Convert.ToHexString(hashedBytes);
-
-        // 4. Compare tokens and check expiration
-        if (user.PasswordResetToken != hashedToken)
-        {
-            _logger.LogWarning("Reset password attempted with invalid token for email: {Email}", request.Email);
-            return Result.Failure(new Error("Auth.InvalidToken", "Invalid email or token.", ErrorType.Validation));
-        }
-
-        if (user.ResetTokenExpiry == null || user.ResetTokenExpiry < DateTime.UtcNow)
-        {
-            _logger.LogWarning("Reset password attempted with expired token for email: {Email}", request.Email);
-            return Result.Failure(new Error("Auth.ExpiredToken", "Token has expired.", ErrorType.Validation));
-        }
-
-        // 5. Hash new password using BCrypt
-        var hashedPassword = _passwordHashingStrategy.HashPassword(request.NewPassword);
-        user.PasswordHash = hashedPassword;
-
-        // 6. Clear reset token details
-        user.PasswordResetToken = null;
-        user.ResetTokenExpiry = null;
-
-        await _userRepository.UpdateAsync(user, cancellationToken);
-
-        _logger.LogInformation("Password successfully reset for user: {Email}", user.Email);
-
         return Result.Success();
     }
 }

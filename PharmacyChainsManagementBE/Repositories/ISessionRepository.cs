@@ -11,4 +11,5 @@ public interface ISessionRepository
     Task AddAsync(UserSession session, CancellationToken cancellationToken);
     Task UpdateAsync(UserSession session, CancellationToken cancellationToken);
     Task RevokeAllSessionsForUserAsync(Guid userId, CancellationToken cancellationToken);
+    Task<UserSession?> GetLastSessionByUserIdAsync(Guid userId, CancellationToken cancellationToken);
 }

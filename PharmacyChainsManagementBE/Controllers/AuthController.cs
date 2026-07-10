@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PharmacyChainsManagementBE.Common;
 using PharmacyChainsManagementBE.DTOs;
 using PharmacyChainsManagementBE.Services;
@@ -22,15 +23,16 @@ public class AuthController : BaseApiController
         _authService = authService;
     }
 
+    [EnableRateLimiting("LoginPolicy")]
     [HttpPost("login")]
-    [ProducesResponseType(typeof(AuthResultResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResultResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest(ApiResponse<object>.ErrorResponse("Validation failed", ModelState));
         }
 
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -41,12 +43,11 @@ public class AuthController : BaseApiController
 
         if (result.IsFailure)
         {
-            return ToProblemDetails(result);
+            return Unauthorized(ApiResponse<object>.ErrorResponse(result.Error.Message));
         }
 
         var authResult = result.Value;
 
-        // Support both Flutter mobile clients and Web clients securely
         var clientType = Request.Headers["X-Client-Type"].ToString();
         var userAgentHeader = Request.Headers["User-Agent"].ToString();
         bool isMobile = clientType.Equals("Mobile", StringComparison.OrdinalIgnoreCase) ||
@@ -55,7 +56,6 @@ public class AuthController : BaseApiController
 
         if (!isMobile)
         {
-            // Web Client: Store Refresh Token in HttpOnly cookie to mitigate XSS attacks
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -65,24 +65,22 @@ public class AuthController : BaseApiController
                 Path = "/api/v1/auth"
             };
             Response.Cookies.Append("refreshToken", authResult.RefreshToken, cookieOptions);
-
-            // Strip the Refresh Token from the response body for web clients
             authResult = authResult with { RefreshToken = string.Empty };
         }
 
-        return Ok(authResult);
+        return Ok(ApiResponse<AuthResultResponse>.Ok(authResult, "Login successful"));
     }
 
     [Authorize]
     [HttpPost("logout")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest(ApiResponse<object>.ErrorResponse("Validation failed", ModelState));
         }
 
         var authHeader = HttpContext.Request.Headers.Authorization.FirstOrDefault();
@@ -92,7 +90,6 @@ public class AuthController : BaseApiController
             accessToken = authHeader["Bearer ".Length..].Trim();
         }
 
-        // Support cookies for Web clients
         var refreshToken = request.RefreshToken;
         if (string.IsNullOrEmpty(refreshToken))
         {
@@ -104,30 +101,28 @@ public class AuthController : BaseApiController
 
         if (result.IsFailure)
         {
-            return ToProblemDetails(result);
+            return BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
         }
 
-        // Clear the refresh token cookie if any
         Response.Cookies.Delete("refreshToken", new CookieOptions
         {
             Path = "/api/v1/auth"
         });
 
-        return Ok(new { Message = "Logged out successfully." });
+        return Ok(ApiResponse<object>.Ok(null, "Logged out successfully."));
     }
 
     [HttpPost("refresh")]
-    [ProducesResponseType(typeof(AuthResultResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResultResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status412PreconditionFailed)]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest(ApiResponse<object>.ErrorResponse("Validation failed", ModelState));
         }
 
-        // Support cookies for Web clients
         var refreshToken = request.RefreshToken;
         if (string.IsNullOrEmpty(refreshToken))
         {
@@ -143,12 +138,11 @@ public class AuthController : BaseApiController
 
         if (result.IsFailure)
         {
-            return ToProblemDetails(result);
+            return BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
         }
 
         var authResult = result.Value;
 
-        // Support both Flutter mobile clients and Web clients securely
         var clientType = Request.Headers["X-Client-Type"].ToString();
         var userAgentHeader = Request.Headers["User-Agent"].ToString();
         bool isMobile = clientType.Equals("Mobile", StringComparison.OrdinalIgnoreCase) ||
@@ -169,40 +163,88 @@ public class AuthController : BaseApiController
             authResult = authResult with { RefreshToken = string.Empty };
         }
 
-        return Ok(authResult);
+        return Ok(ApiResponse<AuthResultResponse>.Ok(authResult, "Token refreshed successfully"));
     }
 
     [HttpPost("forgot-password")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest(ApiResponse<object>.ErrorResponse("Validation failed", ModelState));
         }
 
         var result = await _authService.RequestPasswordResetAsync(request, cancellationToken);
         
         return result.IsSuccess 
-            ? Ok(new { Message = "If the email exists in our system, a password reset link has been sent." }) 
-            : ToProblemDetails(result);
+            ? Ok(ApiResponse<object>.Ok(null, "If the email exists in our system, a password reset link has been sent.")) 
+            : BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
     }
 
     [HttpPost("reset-password")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest(ApiResponse<object>.ErrorResponse("Validation failed", ModelState));
         }
 
         var result = await _authService.ResetPasswordAsync(request, cancellationToken);
         
         return result.IsSuccess 
-            ? Ok(new { Message = "Your password has been successfully reset." }) 
-            : ToProblemDetails(result);
+            ? Ok(ApiResponse<object>.Ok(null, "Your password has been successfully reset.")) 
+            : BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
+    }
+
+    [EnableRateLimiting("LoginPolicy")]
+    [HttpPost("google-login")]
+    [ProducesResponseType(typeof(ApiResponse<AuthResultResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("Validation failed", ModelState));
+        }
+
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = HttpContext.Request.Headers.UserAgent.FirstOrDefault();
+        var deviceId = HttpContext.Request.Headers["X-Device-ID"].FirstOrDefault();
+
+        var result = await _authService.GoogleLoginAsync(request, ipAddress, userAgent, deviceId, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return Unauthorized(ApiResponse<object>.ErrorResponse(result.Error.Message));
+        }
+
+        var authResult = result.Value;
+
+        var clientType = Request.Headers["X-Client-Type"].ToString();
+        var userAgentHeader = Request.Headers["User-Agent"].ToString();
+        bool isMobile = clientType.Equals("Mobile", StringComparison.OrdinalIgnoreCase) ||
+                        userAgentHeader.Contains("Flutter", StringComparison.OrdinalIgnoreCase) ||
+                        userAgentHeader.Contains("Dart", StringComparison.OrdinalIgnoreCase);
+
+        if (!isMobile)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                Path = "/api/v1/auth"
+            };
+            Response.Cookies.Append("refreshToken", authResult.RefreshToken, cookieOptions);
+            authResult = authResult with { RefreshToken = string.Empty };
+        }
+
+        return Ok(ApiResponse<AuthResultResponse>.Ok(authResult, "Google login successful"));
     }
 }

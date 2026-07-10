@@ -13,8 +13,8 @@ public partial class User
     }
 
     public int AccessFailedCount { get; set; }
-    public DateTime? LockoutEnd { get; set; }
+    public DateTimeOffset? LockoutEnd { get; set; }
 
     public string? PasswordResetToken { get; set; }
-    public DateTime? ResetTokenExpiry { get; set; }
+    public DateTimeOffset? ResetTokenExpiry { get; set; }
 }

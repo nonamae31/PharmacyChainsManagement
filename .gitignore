@@ -726,3 +726,10 @@ app.*.map.json
 **/.agents/
 **/.swarm/
 *.pdf
+/.agent_workspace
+PharmacyChainsManagementBE/appsettings.json
+/PharmacyChainsManagementFE/.agent_workspace
+PharmacyChainsManagementFE/.env.example
+/PharmacyChainsManagementFE/integration_test
+/scrcpy
+scrcpy.zip
