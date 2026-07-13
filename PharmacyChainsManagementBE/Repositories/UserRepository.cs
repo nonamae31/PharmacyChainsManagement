@@ -34,4 +34,9 @@ public class UserRepository : IUserRepository
         _context.Users.Update(user);
         return Task.CompletedTask;
     }
+
+    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
+    {
+        await _context.Users.AddAsync(user, cancellationToken);
+    }
 }

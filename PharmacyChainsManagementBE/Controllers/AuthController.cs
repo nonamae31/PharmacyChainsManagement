@@ -25,7 +25,7 @@ public class AuthController : BaseApiController
 
     [EnableRateLimiting("LoginPolicy")]
     [HttpPost("login")]
-    [ProducesResponseType(typeof(ApiResponse<AuthResultResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
@@ -68,7 +68,8 @@ public class AuthController : BaseApiController
             authResult = authResult with { RefreshToken = string.Empty };
         }
 
-        return Ok(ApiResponse<AuthResultResponse>.Ok(authResult, "Login successful"));
+        var loginResponse = new LoginResponseDTO(authResult.AccessToken, authResult.Role.RoleCode);
+        return Ok(loginResponse);
     }
 
     [Authorize]
@@ -220,7 +221,7 @@ public class AuthController : BaseApiController
 
         if (result.IsFailure)
         {
-            return Unauthorized(ApiResponse<object>.ErrorResponse(result.Error.Message));
+            return Unauthorized(new { error = new { code = result.Error.Code, message = result.Error.Message } });
         }
 
         var authResult = result.Value;

@@ -193,8 +193,7 @@ public class AuthService : IAuthService
             var user = await _userRepository.FindActiveByEmailAsync(email, cancellationToken);
             if (user == null)
             {
-                _logger.LogWarning("Google login failed: User not found or inactive for email: {Email}", email);
-                return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.UserNotFound", "User not found or inactive."));
+                return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.UserNotFound", "Tài khoản không tồn tại trong hệ thống. Vui lòng đăng ký."));
             }
 
             if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)

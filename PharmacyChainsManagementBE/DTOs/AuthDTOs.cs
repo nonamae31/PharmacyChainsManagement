@@ -16,6 +16,8 @@ public record AuthResultResponse(
     RoleResponse Role
 );
 
+public record LoginResponseDTO(string Token, string RoleCode);
+
 public record UserResponse(
     Guid UserId, 
     string FullName, 

@@ -74,6 +74,11 @@ try
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials());
+                  
+        options.AddPolicy("Development", policy =>
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader());
     });
 
     builder.Services.AddAuthentication(options =>
@@ -117,12 +122,16 @@ try
     {
         app.UseSwagger();
         app.UseSwaggerUI();
+        app.UseCors("Development");
+    }
+    else 
+    {
+        app.UseCors("Production");
     }
 
     app.UseHttpsRedirection();
     
     app.UseRateLimiter();
-    app.UseCors("Production");
 
     app.UseRouting();
 
