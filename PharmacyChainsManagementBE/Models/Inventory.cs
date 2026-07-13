@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -39,6 +39,10 @@ public partial class Inventory
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 
+    [Timestamp]
+    [Column("row_version")]
+    public byte[] RowVersion { get; set; } = null!;
+
     [ForeignKey("BatchId")]
     [InverseProperty("Inventories")]
     public virtual MedicineBatch Batch { get; set; } = null!;
@@ -50,4 +54,7 @@ public partial class Inventory
     [ForeignKey("MedicineId")]
     [InverseProperty("Inventories")]
     public virtual Medicine Medicine { get; set; } = null!;
+
+    [InverseProperty("Inventory")]
+    public virtual ICollection<InventoryAdjustment> InventoryAdjustments { get; set; } = new List<InventoryAdjustment>();
 }

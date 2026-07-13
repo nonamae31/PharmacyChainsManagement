@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -16,6 +16,10 @@ public partial class Branch
     [Column("branch_name")]
     [StringLength(150)]
     public string BranchName { get; set; } = null!;
+
+    [Column("branch_type")]
+    [StringLength(30)]
+    public string BranchType { get; set; } = "PHARMACY_STORE";
 
     [Column("address")]
     [StringLength(255)]
@@ -61,4 +65,10 @@ public partial class Branch
 
     [InverseProperty("Branch")]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
+
+    [InverseProperty("Branch")]
+    public virtual ICollection<StockIssue> StockIssues { get; set; } = new List<StockIssue>();
+
+    [InverseProperty("Branch")]
+    public virtual ICollection<Stocktake> Stocktakes { get; set; } = new List<Stocktake>();
 }

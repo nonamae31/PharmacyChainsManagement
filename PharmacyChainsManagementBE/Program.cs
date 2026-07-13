@@ -108,6 +108,10 @@ try
     builder.Services.AddSingleton<IEmailAlertQueue, EmailAlertQueue>();
     builder.Services.AddHostedService<SuspiciousLoginAlertBackgroundService>();
 
+    // Inventory Services
+    builder.Services.AddScoped<IInventoryService, InventoryService>();
+    builder.Services.AddHostedService<ExpiredStockBackgroundService>();
+
     var app = builder.Build();
 
     app.UseMiddleware<GlobalExceptionMiddleware>();
