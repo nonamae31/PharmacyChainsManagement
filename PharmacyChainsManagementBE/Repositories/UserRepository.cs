@@ -39,4 +39,12 @@ public class UserRepository : IUserRepository
     {
         await _context.Users.AddAsync(user, cancellationToken);
     }
+
+    public async Task<User?> GetBusinessAdminByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.UserId == id && u.Role.RoleCode == "BUSINESS_ADMIN", cancellationToken);
+    }
 }

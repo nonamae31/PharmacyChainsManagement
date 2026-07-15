@@ -1,0 +1,28 @@
+import '../../domain/entities/business_admin_entity.dart';
+
+class BusinessAdminModel extends BusinessAdminEntity {
+  const BusinessAdminModel({
+    required super.id,
+    required super.name,
+    required super.email,
+    required super.status,
+  });
+
+  factory BusinessAdminModel.fromJson(Map<String, dynamic> json) {
+    return BusinessAdminModel(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'Inactive',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'status': status,
+    };
+  }
+}

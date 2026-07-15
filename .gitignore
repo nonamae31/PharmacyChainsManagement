@@ -734,3 +734,6 @@ PharmacyChainsManagementFE/.env.example
 /scrcpy
 scrcpy.zip
 PharmacyChainsManagementFE/android/app/src/main/res/values/strings.xml
+/.swarm-backend
+/.swarm-flutter
+/PharmacyChainsManagementFE/test

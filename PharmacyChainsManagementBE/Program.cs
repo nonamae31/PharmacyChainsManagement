@@ -18,6 +18,8 @@ using PharmacyChainsManagementBE.Models;
 using PharmacyChainsManagementBE.Repositories;
 using PharmacyChainsManagementBE.Services;
 using PharmacyChainsManagementBE.Validators;
+using PharmacyChainsManagementBE.Security;
+using Microsoft.AspNetCore.Authorization;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -61,6 +63,14 @@ try
         options.AddFixedWindowLimiter("LoginPolicy", o =>
         {
             o.PermitLimit = 5;
+            o.Window = TimeSpan.FromMinutes(1);
+            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            o.QueueLimit = 2;
+        });
+
+        options.AddFixedWindowLimiter("GetAdminPolicy", o =>
+        {
+            o.PermitLimit = 10;
             o.Window = TimeSpan.FromMinutes(1);
             o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             o.QueueLimit = 2;
@@ -112,6 +122,15 @@ try
     builder.Services.AddScoped<IAuditLogService, AuditLogService>();
     builder.Services.AddSingleton<IEmailAlertQueue, EmailAlertQueue>();
     builder.Services.AddHostedService<SuspiciousLoginAlertBackgroundService>();
+
+    builder.Services.AddScoped<IBusinessAdminService, BusinessAdminService>();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddSingleton<IAuthorizationHandler, AdminOrOwnerHandler>();
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("RequireSuperAdminOrOwner", policy =>
+            policy.Requirements.Add(new AdminOrOwnerRequirement()));
+    });
 
     var app = builder.Build();
 

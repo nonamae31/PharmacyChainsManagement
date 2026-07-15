@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/control/auth_bloc.dart';
 import '../../features/auth/control/auth_state.dart';
 import '../../features/auth/boundary/login_screen.dart';
-import '../../features/home/boundary/founder_home_screen.dart';
+import '../../features/founder_admin/presentation/screens/founder_layout_screen.dart';
 import '../../features/home/boundary/business_admin_home_screen.dart';
 import '../../features/home/boundary/branch_manager_home_screen.dart';
 import '../../features/home/boundary/staff_home_screen.dart';
@@ -59,7 +59,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/founder_home',
-        pageBuilder: (context, state) => _buildTransition(context, state, const FounderHomeScreen()),
+        pageBuilder: (context, state) => _buildTransition(context, state, const FounderLayoutScreen()),
       ),
       GoRoute(
         path: '/business_admin_home',

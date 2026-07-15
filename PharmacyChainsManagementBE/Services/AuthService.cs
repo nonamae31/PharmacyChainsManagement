@@ -151,21 +151,24 @@ public class AuthService : IAuthService
         var accessToken = _tokenService.IssueJwt(userId, userDto.Email, roleDto.RoleCode);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
-        var session = new UserSession
+        if (userId != Guid.Empty)
         {
-            SessionId = Guid.NewGuid(),
-            UserId = userId,
-            RefreshToken = refreshToken,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
-            IsRevoked = false,
-            IpAddress = ipAddress,
-            UserAgent = userAgent,
-            DeviceId = deviceId
-        };
+            var session = new UserSession
+            {
+                SessionId = Guid.NewGuid(),
+                UserId = userId,
+                RefreshToken = refreshToken,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false,
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                DeviceId = deviceId
+            };
 
-        await _sessionRepository.AddAsync(session, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _sessionRepository.AddAsync(session, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         return Result.Success(new AuthResultResponse(accessToken, refreshToken, userDto, roleDto));
     }
