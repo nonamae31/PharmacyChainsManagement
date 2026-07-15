@@ -267,10 +267,10 @@ public class InventoryService : IInventoryService
                 .FirstOrDefaultAsync(t => t.TransferId == request.TransferId, cancellationToken);
 
             if (transfer == null) return Result.Failure(Error.NotFound("Transfer.NotFound", "Transfer not found"));
-            if (transfer.Status != "PENDING") return Result.Failure(Error.Validation("Transfer.NotPending", "Transfer is not in pending state"));
+            if (transfer.TransferStatus != "PENDING") return Result.Failure(Error.Validation("Transfer.NotPending", "Transfer is not in pending state"));
 
             bool isApproved = request.ApprovalStatus.Equals("APPROVED", StringComparison.OrdinalIgnoreCase);
-            transfer.Status = request.ApprovalStatus;
+            transfer.TransferStatus = request.ApprovalStatus;
             transfer.ApprovedBy = approvedBy;
             transfer.UpdatedAt = DateTime.UtcNow;
 
@@ -472,7 +472,7 @@ public class InventoryService : IInventoryService
         var transfers = await _dbContext.StockTransferDetails
             .Include(d => d.Transfer).ThenInclude(t => t.FromBranch)
             .Include(d => d.Transfer).ThenInclude(t => t.ToBranch)
-            .Where(d => d.BatchId == batchId && d.Transfer.Status == "APPROVED")
+            .Where(d => d.BatchId == batchId && d.Transfer.TransferStatus == "APPROVED")
             .ToListAsync(cancellationToken);
         foreach (var t in transfers)
         {

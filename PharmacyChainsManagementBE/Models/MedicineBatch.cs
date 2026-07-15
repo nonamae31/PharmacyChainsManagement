@@ -61,9 +61,6 @@ public partial class MedicineBatch
     [InverseProperty("MedicineBatches")]
     public virtual Supplier Supplier { get; set; } = null!;
 
-    [Timestamp]
-    [Column("row_version")]
-    public byte[] RowVersion { get; set; } = null!;
 
     [InverseProperty("Batch")]
     public virtual ICollection<InventoryReceiptDetail> InventoryReceiptDetails { get; set; } = new List<InventoryReceiptDetail>();

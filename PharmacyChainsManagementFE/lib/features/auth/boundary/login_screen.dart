@@ -146,9 +146,6 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
     context.read<AuthBloc>().add(GoogleLoginRequested());
   }
 
-  void _onBiometricLogin() {
-    context.read<AuthBloc>().add(BiometricLoginRequested());
-  }
 
   @override
   Widget build(BuildContext context) {

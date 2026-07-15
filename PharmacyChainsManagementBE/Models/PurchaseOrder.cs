@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -59,4 +59,7 @@ public partial class PurchaseOrder
     [ForeignKey("SupplierId")]
     [InverseProperty("PurchaseOrders")]
     public virtual Supplier Supplier { get; set; } = null!;
+
+    [InverseProperty("PurchaseOrder")]
+    public virtual ICollection<InventoryReceipt> InventoryReceipts { get; set; } = new List<InventoryReceipt>();
 }
