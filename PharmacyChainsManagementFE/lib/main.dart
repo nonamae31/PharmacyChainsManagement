@@ -11,13 +11,13 @@ import 'features/auth/network/auth_api_client.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
     debugPrint("Could not load .env file: $e");
   }
-  
+
   try {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
@@ -27,22 +27,21 @@ void main() async {
   } catch (e) {
     debugPrint("Firebase init error: $e");
   }
-  
+
   final authApiClient = AuthApiClient();
   final localAuth = LocalAuthentication();
 
-  final authBloc = AuthBloc(
-    authApiClient: authApiClient,
-    localAuth: localAuth,
-  );
+  final authBloc = AuthBloc(authApiClient: authApiClient, localAuth: localAuth);
   final appRouter = AppRouter(authBloc);
 
-  runApp(MyApp(
-    authApiClient: authApiClient,
-    localAuth: localAuth,
-    appRouter: appRouter,
-    authBloc: authBloc,
-  ));
+  runApp(
+    MyApp(
+      authApiClient: authApiClient,
+      localAuth: localAuth,
+      appRouter: appRouter,
+      authBloc: authBloc,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -52,8 +51,8 @@ class MyApp extends StatelessWidget {
   final AuthBloc authBloc;
 
   const MyApp({
-    super.key, 
-    required this.authApiClient, 
+    super.key,
+    required this.authApiClient,
     required this.localAuth,
     required this.appRouter,
     required this.authBloc,
@@ -62,11 +61,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>.value(
-          value: authBloc,
-        ),
-      ],
+      providers: [BlocProvider<AuthBloc>.value(value: authBloc)],
       child: MaterialApp.router(
         title: 'Pharmacy Chains Management',
         theme: ThemeData(
