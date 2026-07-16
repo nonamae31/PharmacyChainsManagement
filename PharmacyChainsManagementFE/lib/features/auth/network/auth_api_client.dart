@@ -78,12 +78,9 @@ class AuthApiClient {
             throw ServerException(data['title'].toString());
           }
         }
-        if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-          throw const ServerException('Email hoặc mật khẩu không chính xác.');
-        }
-        throw const ServerException('Không thể kết nối đến máy chủ. Vui lòng thử lại.');
+        throw ServerException('Lỗi mạng: ${e.message}');
       }
-      throw const ServerException('Đã xảy ra lỗi không xác định.');
+      throw ServerException('Lỗi hệ thống: $e');
     }
   }
 

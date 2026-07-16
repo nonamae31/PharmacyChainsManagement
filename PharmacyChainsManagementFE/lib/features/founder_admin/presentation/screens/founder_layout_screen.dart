@@ -14,7 +14,7 @@ class FounderLayoutScreen extends StatefulWidget {
 }
 
 class _FounderLayoutScreenState extends State<FounderLayoutScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   final List<Widget> _pages = [
     const Center(child: Text('Dashboard Placeholder')),

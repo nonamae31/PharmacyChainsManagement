@@ -10,8 +10,8 @@ class BusinessAdminModel extends BusinessAdminEntity {
 
   factory BusinessAdminModel.fromJson(Map<String, dynamic> json) {
     return BusinessAdminModel(
-      id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
+      id: (json['userId'] ?? json['id'])?.toString() ?? '',
+      name: (json['fullName'] ?? json['name'])?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       status: json['status']?.toString() ?? 'Inactive',
     );

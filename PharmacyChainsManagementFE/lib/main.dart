@@ -9,8 +9,11 @@ import 'core/routes/app_router.dart';
 import 'features/auth/control/auth_bloc.dart';
 import 'features/auth/network/auth_api_client.dart';
 
+import 'injection_container.dart' as di;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await di.init();
   
   try {
     await dotenv.load(fileName: ".env");

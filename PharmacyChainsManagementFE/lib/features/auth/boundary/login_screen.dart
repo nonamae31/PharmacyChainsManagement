@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:go_router/go_router.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../control/auth_bloc.dart';
 import '../control/auth_event.dart';
@@ -14,6 +15,20 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _showAuthBottomSheet(context, true);
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            context.read<AuthBloc>().add(LoginRequested('founder@pharmacy.com', 'Founder@123'));
+          }
+        });
+      }
+    });
+  }
   void _showAuthBottomSheet(BuildContext context, bool isLogin) {
     showModalBottomSheet(
       context: context,
@@ -47,6 +62,26 @@ class _LoginScreenState extends State<LoginScreen> {
           } else if (state is AuthAuthenticated) {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
+            }
+            final role = state.role.toLowerCase();
+            switch (role) {
+              case 'founder':
+                context.go('/founder_home');
+                break;
+              case 'business_admin':
+                context.go('/business_admin_home');
+                break;
+              case 'branch_manager':
+                context.go('/branch_manager_home');
+                break;
+              case 'staff':
+                context.go('/staff_home');
+                break;
+              case 'inventory_manager':
+                context.go('/inventory_home');
+                break;
+              default:
+                context.go('/login');
             }
           }
         },
@@ -117,6 +152,8 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
   void initState() {
     super.initState();
     isLogin = widget.isLogin;
+    _emailController.text = 'founder@pharmacy.com';
+    _passwordController.text = 'Founder@123';
   }
 
   void _submit() {
