@@ -7,6 +7,8 @@ import 'features/founder_admin/domain/usecases/deactivate_business_admin_usecase
 import 'features/founder_admin/presentation/cubit/deactivate_admin_cubit.dart';
 import 'features/founder_admin/presentation/cubit/business_admin_cubit.dart';
 import 'features/founder_admin/presentation/cubit/create_admin_cubit.dart';
+import 'features/founder_admin/presentation/cubit/business_admin_edit_cubit.dart';
+import 'features/founder_admin/domain/usecases/update_business_admin_usecase.dart';
 
 // Revenue Report
 import 'features/revenue_report/data/datasources/revenue_report_remote_datasource.dart';
@@ -44,6 +46,7 @@ Future<void> init() async {
   sl.registerFactory(() => CreateAdminCubit(repository: sl()));
   sl.registerFactory(() => DeactivateAdminCubit(useCase: sl()));
   sl.registerFactory(() => FinancialExportCubit(exportFinancialReportUseCase: sl()));
+  sl.registerFactory(() => BusinessAdminEditCubit(updateBusinessAdminUseCase: sl()));
 
   // Bloc
   sl.registerFactory(() => CashFlowBloc(getCashFlowUseCase: sl()));
@@ -53,6 +56,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GenerateRevenueReportUseCase(sl()));
   sl.registerLazySingleton(() => GetCashFlowUseCase(sl()));
   sl.registerLazySingleton(() => ExportFinancialReportUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateBusinessAdminUseCase(sl()));
 
   // Repository
   sl.registerLazySingleton<BusinessAdminRepository>(

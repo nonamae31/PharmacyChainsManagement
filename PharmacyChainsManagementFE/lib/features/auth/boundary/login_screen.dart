@@ -21,11 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _showAuthBottomSheet(context, true);
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            context.read<AuthBloc>().add(LoginRequested('founder@pharmacy.com', 'Founder@123'));
-          }
-        });
       }
     });
   }
@@ -152,8 +147,6 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
   void initState() {
     super.initState();
     isLogin = widget.isLogin;
-    _emailController.text = 'founder@pharmacy.com';
-    _passwordController.text = 'Founder@123';
   }
 
   void _submit() {
