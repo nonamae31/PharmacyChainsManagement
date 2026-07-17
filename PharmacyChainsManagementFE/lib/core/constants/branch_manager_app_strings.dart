@@ -23,7 +23,7 @@ abstract final class AppStrings {
   static const requiresRestock = 'Requires immediate restock';
   static const revenueStatistics = 'Branch Revenue Statistics';
   static const revenueStatisticsSubtitle =
-      'Monthly revenue performance across all departments';
+      'Revenue performance for the selected period';
   static const month = 'Month';
   static const quarter = 'Quarter';
   static const year = 'Year';
@@ -77,6 +77,7 @@ abstract final class AppStrings {
   static const staffPerformanceSubtitle =
       'Sales productivity and operational indicators across your branch team.';
   static const filter = 'Filter';
+  static const addStaff = 'Add Staff';
   static const newAssessment = 'New Assessment';
   static const averageSalesTarget = 'AVERAGE SALES TARGET';
   static const customerSatisfaction = 'CUSTOMER SATISFACTION';
@@ -91,10 +92,10 @@ abstract final class AppStrings {
   static const trendAnalysis = 'Trend Analysis';
   static const managerInsight = 'Manager Insight';
   static const managerInsightMessage =
-      'Sales revenue is calculated from completed, paid invoices. Targets, attendance, and ratings show N/A until those data sources are added.';
+      'Sales revenue comes from completed paid invoices. Targets, attendance, ratings, and scores use the latest saved manager assessment.';
   static const recentFeedback = 'Recent Feedback';
   static const noFeedbackData =
-      'No feedback table is available in the current database.';
+      'No staff assessment feedback has been recorded yet.';
   static const inventoryTitle = 'Branch Inventory Status';
   static const inventorySubtitle =
       'Real-time oversight of branch medicine stock and incoming transfers.';
@@ -121,10 +122,9 @@ abstract final class AppStrings {
   static const dayShort = 'd';
   static const ofLabel = 'of';
   static const staffOnBreak = 'staff members on break';
-  static const addRecordUnavailable =
-      'Record creation is handled by the owning operational workflow.';
   static const fullStaff = 'Full staff';
   static const healthy = 'Healthy';
+  static const needsAttention = 'Needs attention';
   static const selectDateRange = 'Select date range';
   static const current = 'Current';
   static const previous = 'Previous';
@@ -135,7 +135,6 @@ abstract final class AppStrings {
   static const performanceScore = 'Performance score';
   static const salesRevenueLabel = 'Sales revenue';
   static const activeTeam = 'Active Team';
-  static const viewAllReviews = 'View All Reviews';
   static const showing = 'Showing';
   static const results = 'results';
   static const centralHub = 'Central Hub: Inventory Visibility';
@@ -151,10 +150,48 @@ abstract final class AppStrings {
   static const revenueCsvFile = 'branch_revenue.csv';
   static const inventoryCsvFile = 'branch_inventory.csv';
   static const invalidDateRange = 'Please select a valid date range.';
-  static const assessmentUnavailable =
-      'Assessment storage is not available in the current database.';
-  static const rosterUnavailable =
-      'Shift roster storage is not available in the current database.';
-  static const shipmentUnavailable =
-      'Shipment creation belongs to the Inventory Manager workflow.';
+  static const staffCreated = 'Staff account created successfully.';
+  static const shiftSaved = 'Shift roster saved successfully.';
+  static const assessmentSaved = 'Staff assessment saved successfully.';
+  static const shipmentCreated = 'Shipment request created successfully.';
+  static const fullName = 'Full name';
+  static const email = 'Email';
+  static const phone = 'Phone';
+  static const temporaryPassword = 'Temporary password';
+  static const requiredField = 'This field is required.';
+  static const invalidEmail = 'Enter a valid email address.';
+  static const passwordMinimum = 'Password must contain at least 8 characters.';
+  static const create = 'Create';
+  static const save = 'Save';
+  static const apply = 'Apply';
+  static const filterStaff = 'Filter staff';
+  static const active = 'Active';
+  static const inactive = 'Inactive';
+  static const sortBy = 'Sort by';
+  static const highestRevenue = 'Highest revenue';
+  static const highestPerformance = 'Highest performance';
+  static const nameAscending = 'Name A-Z';
+  static const staffMember = 'Staff member';
+  static const assessmentDate = 'Assessment date';
+  static const notes = 'Notes';
+  static const invalidNumber = 'Enter a valid number.';
+  static const maximumValue = 'Maximum value:';
+  static const staffLoading = 'Staff data is loading. Please try again.';
+  static const noStaffAvailable = 'No branch staff is available.';
+  static const shiftDate = 'Shift date';
+  static const startTime = 'Start time';
+  static const endTime = 'End time';
+  static const scheduled = 'Scheduled';
+  static const dayOff = 'Day off';
+  static const cancelled = 'Cancelled';
+  static const invalidShiftTime = 'End time must be later than start time.';
+  static const sourceBranch = 'Source branch';
+  static const medicineBatch = 'Medicine batch';
+  static const quantity = 'Quantity';
+  static const available = 'Available';
+  static const invalidQuantity = 'Enter a quantity greater than zero.';
+  static const quantityExceedsStock = 'Quantity exceeds source stock.';
+  static const createRequest = 'Create request';
+  static const noShipmentStock =
+      'No available stock was found in another active branch.';
 }

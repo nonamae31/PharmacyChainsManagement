@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
@@ -22,15 +23,21 @@ public sealed class BranchManagerController : ControllerBase
 {
     private const int MaximumReportDays = 366;
     private readonly PharmacyDbContext _dbContext;
+    private readonly IPasswordHashingStrategy _passwordHashingStrategy;
 
-    public BranchManagerController(PharmacyDbContext dbContext)
+    public BranchManagerController(
+        PharmacyDbContext dbContext,
+        IPasswordHashingStrategy passwordHashingStrategy)
     {
         _dbContext = dbContext;
+        _passwordHashingStrategy = passwordHashingStrategy;
     }
 
     [HttpGet("dashboard")]
     [ProducesResponseType(typeof(BranchDashboardDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetDashboard(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetDashboard(
+        [FromQuery] string trendPeriod = "month",
+        CancellationToken cancellationToken = default)
     {
         var access = await ResolveAccessAsync(cancellationToken);
         if (access is null)
@@ -41,6 +48,7 @@ public sealed class BranchManagerController : ControllerBase
         var dashboard = await BranchManagerDataService.GetDashboardAsync(
             _dbContext,
             access.Value.BranchId,
+            trendPeriod,
             cancellationToken);
         return dashboard is null ? NotFound() : Ok(dashboard);
     }
@@ -114,6 +122,8 @@ public sealed class BranchManagerController : ControllerBase
     [ProducesResponseType(typeof(StaffPerformanceDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStaffPerformance(
         [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string sort = "revenue_desc",
         CancellationToken cancellationToken = default)
     {
         var access = await ResolveAccessAsync(cancellationToken);
@@ -129,7 +139,142 @@ public sealed class BranchManagerController : ControllerBase
             today.AddDays(-29),
             today,
             search,
+            status,
+            sort,
             cancellationToken));
+    }
+
+    [HttpPost("staff")]
+    [ProducesResponseType(typeof(BranchStaffDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateStaff(
+        [FromBody] CreateBranchStaffRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        if (await _dbContext.Users.AnyAsync(user => user.Email == normalizedEmail, cancellationToken))
+        {
+            return Conflict(new { message = "A user with this email already exists." });
+        }
+
+        var staffRole = await _dbContext.Roles.SingleOrDefaultAsync(
+            role => role.RoleCode == "STAFF" && role.IsActive,
+            cancellationToken);
+        if (staffRole is null)
+        {
+            return Problem("The STAFF role is not configured.", statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var now = DateTime.UtcNow;
+        var staff = new User
+        {
+            UserId = Guid.NewGuid(),
+            RoleId = staffRole.RoleId,
+            BranchId = access.Value.BranchId,
+            FullName = request.FullName.Trim(),
+            Email = normalizedEmail,
+            PasswordHash = _passwordHashingStrategy.HashPassword(request.Password),
+            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
+            Status = "ACTIVE",
+            MustChangePassword = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        _dbContext.Users.Add(staff);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var response = new BranchStaffDto(
+            staff.UserId,
+            staff.FullName,
+            staff.Email,
+            staff.Phone,
+            staff.Status,
+            staff.CreatedAt);
+        return CreatedAtAction(nameof(GetStaffPerformance), new { search = staff.Email }, response);
+    }
+
+    [HttpGet("staff-shifts")]
+    [ProducesResponseType(typeof(IReadOnlyList<StaffShiftDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStaffShifts(
+        [FromQuery] DateOnly? date = null,
+        CancellationToken cancellationToken = default)
+    {
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        return Ok(await BranchManagerDataService.GetStaffShiftsAsync(
+            _dbContext,
+            access.Value.BranchId,
+            date ?? DateOnly.FromDateTime(DateTime.UtcNow),
+            cancellationToken));
+    }
+
+    [HttpPost("staff-shifts")]
+    [ProducesResponseType(typeof(StaffShiftDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpsertStaffShift(
+        [FromBody] UpsertStaffShiftRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid || request.ShiftDate == default || request.StartTime >= request.EndTime)
+        {
+            ModelState.AddModelError(nameof(request.EndTime), "End time must be later than start time.");
+            return ValidationProblem(ModelState);
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var shift = await BranchManagerDataService.UpsertStaffShiftAsync(
+            _dbContext,
+            access.Value.ManagerId,
+            access.Value.BranchId,
+            request,
+            cancellationToken);
+        return shift is null ? BadRequest(new { message = "The selected staff member does not belong to this branch." }) : Ok(shift);
+    }
+
+    [HttpPost("staff-assessments")]
+    [ProducesResponseType(typeof(StaffAssessmentDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateStaffAssessment(
+        [FromBody] CreateStaffAssessmentRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid || request.AssessmentDate == default)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var assessment = await BranchManagerDataService.CreateStaffAssessmentAsync(
+            _dbContext,
+            access.Value.ManagerId,
+            access.Value.BranchId,
+            request,
+            cancellationToken);
+        return assessment is null
+            ? BadRequest(new { message = "The selected staff member does not belong to this branch." })
+            : StatusCode(StatusCodes.Status201Created, assessment);
     }
 
     [HttpGet("inventory")]
@@ -194,6 +339,50 @@ public sealed class BranchManagerController : ControllerBase
         }
 
         return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", $"branch-inventory-{DateTime.UtcNow:yyyyMMdd}.csv");
+    }
+
+    [HttpGet("inventory/shipment-options")]
+    [ProducesResponseType(typeof(ShipmentOptionsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetShipmentOptions(CancellationToken cancellationToken)
+    {
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        return Ok(await BranchManagerDataService.GetShipmentOptionsAsync(
+            _dbContext,
+            access.Value.BranchId,
+            cancellationToken));
+    }
+
+    [HttpPost("inventory/shipments")]
+    [ProducesResponseType(typeof(ShipmentRequestDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateShipment(
+        [FromBody] CreateShipmentRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var shipment = await BranchManagerDataService.CreateShipmentAsync(
+            _dbContext,
+            access.Value.ManagerId,
+            access.Value.BranchId,
+            request,
+            cancellationToken);
+        return shipment is null
+            ? BadRequest(new { message = "The selected batch, source branch, or quantity is invalid." })
+            : StatusCode(StatusCodes.Status201Created, shipment);
     }
 
     [HttpPost("daily-revenue/confirm")]

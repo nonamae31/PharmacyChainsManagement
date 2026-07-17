@@ -21,18 +21,26 @@ final class BranchDashboardLoading extends BranchDashboardState {
 class BranchDashboardLoadSuccess extends BranchDashboardState {
   final BranchDashboardDto dashboard;
   final String searchQuery;
+  final String trendPeriod;
   final List<DashboardStaffDto> visibleStaff;
   final List<DashboardInventoryDto> visibleInventory;
 
   const BranchDashboardLoadSuccess({
     required this.dashboard,
     this.searchQuery = '',
+    this.trendPeriod = 'month',
     required this.visibleStaff,
     required this.visibleInventory,
   });
 
   @override
-  List<Object?> get props => [dashboard, searchQuery, visibleStaff, visibleInventory];
+  List<Object?> get props => [
+    dashboard,
+    searchQuery,
+    trendPeriod,
+    visibleStaff,
+    visibleInventory,
+  ];
 }
 
 final class DailyRevenueConfirmationSuccess extends BranchDashboardLoadSuccess {
@@ -41,6 +49,7 @@ final class DailyRevenueConfirmationSuccess extends BranchDashboardLoadSuccess {
   const DailyRevenueConfirmationSuccess({
     required super.dashboard,
     required super.searchQuery,
+    required super.trendPeriod,
     required super.visibleStaff,
     required super.visibleInventory,
     required this.confirmation,

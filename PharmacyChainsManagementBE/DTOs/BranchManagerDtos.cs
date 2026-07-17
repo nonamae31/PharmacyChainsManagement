@@ -61,7 +61,9 @@ public sealed record BranchRevenueDto(
 public sealed record StaffPerformanceRowDto(
     Guid StaffId,
     string FullName,
+    string Email,
     string RoleName,
+    string Status,
     decimal SalesRevenue,
     decimal? SalesTarget,
     decimal? TargetProgressPercent,
@@ -71,6 +73,14 @@ public sealed record StaffPerformanceRowDto(
 
 public sealed record StaffTrendPointDto(string Label, decimal Revenue);
 
+public sealed record StaffFeedbackDto(
+    Guid AssessmentId,
+    Guid StaffId,
+    string StaffName,
+    DateOnly AssessmentDate,
+    decimal PerformanceScore,
+    string Notes);
+
 public sealed record StaffPerformanceDto(
     Guid BranchId,
     decimal? AverageSalesTargetPercent,
@@ -78,7 +88,8 @@ public sealed record StaffPerformanceDto(
     decimal? TeamAttendancePercent,
     StaffPerformanceRowDto? TopPerformer,
     IReadOnlyList<StaffPerformanceRowDto> Staff,
-    IReadOnlyList<StaffTrendPointDto> Trend);
+    IReadOnlyList<StaffTrendPointDto> Trend,
+    IReadOnlyList<StaffFeedbackDto> RecentFeedback);
 
 public sealed record BranchInventoryRowDto(
     Guid MedicineId,
@@ -127,3 +138,129 @@ public sealed record DailyRevenueConfirmationDto(
     decimal Difference,
     bool IsMatched,
     DateTime ConfirmedAt);
+
+public sealed class CreateBranchStaffRequestDto
+{
+    [Required, StringLength(150, MinimumLength = 2)]
+    public string FullName { get; init; } = string.Empty;
+
+    [Required, EmailAddress, StringLength(150)]
+    public string Email { get; init; } = string.Empty;
+
+    [Required, StringLength(100, MinimumLength = 8)]
+    public string Password { get; init; } = string.Empty;
+
+    [StringLength(30)]
+    public string? Phone { get; init; }
+}
+
+public sealed record BranchStaffDto(
+    Guid StaffId,
+    string FullName,
+    string Email,
+    string? Phone,
+    string Status,
+    DateTime CreatedAt);
+
+public sealed class UpsertStaffShiftRequestDto
+{
+    [Required]
+    public Guid StaffId { get; init; }
+
+    public DateOnly ShiftDate { get; init; }
+
+    public TimeOnly StartTime { get; init; }
+
+    public TimeOnly EndTime { get; init; }
+
+    [Required, StringLength(30)]
+    public string Status { get; init; } = "SCHEDULED";
+
+    [StringLength(500)]
+    public string? Notes { get; init; }
+}
+
+public sealed record StaffShiftDto(
+    Guid ShiftId,
+    Guid StaffId,
+    string StaffName,
+    DateOnly ShiftDate,
+    TimeOnly StartTime,
+    TimeOnly EndTime,
+    string Status,
+    string? Notes,
+    DateTime UpdatedAt);
+
+public sealed class CreateStaffAssessmentRequestDto
+{
+    [Required]
+    public Guid StaffId { get; init; }
+
+    public DateOnly AssessmentDate { get; init; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal SalesTarget { get; init; }
+
+    [Range(typeof(decimal), "0", "5")]
+    public decimal CustomerRating { get; init; }
+
+    [Range(typeof(decimal), "0", "100")]
+    public decimal AttendancePercent { get; init; }
+
+    [Range(typeof(decimal), "0", "100")]
+    public decimal PerformanceScore { get; init; }
+
+    [StringLength(1000)]
+    public string? Notes { get; init; }
+}
+
+public sealed record StaffAssessmentDto(
+    Guid AssessmentId,
+    Guid StaffId,
+    DateOnly AssessmentDate,
+    decimal SalesTarget,
+    decimal CustomerRating,
+    decimal AttendancePercent,
+    decimal PerformanceScore,
+    string? Notes,
+    DateTime CreatedAt);
+
+public sealed record TransferSourceBranchDto(Guid BranchId, string BranchName);
+
+public sealed record TransferBatchOptionDto(
+    Guid BranchId,
+    Guid MedicineId,
+    Guid BatchId,
+    string MedicineName,
+    string BatchNumber,
+    int AvailableQuantity,
+    DateOnly ExpiryDate);
+
+public sealed record ShipmentOptionsDto(
+    IReadOnlyList<TransferSourceBranchDto> SourceBranches,
+    IReadOnlyList<TransferBatchOptionDto> Batches);
+
+public sealed class CreateShipmentRequestDto
+{
+    [Required]
+    public Guid FromBranchId { get; init; }
+
+    [Required]
+    public Guid BatchId { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Quantity { get; init; }
+
+    [StringLength(1000)]
+    public string? Notes { get; init; }
+}
+
+public sealed record ShipmentRequestDto(
+    Guid TransferId,
+    Guid FromBranchId,
+    Guid ToBranchId,
+    Guid MedicineId,
+    Guid BatchId,
+    int Quantity,
+    string Status,
+    DateOnly RequestDate);

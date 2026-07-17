@@ -15,12 +15,14 @@ class BranchDashboardContent extends StatelessWidget {
   final BranchDashboardLoadSuccess state;
   final VoidCallback onUpdateRoster;
   final VoidCallback onFilterAlerts;
+  final ValueChanged<String> onPeriodSelected;
 
   const BranchDashboardContent({
     super.key,
     required this.state,
     required this.onUpdateRoster,
     required this.onFilterAlerts,
+    required this.onPeriodSelected,
   });
 
   @override
@@ -41,7 +43,15 @@ class BranchDashboardContent extends StatelessWidget {
                 label: AppStrings.activeStaff,
                 value: '${metrics.activeStaff} / ${metrics.totalStaff}',
                 icon: Icons.groups_outlined,
-                helper: AppStrings.fullStaff,
+                helper: metrics.totalStaff > 0 &&
+                        metrics.activeStaff >= metrics.totalStaff
+                    ? AppStrings.fullStaff
+                    : '${metrics.totalStaff - metrics.activeStaff} ${AppStrings.staffOnBreak}',
+                accentColor:
+                    metrics.totalStaff > 0 &&
+                        metrics.activeStaff < metrics.totalStaff
+                    ? AppColors.warning
+                    : AppColors.teal,
               ),
               AppMetricCard(
                 label: AppStrings.stockAlerts,
@@ -54,7 +64,9 @@ class BranchDashboardContent extends StatelessWidget {
                 label: AppStrings.branchEfficiency,
                 value: _percent(metrics.branchEfficiencyPercent),
                 icon: Icons.analytics_outlined,
-                helper: AppStrings.healthy,
+                helper: metrics.branchEfficiencyPercent >= 70
+                    ? AppStrings.healthy
+                    : AppStrings.needsAttention,
                 emphasized: true,
               ),
             ],
@@ -65,7 +77,10 @@ class BranchDashboardContent extends StatelessWidget {
                 constraints.maxWidth < AppSpacing.stackedPanelBreakpoint
                 ? Column(
                     children: [
-                      _RevenuePanel(state: state),
+                      _RevenuePanel(
+                        state: state,
+                        onPeriodSelected: onPeriodSelected,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       _StaffPanel(state: state, onUpdateRoster: onUpdateRoster),
                     ],
@@ -73,7 +88,13 @@ class BranchDashboardContent extends StatelessWidget {
                 : Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(flex: 2, child: _RevenuePanel(state: state)),
+                      Expanded(
+                        flex: 2,
+                        child: _RevenuePanel(
+                          state: state,
+                          onPeriodSelected: onPeriodSelected,
+                        ),
+                      ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: _StaffPanel(
@@ -99,8 +120,9 @@ class BranchDashboardContent extends StatelessWidget {
 
 class _RevenuePanel extends StatelessWidget {
   final BranchDashboardLoadSuccess state;
+  final ValueChanged<String> onPeriodSelected;
 
-  const _RevenuePanel({required this.state});
+  const _RevenuePanel({required this.state, required this.onPeriodSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -119,8 +141,9 @@ class _RevenuePanel extends StatelessWidget {
                   ),
                   ButtonSegment(value: 'year', label: Text(AppStrings.year)),
                 ],
-                selected: const {'month'},
-                onSelectionChanged: (_) {},
+                selected: {state.trendPeriod},
+                onSelectionChanged: (selection) =>
+                    onPeriodSelected(selection.first),
               );
               if (constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint) {
                 return Column(

@@ -17,7 +17,14 @@ class AppErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_outlined, size: AppSpacing.xxl, color: AppColors.danger),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: const BoxDecoration(
+                color: AppColors.dangerSoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cloud_off_outlined, size: AppSpacing.iconLarge, color: AppColors.danger),
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(message, textAlign: TextAlign.center, style: AppTextStyles.body),
             const SizedBox(height: AppSpacing.md),

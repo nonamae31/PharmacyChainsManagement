@@ -6,28 +6,36 @@ import '../network/branch_inventory_api_client.dart';
 import 'branch_inventory_event.dart';
 import 'branch_inventory_state.dart';
 
-class BranchInventoryBloc extends Bloc<BranchInventoryEvent, BranchInventoryState> {
+class BranchInventoryBloc
+    extends Bloc<BranchInventoryEvent, BranchInventoryState> {
   final BranchInventoryApiClient _apiClient;
 
   BranchInventoryBloc(this._apiClient) : super(const BranchInventoryInitial()) {
     on<BranchInventoryFetchRequested>(_onFetchRequested);
     on<BranchInventoryExportRequested>(_onExportRequested);
+    on<BranchInventoryShipmentOptionsRequested>(_onShipmentOptionsRequested);
+    on<BranchInventoryShipmentCreateRequested>(_onShipmentCreateRequested);
   }
 
-  Future<void> _onFetchRequested(BranchInventoryFetchRequested event, Emitter<BranchInventoryState> emit) async {
+  Future<void> _onFetchRequested(
+    BranchInventoryFetchRequested event,
+    Emitter<BranchInventoryState> emit,
+  ) async {
     emit(const BranchInventoryLoading());
     try {
-      emit(BranchInventoryLoadSuccess(
-        inventory: await _apiClient.fetchInventory(
-          search: event.search,
-          category: event.category,
-          status: event.status,
-          page: event.page,
+      emit(
+        BranchInventoryLoadSuccess(
+          inventory: await _apiClient.fetchInventory(
+            search: event.search,
+            category: event.category,
+            status: event.status,
+            page: event.page,
+          ),
+          search: event.search ?? '',
+          category: event.category ?? 'all',
+          status: event.status ?? 'all',
         ),
-        search: event.search ?? '',
-        category: event.category ?? 'all',
-        status: event.status ?? 'all',
-      ));
+      );
     } on BranchManagerAppException catch (error) {
       emit(BranchInventoryLoadFailure(error.message));
     } catch (_) {
@@ -35,17 +43,83 @@ class BranchInventoryBloc extends Bloc<BranchInventoryEvent, BranchInventoryStat
     }
   }
 
-  Future<void> _onExportRequested(BranchInventoryExportRequested event, Emitter<BranchInventoryState> emit) async {
+  Future<void> _onExportRequested(
+    BranchInventoryExportRequested event,
+    Emitter<BranchInventoryState> emit,
+  ) async {
     final current = state;
     if (current is! BranchInventoryLoadSuccess) return;
     try {
-      emit(BranchInventoryExportSuccess(
-        inventory: current.inventory,
+      emit(
+        BranchInventoryExportSuccess(
+          inventory: current.inventory,
+          search: current.search,
+          category: current.category,
+          status: current.status,
+          bytes: await _apiClient.exportInventory(),
+        ),
+      );
+    } on BranchManagerAppException catch (error) {
+      emit(BranchInventoryLoadFailure(error.message));
+    } catch (_) {
+      emit(const BranchInventoryLoadFailure(AppStrings.dataCannotLoad));
+    }
+  }
+
+  Future<void> _onShipmentOptionsRequested(
+    BranchInventoryShipmentOptionsRequested event,
+    Emitter<BranchInventoryState> emit,
+  ) async {
+    final current = state;
+    if (current is! BranchInventoryLoadSuccess) return;
+    try {
+      emit(
+        BranchInventoryLoadSuccess(
+          inventory: current.inventory,
+          search: current.search,
+          category: current.category,
+          status: current.status,
+        ),
+      );
+      emit(
+        BranchInventoryShipmentOptionsReady(
+          inventory: current.inventory,
+          search: current.search,
+          category: current.category,
+          status: current.status,
+          options: await _apiClient.fetchShipmentOptions(),
+        ),
+      );
+    } on BranchManagerAppException catch (error) {
+      emit(BranchInventoryLoadFailure(error.message));
+    } catch (_) {
+      emit(const BranchInventoryLoadFailure(AppStrings.dataCannotLoad));
+    }
+  }
+
+  Future<void> _onShipmentCreateRequested(
+    BranchInventoryShipmentCreateRequested event,
+    Emitter<BranchInventoryState> emit,
+  ) async {
+    final current = state;
+    if (current is! BranchInventoryLoadSuccess) return;
+    try {
+      await _apiClient.createShipment(event.request);
+      final inventory = await _apiClient.fetchInventory(
         search: current.search,
         category: current.category,
         status: current.status,
-        bytes: await _apiClient.exportInventory(),
-      ));
+        page: current.inventory.page,
+      );
+      emit(
+        BranchInventoryOperationSuccess(
+          inventory: inventory,
+          search: current.search,
+          category: current.category,
+          status: current.status,
+          message: AppStrings.shipmentCreated,
+        ),
+      );
     } on BranchManagerAppException catch (error) {
       emit(BranchInventoryLoadFailure(error.message));
     } catch (_) {

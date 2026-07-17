@@ -17,7 +17,18 @@ class AppStatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
       decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(AppRadius.pill)),
-      child: Text(label, style: AppTextStyles.caption.copyWith(color: foreground, fontWeight: FontWeight.w700)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: foreground, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: AppSpacing.xxs),
+          Text(label, style: AppTextStyles.caption.copyWith(color: foreground, fontWeight: FontWeight.w700)),
+        ],
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PharmacyChainsManagementBE.Models;
@@ -11,9 +12,11 @@ using PharmacyChainsManagementBE.Models;
 namespace PharmacyChainsManagementBE.Migrations
 {
     [DbContext(typeof(PharmacyDbContext))]
-    partial class PharmacyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260717193152_AddMustChangePasswordToUser")]
+    partial class AddMustChangePasswordToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1086,10 +1089,6 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("full_name");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_deleted");
-
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("timestamp with time zone");
 
@@ -1153,7 +1152,6 @@ namespace PharmacyChainsManagementBE.Migrations
                             CreatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "businessadmin@pharmacy.com",
                             FullName = "Admin User",
-                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
@@ -1167,7 +1165,6 @@ namespace PharmacyChainsManagementBE.Migrations
                             CreatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "manager@pharmacy.com",
                             FullName = "Manager User",
-                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)2,
@@ -1181,7 +1178,6 @@ namespace PharmacyChainsManagementBE.Migrations
                             CreatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "staff@pharmacy.com",
                             FullName = "Staff User",
-                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)3,
@@ -1195,7 +1191,6 @@ namespace PharmacyChainsManagementBE.Migrations
                             CreatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "inventory@pharmacy.com",
                             FullName = "Inventory Manager",
-                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)4,

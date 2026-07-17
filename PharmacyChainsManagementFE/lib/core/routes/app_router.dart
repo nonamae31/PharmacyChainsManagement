@@ -3,16 +3,17 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/control/auth_bloc.dart';
 import '../../features/auth/control/auth_state.dart';
 import '../../features/auth/boundary/login_screen.dart';
+import '../../features/branch_portal/boundary/branch_manager_portal_screen.dart';
 import '../../features/home/boundary/founder_home_screen.dart';
 import '../../features/home/boundary/business_admin_home_screen.dart';
-import '../../features/home/boundary/branch_manager_home_screen.dart';
 import '../../features/home/boundary/staff_home_screen.dart';
 import '../../features/home/boundary/inventory_home_screen.dart';
+import '../theme/branch_manager_app_theme.dart';
 import 'dart:async';
 
 class AppRouter {
   final AuthBloc authBloc;
-  
+
   AppRouter(this.authBloc);
 
   late final GoRouter router = GoRouter(
@@ -27,7 +28,7 @@ class AppRouter {
       }
 
       final role = authState.role.toUpperCase();
-      
+
       String targetPath = '/login';
       switch (role) {
         case 'FOUNDER':
@@ -55,32 +56,48 @@ class AppRouter {
     routes: <RouteBase>[
       GoRoute(
         path: '/login',
-        builder: (BuildContext context, GoRouterState state) => const LoginScreen(),
+        builder: (BuildContext context, GoRouterState state) =>
+            const LoginScreen(),
       ),
       GoRoute(
         path: '/founder_home',
-        pageBuilder: (context, state) => _buildTransition(context, state, const FounderHomeScreen()),
+        pageBuilder: (context, state) =>
+            _buildTransition(context, state, const FounderHomeScreen()),
       ),
       GoRoute(
         path: '/business_admin_home',
-        pageBuilder: (context, state) => _buildTransition(context, state, const BusinessAdminHomeScreen()),
+        pageBuilder: (context, state) =>
+            _buildTransition(context, state, const BusinessAdminHomeScreen()),
       ),
       GoRoute(
         path: '/branch_manager_home',
-        pageBuilder: (context, state) => _buildTransition(context, state, const BranchManagerHomeScreen()),
+        pageBuilder: (context, state) => _buildTransition(
+          context,
+          state,
+          Theme(
+            data: BranchManagerAppTheme.light,
+            child: const BranchManagerPortalScreen(),
+          ),
+        ),
       ),
       GoRoute(
         path: '/staff_home',
-        pageBuilder: (context, state) => _buildTransition(context, state, const StaffHomeScreen()),
+        pageBuilder: (context, state) =>
+            _buildTransition(context, state, const StaffHomeScreen()),
       ),
       GoRoute(
         path: '/inventory_home',
-        pageBuilder: (context, state) => _buildTransition(context, state, const InventoryHomeScreen()),
+        pageBuilder: (context, state) =>
+            _buildTransition(context, state, const InventoryHomeScreen()),
       ),
     ],
   );
 
-  CustomTransitionPage _buildTransition(BuildContext context, GoRouterState state, Widget child) {
+  CustomTransitionPage _buildTransition(
+    BuildContext context,
+    GoRouterState state,
+    Widget child,
+  ) {
     return CustomTransitionPage(
       key: state.pageKey,
       child: child,

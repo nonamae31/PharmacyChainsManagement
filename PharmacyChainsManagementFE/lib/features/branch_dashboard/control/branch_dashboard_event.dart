@@ -10,7 +10,21 @@ sealed class BranchDashboardEvent extends Equatable {
 }
 
 final class BranchDashboardFetchRequested extends BranchDashboardEvent {
-  const BranchDashboardFetchRequested();
+  final String trendPeriod;
+
+  const BranchDashboardFetchRequested({this.trendPeriod = 'month'});
+
+  @override
+  List<Object?> get props => [trendPeriod];
+}
+
+final class BranchDashboardPeriodChanged extends BranchDashboardEvent {
+  final String trendPeriod;
+
+  const BranchDashboardPeriodChanged(this.trendPeriod);
+
+  @override
+  List<Object?> get props => [trendPeriod];
 }
 
 final class BranchDashboardSearchChanged extends BranchDashboardEvent {

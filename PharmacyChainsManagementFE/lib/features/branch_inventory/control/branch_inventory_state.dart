@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../entity/branch_inventory_dto.dart';
+import '../entity/shipment_dto.dart';
 
 sealed class BranchInventoryState extends Equatable {
   const BranchInventoryState();
@@ -47,6 +48,37 @@ final class BranchInventoryExportSuccess extends BranchInventoryLoadSuccess {
 
   @override
   List<Object?> get props => [...super.props, bytes];
+}
+
+final class BranchInventoryShipmentOptionsReady
+    extends BranchInventoryLoadSuccess {
+  final ShipmentOptionsDto options;
+
+  const BranchInventoryShipmentOptionsReady({
+    required super.inventory,
+    required super.search,
+    required super.category,
+    required super.status,
+    required this.options,
+  });
+
+  @override
+  List<Object?> get props => [...super.props, options];
+}
+
+final class BranchInventoryOperationSuccess extends BranchInventoryLoadSuccess {
+  final String message;
+
+  const BranchInventoryOperationSuccess({
+    required super.inventory,
+    required super.search,
+    required super.category,
+    required super.status,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [...super.props, message];
 }
 
 final class BranchInventoryLoadFailure extends BranchInventoryState {

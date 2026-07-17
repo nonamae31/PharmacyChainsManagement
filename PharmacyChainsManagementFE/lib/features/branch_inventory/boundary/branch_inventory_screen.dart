@@ -10,7 +10,9 @@ import '../../../shared/shared_components/app_page_header.dart';
 import '../control/branch_inventory_bloc.dart';
 import '../control/branch_inventory_event.dart';
 import '../control/branch_inventory_state.dart';
+import '../entity/shipment_dto.dart';
 import 'widgets/branch_inventory_content.dart';
+import 'widgets/shipment_dialog.dart';
 
 class BranchInventoryScreen extends StatefulWidget {
   const BranchInventoryScreen({super.key});
@@ -37,6 +39,12 @@ class _BranchInventoryScreenState extends State<BranchInventoryScreen> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text(AppStrings.exportReady)));
+        } else if (state is BranchInventoryShipmentOptionsReady) {
+          _showShipment(state.options);
+        } else if (state is BranchInventoryOperationSuccess) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
         }
       },
       builder: (context, state) {
@@ -64,8 +72,11 @@ class _BranchInventoryScreenState extends State<BranchInventoryScreen> {
                       label: const Text(AppStrings.exportCsv),
                     ),
                     FilledButton.icon(
-                      onPressed: () =>
-                          _showMessage(AppStrings.shipmentUnavailable),
+                      onPressed: state is BranchInventoryLoadSuccess
+                          ? () => context.read<BranchInventoryBloc>().add(
+                              const BranchInventoryShipmentOptionsRequested(),
+                            )
+                          : null,
                       icon: const Icon(Icons.add),
                       label: const Text(AppStrings.newShipment),
                     ),
@@ -135,9 +146,21 @@ class _BranchInventoryScreenState extends State<BranchInventoryScreen> {
     );
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  Future<void> _showShipment(ShipmentOptionsDto options) async {
+    if (options.sourceBranches.isEmpty || options.batches.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text(AppStrings.noShipmentStock)));
+      return;
+    }
+    final request = await showDialog<CreateShipmentRequestDto>(
+      context: context,
+      builder: (_) => ShipmentDialog(options: options),
+    );
+    if (request != null && mounted) {
+      context.read<BranchInventoryBloc>().add(
+        BranchInventoryShipmentCreateRequested(request),
+      );
+    }
   }
 }

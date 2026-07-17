@@ -7,6 +7,8 @@ public static class ModelBuilderExtensions
 {
     public static void SeedRolesAndUsers(this ModelBuilder modelBuilder)
     {
+        var seededAt = new DateTime(2026, 7, 12, 0, 0, 0, DateTimeKind.Utc);
+
         // Add roles
         modelBuilder.Entity<Role>().HasData(
             new Role { RoleId = 1, RoleCode = "BUSINESS_ADMIN", RoleName = "Business Admin", IsActive = true },
@@ -29,8 +31,8 @@ public static class ModelBuilderExtensions
                 Email = "businessadmin@pharmacy.com",
                 PasswordHash = passwordHash,
                 Status = "ACTIVE",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = seededAt,
+                UpdatedAt = seededAt
             },
             new User
             {
@@ -40,8 +42,8 @@ public static class ModelBuilderExtensions
                 Email = "manager@pharmacy.com",
                 PasswordHash = passwordHash,
                 Status = "ACTIVE",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = seededAt,
+                UpdatedAt = seededAt
             },
             new User
             {
@@ -51,8 +53,8 @@ public static class ModelBuilderExtensions
                 Email = "staff@pharmacy.com",
                 PasswordHash = passwordHash,
                 Status = "ACTIVE",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = seededAt,
+                UpdatedAt = seededAt
             },
             new User
             {
@@ -62,8 +64,8 @@ public static class ModelBuilderExtensions
                 Email = "inventory@pharmacy.com",
                 PasswordHash = passwordHash,
                 Status = "ACTIVE",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = seededAt,
+                UpdatedAt = seededAt
             }
         );
     }

@@ -35,6 +35,7 @@ public static class BranchManagerDataService
     public static async Task<BranchDashboardDto?> GetDashboardAsync(
         PharmacyDbContext dbContext,
         Guid branchId,
+        string trendPeriod,
         CancellationToken cancellationToken)
     {
         var branch = await dbContext.Branches
@@ -46,7 +47,12 @@ public static class BranchManagerDataService
         }
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var trendStart = today.AddDays(-29);
+        var trendStart = trendPeriod.Trim().ToLowerInvariant() switch
+        {
+            "quarter" => today.AddDays(-89),
+            "year" => today.AddDays(-364),
+            _ => today.AddDays(-29)
+        };
         var invoices = await dbContext.Invoices
             .AsNoTracking()
             .Where(invoice => invoice.BranchId == branchId
@@ -75,11 +81,31 @@ public static class BranchManagerDataService
             .Include(item => item.Batch)
             .Where(item => item.BranchId == branchId && item.Status == ActiveStatus)
             .ToListAsync(cancellationToken);
-        var alerts = inventory.Where(item => item.QuantityOnHand <= item.SafetyStockLevel).ToList();
+        var inventoryRows = inventory
+            .GroupBy(item => new
+            {
+                item.MedicineId,
+                item.Medicine.MedicineName,
+                item.Medicine.Category
+            })
+            .Select(group => new
+            {
+                group.Key.MedicineId,
+                group.Key.MedicineName,
+                Category = group.Key.Category ?? "Uncategorized",
+                Sku = group.Select(item => item.Batch.BatchNumber).FirstOrDefault()
+                    ?? group.Key.MedicineId.ToString("N")[..10],
+                CurrentStock = group.Sum(item => item.QuantityOnHand),
+                ReorderPoint = group.Sum(item => item.SafetyStockLevel)
+            })
+            .ToList();
+        var alerts = inventoryRows
+            .Where(item => item.CurrentStock <= item.ReorderPoint)
+            .ToList();
 
-        var inventoryHealth = inventory.Count == 0
+        var inventoryHealth = inventoryRows.Count == 0
             ? 100m
-            : (inventory.Count - alerts.Count) * 100m / inventory.Count;
+            : (inventoryRows.Count - alerts.Count) * 100m / inventoryRows.Count;
         var staffHealth = staff.Count == 0 ? 0m : activeStaff * 100m / staff.Count;
         var revenueHealth = previousRevenue == 0
             ? (todayRevenue > 0 ? 100m : 0m)
@@ -102,25 +128,14 @@ public static class BranchManagerDataService
             .ToList();
 
         var inventoryAlerts = alerts
-            .GroupBy(item => new
-            {
+            .Select(item => new DashboardInventoryDto(
                 item.MedicineId,
-                item.Medicine.MedicineName,
-                item.Medicine.Category
-            })
-            .Select(group =>
-            {
-                var currentStock = group.Sum(item => item.QuantityOnHand);
-                var reorderPoint = group.Sum(item => item.SafetyStockLevel);
-                return new DashboardInventoryDto(
-                    group.Key.MedicineId,
-                    group.Select(item => item.Batch.BatchNumber).FirstOrDefault() ?? group.Key.MedicineId.ToString("N")[..10],
-                    group.Key.MedicineName,
-                    group.Key.Category ?? "Uncategorized",
-                    currentStock,
-                    reorderPoint,
-                    GetInventoryStatus(currentStock, reorderPoint));
-            })
+                item.Sku,
+                item.MedicineName,
+                item.Category,
+                item.CurrentStock,
+                item.ReorderPoint,
+                GetInventoryStatus(item.CurrentStock, item.ReorderPoint)))
             .OrderBy(item => item.CurrentStock - item.ReorderPoint)
             .Take(5)
             .ToList();
@@ -212,6 +227,8 @@ public static class BranchManagerDataService
         DateOnly fromDate,
         DateOnly toDate,
         string? search,
+        string? status,
+        string sort,
         CancellationToken cancellationToken)
     {
         var staff = await dbContext.Users
@@ -223,6 +240,10 @@ public static class BranchManagerDataService
         {
             staff = staff.Where(item => item.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)
                 || item.Email.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        if (!string.IsNullOrWhiteSpace(status) && !status.Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            staff = staff.Where(item => item.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         var staffIds = staff.Select(item => item.UserId).ToList();
@@ -238,23 +259,43 @@ public static class BranchManagerDataService
         var revenueByStaff = invoices
             .GroupBy(invoice => invoice.StaffId)
             .ToDictionary(group => group.Key, group => group.Sum(invoice => invoice.TotalAmount));
+        var assessments = await dbContext.StaffAssessments
+            .AsNoTracking()
+            .Where(item => item.BranchId == branchId && staffIds.Contains(item.StaffId))
+            .OrderByDescending(item => item.AssessmentDate)
+            .ThenByDescending(item => item.CreatedAt)
+            .ToListAsync(cancellationToken);
+        var latestAssessmentByStaff = assessments
+            .GroupBy(item => item.StaffId)
+            .ToDictionary(group => group.Key, group => group.First());
         var rows = staff.Select(item =>
         {
             var revenue = revenueByStaff.GetValueOrDefault(item.UserId);
+            latestAssessmentByStaff.TryGetValue(item.UserId, out var assessment);
+            decimal? targetProgress = assessment is null || assessment.SalesTarget == 0m
+                ? null
+                : Math.Round(revenue / assessment.SalesTarget * 100m, 1);
             return new StaffPerformanceRowDto(
                 item.UserId,
                 item.FullName,
+                item.Email,
                 item.Role.RoleName,
+                item.Status,
                 revenue,
-                null,
-                null,
-                null,
-                null,
-                null);
+                assessment?.SalesTarget,
+                targetProgress,
+                assessment?.CustomerRating,
+                assessment?.AttendancePercent,
+                assessment?.PerformanceScore);
         })
-        .OrderByDescending(item => item.SalesRevenue)
-        .ThenBy(item => item.FullName)
         .ToList();
+        rows = (sort ?? "revenue_desc").Trim().ToLowerInvariant() switch
+        {
+            "name_asc" => rows.OrderBy(item => item.FullName).ToList(),
+            "performance_desc" => rows.OrderByDescending(item => item.PerformanceScore ?? -1m)
+                .ThenByDescending(item => item.SalesRevenue).ToList(),
+            _ => rows.OrderByDescending(item => item.SalesRevenue).ThenBy(item => item.FullName).ToList()
+        };
 
         var trendStart = toDate.AddMonths(-5);
         var trendInvoices = await dbContext.Invoices
@@ -275,12 +316,162 @@ public static class BranchManagerDataService
 
         return new StaffPerformanceDto(
             branchId,
-            null,
-            null,
-            null,
-            rows.FirstOrDefault(),
+            rows.Any(item => item.TargetProgressPercent.HasValue)
+                ? rows.Where(item => item.TargetProgressPercent.HasValue).Average(item => item.TargetProgressPercent!.Value)
+                : null,
+            rows.Any(item => item.CustomerRating.HasValue)
+                ? rows.Where(item => item.CustomerRating.HasValue).Average(item => item.CustomerRating!.Value)
+                : null,
+            rows.Any(item => item.AttendancePercent.HasValue)
+                ? rows.Where(item => item.AttendancePercent.HasValue).Average(item => item.AttendancePercent!.Value)
+                : null,
+            rows.OrderByDescending(item => item.SalesRevenue).FirstOrDefault(),
             rows,
-            trend);
+            trend,
+            assessments
+                .Where(item => !string.IsNullOrWhiteSpace(item.Notes))
+                .Take(5)
+                .Join(staff, assessment => assessment.StaffId, user => user.UserId,
+                    (assessment, user) => new StaffFeedbackDto(
+                        assessment.AssessmentId,
+                        assessment.StaffId,
+                        user.FullName,
+                        assessment.AssessmentDate,
+                        assessment.PerformanceScore,
+                        assessment.Notes!))
+                .ToList());
+    }
+
+    public static async Task<IReadOnlyList<StaffShiftDto>> GetStaffShiftsAsync(
+        PharmacyDbContext dbContext,
+        Guid branchId,
+        DateOnly date,
+        CancellationToken cancellationToken)
+    {
+        var staffNames = await dbContext.Users
+            .AsNoTracking()
+            .Where(user => user.BranchId == branchId && user.Role.RoleCode == StaffRoleCode)
+            .ToDictionaryAsync(user => user.UserId, user => user.FullName, cancellationToken);
+        var staffIds = staffNames.Keys.ToList();
+        var shifts = await dbContext.StaffShifts
+            .AsNoTracking()
+            .Where(shift => shift.BranchId == branchId && shift.ShiftDate == date && staffIds.Contains(shift.StaffId))
+            .OrderBy(shift => shift.StartTime)
+            .ToListAsync(cancellationToken);
+
+        return shifts.Select(shift => new StaffShiftDto(
+            shift.ShiftId,
+            shift.StaffId,
+            staffNames.GetValueOrDefault(shift.StaffId, string.Empty),
+            shift.ShiftDate,
+            shift.StartTime,
+            shift.EndTime,
+            shift.Status,
+            shift.Notes,
+            shift.UpdatedAt)).ToList();
+    }
+
+    public static async Task<StaffShiftDto?> UpsertStaffShiftAsync(
+        PharmacyDbContext dbContext,
+        Guid managerId,
+        Guid branchId,
+        UpsertStaffShiftRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var staff = await dbContext.Users
+            .AsNoTracking()
+            .Include(user => user.Role)
+            .SingleOrDefaultAsync(user => user.UserId == request.StaffId
+                && user.BranchId == branchId
+                && user.Role.RoleCode == StaffRoleCode,
+                cancellationToken);
+        if (staff is null)
+        {
+            return null;
+        }
+
+        var now = DateTime.UtcNow;
+        var shift = await dbContext.StaffShifts.SingleOrDefaultAsync(
+            item => item.BranchId == branchId
+                && item.StaffId == request.StaffId
+                && item.ShiftDate == request.ShiftDate,
+            cancellationToken);
+        if (shift is null)
+        {
+            shift = new StaffShift
+            {
+                ShiftId = Guid.NewGuid(),
+                BranchId = branchId,
+                StaffId = request.StaffId,
+                ShiftDate = request.ShiftDate,
+                CreatedBy = managerId,
+                CreatedAt = now
+            };
+            dbContext.StaffShifts.Add(shift);
+        }
+
+        shift.StartTime = request.StartTime;
+        shift.EndTime = request.EndTime;
+        shift.Status = request.Status.Trim().ToUpperInvariant();
+        shift.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+        shift.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new StaffShiftDto(
+            shift.ShiftId,
+            shift.StaffId,
+            staff.FullName,
+            shift.ShiftDate,
+            shift.StartTime,
+            shift.EndTime,
+            shift.Status,
+            shift.Notes,
+            shift.UpdatedAt);
+    }
+
+    public static async Task<StaffAssessmentDto?> CreateStaffAssessmentAsync(
+        PharmacyDbContext dbContext,
+        Guid managerId,
+        Guid branchId,
+        CreateStaffAssessmentRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var isBranchStaff = await dbContext.Users.AnyAsync(user => user.UserId == request.StaffId
+            && user.BranchId == branchId
+            && user.Role.RoleCode == StaffRoleCode,
+            cancellationToken);
+        if (!isBranchStaff)
+        {
+            return null;
+        }
+
+        var assessment = new StaffAssessment
+        {
+            AssessmentId = Guid.NewGuid(),
+            BranchId = branchId,
+            StaffId = request.StaffId,
+            AssessedBy = managerId,
+            AssessmentDate = request.AssessmentDate,
+            SalesTarget = request.SalesTarget,
+            CustomerRating = request.CustomerRating,
+            AttendancePercent = request.AttendancePercent,
+            PerformanceScore = request.PerformanceScore,
+            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            CreatedAt = DateTime.UtcNow
+        };
+        dbContext.StaffAssessments.Add(assessment);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new StaffAssessmentDto(
+            assessment.AssessmentId,
+            assessment.StaffId,
+            assessment.AssessmentDate,
+            assessment.SalesTarget,
+            assessment.CustomerRating,
+            assessment.AttendancePercent,
+            assessment.PerformanceScore,
+            assessment.Notes,
+            assessment.CreatedAt);
     }
 
     public static async Task<BranchInventoryDto> GetInventoryAsync(
@@ -368,6 +559,100 @@ public static class BranchManagerDataService
             totalRecords,
             categories,
             items);
+    }
+
+    public static async Task<ShipmentOptionsDto> GetShipmentOptionsAsync(
+        PharmacyDbContext dbContext,
+        Guid destinationBranchId,
+        CancellationToken cancellationToken)
+    {
+        var inventory = await dbContext.Inventories
+            .AsNoTracking()
+            .Include(item => item.Branch)
+            .Include(item => item.Medicine)
+            .Include(item => item.Batch)
+            .Where(item => item.BranchId != destinationBranchId
+                && item.Branch.Status == ActiveStatus
+                && item.Status == ActiveStatus
+                && item.QuantityOnHand > 0
+                && item.Batch.Status == ActiveStatus)
+            .OrderBy(item => item.Branch.BranchName)
+            .ThenBy(item => item.Medicine.MedicineName)
+            .ToListAsync(cancellationToken);
+
+        return new ShipmentOptionsDto(
+            inventory
+                .GroupBy(item => new { item.BranchId, item.Branch.BranchName })
+                .Select(group => new TransferSourceBranchDto(group.Key.BranchId, group.Key.BranchName))
+                .ToList(),
+            inventory.Select(item => new TransferBatchOptionDto(
+                item.BranchId,
+                item.MedicineId,
+                item.BatchId,
+                item.Medicine.MedicineName,
+                item.Batch.BatchNumber,
+                item.QuantityOnHand,
+                item.Batch.ExpiryDate)).ToList());
+    }
+
+    public static async Task<ShipmentRequestDto?> CreateShipmentAsync(
+        PharmacyDbContext dbContext,
+        Guid managerId,
+        Guid destinationBranchId,
+        CreateShipmentRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (request.FromBranchId == destinationBranchId)
+        {
+            return null;
+        }
+
+        var sourceInventory = await dbContext.Inventories
+            .AsNoTracking()
+            .Include(item => item.Batch)
+            .SingleOrDefaultAsync(item => item.BranchId == request.FromBranchId
+                && item.BatchId == request.BatchId
+                && item.Status == ActiveStatus
+                && item.QuantityOnHand >= request.Quantity,
+                cancellationToken);
+        if (sourceInventory is null)
+        {
+            return null;
+        }
+
+        var now = DateTime.UtcNow;
+        var transfer = new StockTransfer
+        {
+            TransferId = Guid.NewGuid(),
+            FromBranchId = request.FromBranchId,
+            ToBranchId = destinationBranchId,
+            RequestedBy = managerId,
+            TransferStatus = PendingStatus,
+            RequestDate = DateOnly.FromDateTime(now),
+            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        transfer.StockTransferDetails.Add(new StockTransferDetail
+        {
+            TransferDetailId = Guid.NewGuid(),
+            TransferId = transfer.TransferId,
+            MedicineId = sourceInventory.MedicineId,
+            BatchId = sourceInventory.BatchId,
+            Quantity = request.Quantity
+        });
+        dbContext.StockTransfers.Add(transfer);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new ShipmentRequestDto(
+            transfer.TransferId,
+            transfer.FromBranchId,
+            transfer.ToBranchId,
+            sourceInventory.MedicineId,
+            sourceInventory.BatchId,
+            request.Quantity,
+            transfer.TransferStatus,
+            transfer.RequestDate);
     }
 
     public static async Task<DailyRevenueConfirmationDto> ConfirmDailyRevenueAsync(

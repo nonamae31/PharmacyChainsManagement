@@ -49,13 +49,13 @@ public partial class PharmacyDbContext : DbContext
 
     public virtual DbSet<StockTransferDetail> StockTransferDetails { get; set; }
 
+    public virtual DbSet<StaffAssessment> StaffAssessments { get; set; }
+
+    public virtual DbSet<StaffShift> StaffShifts { get; set; }
+
     public virtual DbSet<Supplier> Suppliers { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=SQL1002.site4now.net;Initial Catalog=db_acafda_pharmacychains;User Id=db_acafda_pharmacychains_admin;Password=29033108@hm;Encrypt=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -298,6 +298,46 @@ public partial class PharmacyDbContext : DbContext
             entity.HasOne(d => d.Transfer).WithMany(p => p.StockTransferDetails)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_STD_TRANSFER");
+        });
+
+        modelBuilder.Entity<StaffAssessment>(entity =>
+        {
+            entity.Property(e => e.AssessmentId).ValueGeneratedNever();
+
+            entity.HasOne<Branch>()
+                .WithMany()
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.StaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.AssessedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<StaffShift>(entity =>
+        {
+            entity.Property(e => e.ShiftId).ValueGeneratedNever();
+
+            entity.HasOne<Branch>()
+                .WithMany()
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.StaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<Supplier>(entity =>

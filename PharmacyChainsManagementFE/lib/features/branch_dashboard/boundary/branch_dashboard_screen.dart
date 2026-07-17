@@ -6,6 +6,11 @@ import '../../../core/theme/branch_manager_app_theme.dart';
 import '../../../shared/shared_components/app_error_view.dart';
 import '../../../shared/shared_components/app_loading_indicator.dart';
 import '../../../shared/shared_components/app_page_header.dart';
+import '../../staff_performance/boundary/widgets/staff_management_dialogs.dart';
+import '../../staff_performance/control/staff_performance_bloc.dart';
+import '../../staff_performance/control/staff_performance_event.dart';
+import '../../staff_performance/control/staff_performance_state.dart';
+import '../../staff_performance/entity/staff_management_dto.dart';
 import '../control/branch_dashboard_bloc.dart';
 import '../control/branch_dashboard_event.dart';
 import '../control/branch_dashboard_state.dart';
@@ -44,12 +49,6 @@ class _BranchDashboardScreenState extends State<BranchDashboardScreen> {
             MediaQuery.sizeOf(context).width <
             AppSpacing.mobileHeaderBreakpoint;
         return Scaffold(
-          floatingActionButton: FloatingActionButton.small(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.surface,
-            onPressed: () => _showMessage(AppStrings.addRecordUnavailable),
-            child: const Icon(Icons.add),
-          ),
           body: Padding(
             padding: EdgeInsets.all(mobile ? AppSpacing.md : AppSpacing.lg),
             child: Column(
@@ -95,7 +94,10 @@ class _BranchDashboardScreenState extends State<BranchDashboardScreen> {
       ),
       BranchDashboardLoadSuccess() => BranchDashboardContent(
         state: state,
-        onUpdateRoster: () => _showMessage(AppStrings.rosterUnavailable),
+        onUpdateRoster: _showShiftRoster,
+        onPeriodSelected: (period) => context.read<BranchDashboardBloc>().add(
+          BranchDashboardPeriodChanged(period),
+        ),
         onFilterAlerts: () => context.read<BranchDashboardBloc>().add(
           const BranchDashboardSearchChanged('Critical'),
         ),
@@ -114,6 +116,46 @@ class _BranchDashboardScreenState extends State<BranchDashboardScreen> {
       context.read<BranchDashboardBloc>().add(
         DailyRevenueConfirmationSubmitted(request),
       );
+    }
+  }
+
+  Future<void> _showShiftRoster() async {
+    final staffBloc = context.read<StaffPerformanceBloc>();
+    StaffPerformanceState staffState = staffBloc.state;
+    if (staffState is! StaffPerformanceLoadSuccess) {
+      if (staffState is! StaffPerformanceLoading) {
+        staffBloc.add(const StaffPerformanceFetchRequested());
+      }
+      staffState = await staffBloc.stream
+          .firstWhere(
+            (state) =>
+                state is StaffPerformanceLoadSuccess ||
+                state is StaffPerformanceLoadFailure,
+          )
+          .timeout(
+            const Duration(seconds: 35),
+            onTimeout: () => const StaffPerformanceLoadFailure(
+              AppStrings.requestTimedOut,
+            ),
+          );
+      if (!mounted) return;
+    }
+    if (staffState case StaffPerformanceLoadFailure(:final message)) {
+      _showMessage(message);
+      return;
+    }
+    final loadedState = staffState as StaffPerformanceLoadSuccess;
+    if (loadedState.performance.staff.isEmpty) {
+      _showMessage(AppStrings.noStaffAvailable);
+      return;
+    }
+
+    final request = await showDialog<UpsertStaffShiftRequestDto>(
+      context: context,
+      builder: (_) => StaffShiftDialog(staff: loadedState.performance.staff),
+    );
+    if (request != null && mounted) {
+      staffBloc.add(StaffShiftUpsertRequested(request));
     }
   }
 

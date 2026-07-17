@@ -113,31 +113,64 @@ class _PortalNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: compact ? AppSpacing.headerHeight : AppSpacing.navWidth,
-      color: AppColors.surface,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowSoft,
+            blurRadius: 16,
+            offset: Offset(2, 0),
+          ),
+        ],
+      ),
       child: SafeArea(
         child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: compact
-                  ? const Icon(Icons.local_pharmacy, color: AppColors.primary)
-                  : const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppStrings.appTitle,
-                          style: AppTextStyles.sectionTitle,
-                        ),
-                        SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          AppStrings.appSubtitle,
-                          style: AppTextStyles.caption,
-                        ),
-                      ],
+              child: Row(
+                mainAxisAlignment: compact
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.xs),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.cardGradient,
+                      borderRadius: BorderRadius.circular(AppRadius.medium),
                     ),
+                    child: const Icon(
+                      Icons.local_pharmacy,
+                      color: AppColors.surface,
+                      size: AppSpacing.iconMedium,
+                    ),
+                  ),
+                  if (!compact) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            AppStrings.appTitle,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.sectionTitle,
+                          ),
+                          SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            AppStrings.appSubtitle,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-            const Divider(height: AppSpacing.hairline),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.xs),
             for (
               var index = 0;
               index < _BranchManagerPortalScreenState._destinations.length;
@@ -151,6 +184,8 @@ class _PortalNavigation extends StatelessWidget {
                 onTap: () => onSelected(index),
               ),
             const Spacer(),
+            const Divider(height: AppSpacing.hairline),
+            const SizedBox(height: AppSpacing.xs),
             _NavigationItem(
               label: AppStrings.logOut,
               icon: Icons.logout,
@@ -159,7 +194,7 @@ class _PortalNavigation extends StatelessWidget {
               danger: true,
               onTap: onLogout,
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
           ],
         ),
       ),
@@ -189,37 +224,46 @@ class _NavigationItem extends StatelessWidget {
     final color = danger
         ? AppColors.danger
         : (selected ? AppColors.primary : AppColors.textSecondary);
-    return Material(
-      color: selected ? AppColors.overlay : AppColors.surface,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: AppSpacing.xxl,
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: selected ? AppColors.primary : AppColors.transparent,
-                width: AppSpacing.xxs,
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
+      child: Material(
+        color: selected ? AppColors.tealSoft : AppColors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: AppSpacing.xxl,
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? AppSpacing.sm : AppSpacing.md,
             ),
-          ),
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? AppSpacing.sm : AppSpacing.md,
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: AppSpacing.iconMedium),
-              if (!compact) ...[
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  label,
-                  style: AppTextStyles.body.copyWith(
-                    color: color,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+            child: Row(
+              mainAxisAlignment: compact
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
+              children: [
+                Icon(icon, color: color, size: AppSpacing.iconMedium),
+                if (!compact) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body.copyWith(
+                        color: color,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

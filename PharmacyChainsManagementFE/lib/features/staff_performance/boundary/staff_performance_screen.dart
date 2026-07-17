@@ -9,7 +9,10 @@ import '../../../shared/shared_components/app_page_header.dart';
 import '../control/staff_performance_bloc.dart';
 import '../control/staff_performance_event.dart';
 import '../control/staff_performance_state.dart';
+import '../entity/staff_management_dto.dart';
+import '../entity/staff_performance_dto.dart';
 import 'widgets/staff_performance_content.dart';
+import 'widgets/staff_management_dialogs.dart';
 
 class StaffPerformanceScreen extends StatefulWidget {
   const StaffPerformanceScreen({super.key});
@@ -29,7 +32,14 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<StaffPerformanceBloc, StaffPerformanceState>(
+    return BlocConsumer<StaffPerformanceBloc, StaffPerformanceState>(
+      listener: (context, state) {
+        if (state is StaffPerformanceOperationSuccess) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
+        }
+      },
       builder: (context, state) {
         final mobile =
             MediaQuery.sizeOf(context).width <
@@ -43,20 +53,28 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                   title: AppStrings.staffPerformanceTitle,
                   subtitle: AppStrings.staffPerformanceSubtitle,
                   searchHint: AppStrings.searchStaff,
-                  onSearchChanged: (value) => context
-                      .read<StaffPerformanceBloc>()
-                      .add(StaffPerformanceFetchRequested(search: value)),
+                  onSearchChanged: (value) => _search(state, value),
                   actions: [
                     OutlinedButton.icon(
-                      onPressed: () => context.read<StaffPerformanceBloc>().add(
-                        const StaffPerformanceFetchRequested(),
-                      ),
+                      onPressed: state is StaffPerformanceLoadSuccess
+                          ? () => _showFilter(state)
+                          : null,
                       icon: const Icon(Icons.filter_list),
                       label: const Text(AppStrings.filter),
                     ),
+                    OutlinedButton.icon(
+                      onPressed: state is StaffPerformanceLoadSuccess
+                          ? _showCreateStaff
+                          : null,
+                      icon: const Icon(Icons.person_add_alt_1),
+                      label: const Text(AppStrings.addStaff),
+                    ),
                     FilledButton.icon(
-                      onPressed: () =>
-                          _showMessage(AppStrings.assessmentUnavailable),
+                      onPressed:
+                          state is StaffPerformanceLoadSuccess &&
+                              state.performance.staff.isNotEmpty
+                          ? () => _showAssessment(state.performance.staff)
+                          : null,
                       icon: const Icon(Icons.add),
                       label: const Text(AppStrings.newAssessment),
                     ),
@@ -87,9 +105,56 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
     };
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  void _search(StaffPerformanceState state, String value) {
+    if (state is! StaffPerformanceLoadSuccess) return;
+    context.read<StaffPerformanceBloc>().add(
+      StaffPerformanceFetchRequested(
+        search: value,
+        status: state.status,
+        sort: state.sort,
+      ),
+    );
+  }
+
+  Future<void> _showFilter(StaffPerformanceLoadSuccess state) async {
+    final selection = await showDialog<StaffFilterSelection>(
+      context: context,
+      builder: (_) => StaffFilterDialog(
+        initialStatus: state.status,
+        initialSort: state.sort,
+      ),
+    );
+    if (selection == null || !mounted) return;
+    context.read<StaffPerformanceBloc>().add(
+      StaffPerformanceFetchRequested(
+        search: state.search,
+        status: selection.status,
+        sort: selection.sort,
+      ),
+    );
+  }
+
+  Future<void> _showCreateStaff() async {
+    final request = await showDialog<CreateBranchStaffRequestDto>(
+      context: context,
+      builder: (_) => const CreateStaffDialog(),
+    );
+    if (request != null && mounted) {
+      context.read<StaffPerformanceBloc>().add(
+        BranchStaffCreateRequested(request),
+      );
+    }
+  }
+
+  Future<void> _showAssessment(List<StaffPerformanceRowDto> staff) async {
+    final request = await showDialog<CreateStaffAssessmentRequestDto>(
+      context: context,
+      builder: (_) => StaffAssessmentDialog(staff: staff),
+    );
+    if (request != null && mounted) {
+      context.read<StaffPerformanceBloc>().add(
+        StaffAssessmentCreateRequested(request),
+      );
+    }
   }
 }

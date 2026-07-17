@@ -15,7 +15,14 @@ class AppEmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.search_off, size: AppSpacing.xxl, color: AppColors.muted),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.search_off, size: AppSpacing.iconLarge, color: AppColors.muted),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Text(message, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
         ],

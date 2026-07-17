@@ -52,7 +52,7 @@ class StaffPerformanceContent extends StatelessWidget {
                     children: [
                       _TrendPanel(performance: performance),
                       const SizedBox(height: AppSpacing.md),
-                      const _FeedbackPanel(),
+                      _FeedbackPanel(performance: performance),
                     ],
                   )
                 : Row(
@@ -60,7 +60,7 @@ class StaffPerformanceContent extends StatelessWidget {
                     children: [
                       Expanded(child: _TrendPanel(performance: performance)),
                       const SizedBox(width: AppSpacing.md),
-                      const Expanded(child: _FeedbackPanel()),
+                      Expanded(child: _FeedbackPanel(performance: performance)),
                     ],
                   ),
           ),
@@ -365,31 +365,41 @@ class _TrendPanel extends StatelessWidget {
 }
 
 class _FeedbackPanel extends StatelessWidget {
-  const _FeedbackPanel();
+  final StaffPerformanceDto performance;
+
+  const _FeedbackPanel({required this.performance});
 
   @override
   Widget build(BuildContext context) {
-    return const AppSectionCard(
+    final feedback = performance.recentFeedback;
+    return AppSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(AppStrings.recentFeedback, style: AppTextStyles.sectionTitle),
-          SizedBox(height: AppSpacing.lg),
-          Icon(
-            Icons.rate_review_outlined,
-            color: AppColors.muted,
-            size: AppSpacing.xxl,
+          const Text(
+            AppStrings.recentFeedback,
+            style: AppTextStyles.sectionTitle,
           ),
-          SizedBox(height: AppSpacing.md),
-          Text(AppStrings.noFeedbackData, style: AppTextStyles.body),
-          SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: null,
-              child: Text(AppStrings.viewAllReviews),
-            ),
-          ),
+          const SizedBox(height: AppSpacing.md),
+          if (feedback.isEmpty)
+            const Text(AppStrings.noFeedbackData, style: AppTextStyles.body)
+          else
+            for (final item in feedback) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.rate_review_outlined,
+                  color: AppColors.primary,
+                ),
+                title: Text(item.staffName),
+                subtitle: Text(item.notes),
+                trailing: Text(
+                  '${item.performanceScore.toStringAsFixed(0)}${AppStrings.percentSymbol}',
+                  style: AppTextStyles.body,
+                ),
+              ),
+              const Divider(height: AppSpacing.hairline),
+            ],
         ],
       ),
     );

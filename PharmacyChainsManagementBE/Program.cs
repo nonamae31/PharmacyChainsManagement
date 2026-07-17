@@ -42,7 +42,7 @@ try
     builder.Services.AddSwaggerGen();
 
     builder.Services.AddDbContext<PharmacyDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
     var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
     builder.Services.Configure<JwtSettings>(jwtSettingsSection);
@@ -142,6 +142,10 @@ try
     app.MapControllers();
 
     app.Run();
+}
+catch (HostAbortedException)
+{
+    // EF Core design-time tools intentionally abort the host after resolving services.
 }
 catch (Exception ex)
 {

@@ -58,6 +58,9 @@ final class BranchManagerApiClientBase {
     if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
       return const BranchManagerUnauthorizedException();
     }
+    if ((error.response?.statusCode ?? 0) >= 500) {
+      return const BranchManagerServerException(AppStrings.dataCannotLoad);
+    }
     final responseData = error.response?.data;
     if (responseData is Map<String, dynamic>) {
       final message = responseData['message'] ?? responseData['detail'] ?? responseData['title'];

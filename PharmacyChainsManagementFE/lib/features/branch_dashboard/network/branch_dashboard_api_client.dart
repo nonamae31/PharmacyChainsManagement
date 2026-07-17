@@ -7,13 +7,25 @@ class BranchDashboardApiClient {
 
   BranchDashboardApiClient(this._apiClient);
 
-  Future<BranchDashboardDto> fetchDashboard() async {
-    final response = await _apiClient.get('/api/v1/branch-manager/dashboard');
+  Future<BranchDashboardDto> fetchDashboard({
+    String trendPeriod = 'month',
+  }) async {
+    final response = await _apiClient.get(
+      '/api/v1/branch-manager/dashboard',
+      queryParameters: {'trendPeriod': trendPeriod},
+    );
     return BranchDashboardDto.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<DailyRevenueConfirmationDto> confirmDailyRevenue(ConfirmDailyRevenueRequestDto request) async {
-    final response = await _apiClient.post('/api/v1/branch-manager/daily-revenue/confirm', data: request.toJson());
-    return DailyRevenueConfirmationDto.fromJson(response.data as Map<String, dynamic>);
+  Future<DailyRevenueConfirmationDto> confirmDailyRevenue(
+    ConfirmDailyRevenueRequestDto request,
+  ) async {
+    final response = await _apiClient.post(
+      '/api/v1/branch-manager/daily-revenue/confirm',
+      data: request.toJson(),
+    );
+    return DailyRevenueConfirmationDto.fromJson(
+      response.data as Map<String, dynamic>,
+    );
   }
 }
