@@ -18,10 +18,12 @@ namespace PharmacyChainsManagementBE.Controllers;
 public class BusinessAdminController : ControllerBase
 {
     private readonly IBusinessAdminService _businessAdminService;
+    private readonly MediatR.IMediator _mediator;
 
-    public BusinessAdminController(IBusinessAdminService businessAdminService)
+    public BusinessAdminController(IBusinessAdminService businessAdminService, MediatR.IMediator mediator)
     {
         _businessAdminService = businessAdminService;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -183,6 +185,59 @@ public class BusinessAdminController : ControllerBase
                 return Conflict(result);
             if (result.Message.Contains("quyền") || result.Message.Contains("truy cập"))
                 return StatusCode(403, result);
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Soft deletes a business admin account.
+    /// </summary>
+    /// <param name="id">The account ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Result message.</returns>
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Founder")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SoftDeleteBusinessAdmin(Guid id, CancellationToken cancellationToken)
+    {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var command = new PharmacyChainsManagementBE.Features.BusinessAdmin.Commands.SoftDeleteBusinessAdmin.SoftDeleteBusinessAdminCommand(id, ipAddress);
+        var result = await _mediator.Send(command, cancellationToken);
+        if (!result.Success)
+        {
+            return NotFound(result);
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Reactivates a soft-deleted business admin account.
+    /// </summary>
+    /// <param name="id">The account ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Result message.</returns>
+    [HttpPatch("{id}/reactivate")]
+    [Authorize(Roles = "Founder")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReactivateBusinessAdmin(Guid id, CancellationToken cancellationToken)
+    {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var command = new PharmacyChainsManagementBE.Features.BusinessAdmin.Commands.ReactivateBusinessAdmin.ReactivateBusinessAdminCommand(id, ipAddress);
+        var result = await _mediator.Send(command, cancellationToken);
+        if (!result.Success)
+        {
+            if (result.Message == "Business Admin không tồn tại.")
+                return NotFound(result);
             return BadRequest(result);
         }
 

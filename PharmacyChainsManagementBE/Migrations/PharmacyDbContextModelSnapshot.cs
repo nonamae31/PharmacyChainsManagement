@@ -2,8 +2,8 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PharmacyChainsManagementBE.Models;
 
 #nullable disable
@@ -18,46 +18,46 @@ namespace PharmacyChainsManagementBE.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.AuditLog", b =>
                 {
                     b.Property<Guid>("AuditId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("audit_id");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("action");
 
                     b.Property<Guid>("ActorId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("actor_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<Guid>("EntityId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("entity_id");
 
                     b.Property<string>("EntityName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("entity_name");
 
                     b.Property<string>("NewValue")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("text")
                         .HasColumnName("new_value");
 
                     b.Property<string>("OldValue")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("text")
                         .HasColumnName("old_value");
 
                     b.HasKey("AuditId")
@@ -71,23 +71,23 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Branch", b =>
                 {
                     b.Property<Guid>("BranchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("branch_id");
 
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("address");
 
                     b.Property<string>("BranchName")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("branch_name");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<decimal?>("Latitude")
@@ -100,17 +100,17 @@ namespace PharmacyChainsManagementBE.Migrations
 
                     b.Property<string>("Phone")
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("phone");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("BranchId")
@@ -122,41 +122,41 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Inventory", b =>
                 {
                     b.Property<Guid>("InventoryId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("inventory_id");
 
                     b.Property<Guid>("BatchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("batch_id");
 
                     b.Property<Guid>("BranchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("branch_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<Guid>("MedicineId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("medicine_id");
 
                     b.Property<int>("QuantityOnHand")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity_on_hand");
 
                     b.Property<int>("SafetyStockLevel")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("safety_stock_level");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("InventoryId")
@@ -175,21 +175,21 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Invoice", b =>
                 {
                     b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("invoice_id");
 
                     b.Property<Guid>("BranchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("branch_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("InvoiceCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("invoice_code");
 
                     b.Property<DateOnly>("InvoiceDate")
@@ -199,21 +199,21 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("payment_status");
 
                     b.Property<Guid?>("PrescriptionId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("prescription_id");
 
                     b.Property<Guid>("StaffId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("staff_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<decimal>("TotalAmount")
@@ -221,7 +221,7 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("total_amount");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("InvoiceId")
@@ -242,15 +242,15 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.InvoiceDetail", b =>
                 {
                     b.Property<Guid>("InvoiceDetailId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("invoice_detail_id");
 
                     b.Property<Guid>("BatchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("batch_id");
 
                     b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("invoice_id");
 
                     b.Property<decimal>("LineTotal")
@@ -258,11 +258,11 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("line_total");
 
                     b.Property<Guid>("MedicineId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("medicine_id");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<decimal>("UnitPrice")
@@ -284,22 +284,22 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Medicine", b =>
                 {
                     b.Property<Guid>("MedicineId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("medicine_id");
 
                     b.Property<string>("Category")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("category");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("MedicineName")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("medicine_name");
 
                     b.Property<decimal>("StandardPrice")
@@ -309,21 +309,21 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("unit");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.Property<string>("UsageDescription")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("text")
                         .HasColumnName("usage_description");
 
                     b.HasKey("MedicineId")
@@ -335,17 +335,17 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.MedicineBatch", b =>
                 {
                     b.Property<Guid>("BatchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("batch_id");
 
                     b.Property<string>("BatchNumber")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("batch_number");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<DateOnly>("ExpiryDate")
@@ -357,27 +357,27 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("manufacturing_date");
 
                     b.Property<Guid>("MedicineId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("medicine_id");
 
                     b.Property<string>("QcStatus")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("qc_status");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<Guid>("SupplierId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("supplier_id");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("BatchId")
@@ -400,19 +400,19 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.Property<string>("GatewayCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("gateway_code");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
                     b.Property<string>("Provider")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("provider");
 
                     b.HasKey("GatewayId")
@@ -427,7 +427,7 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.PaymentTransaction", b =>
                 {
                     b.Property<Guid>("PaymentId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("payment_id");
 
                     b.Property<decimal>("Amount")
@@ -435,7 +435,7 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("amount");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<short?>("GatewayId")
@@ -444,31 +444,31 @@ namespace PharmacyChainsManagementBE.Migrations
 
                     b.Property<string>("GatewayReference")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("gateway_reference");
 
                     b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("invoice_id");
 
                     b.Property<DateTime?>("PaymentDate")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("payment_date");
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("payment_method");
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("payment_status");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("PaymentId")
@@ -484,26 +484,26 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Prescription", b =>
                 {
                     b.Property<Guid>("PrescriptionId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("prescription_id");
 
                     b.Property<Guid>("BranchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("branch_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("CustomerName")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("customer_name");
 
                     b.Property<string>("DoctorName")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("doctor_name");
 
                     b.Property<DateOnly>("PrescriptionDate")
@@ -511,17 +511,17 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("prescription_date");
 
                     b.Property<Guid>("StaffId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("staff_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("PrescriptionId")
@@ -537,34 +537,34 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.PrescriptionDetail", b =>
                 {
                     b.Property<Guid>("PrescriptionDetailId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("prescription_detail_id");
 
                     b.Property<string>("Dosage")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("dosage");
 
                     b.Property<string>("Duration")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("duration");
 
                     b.Property<string>("Frequency")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("frequency");
 
                     b.Property<Guid>("MedicineId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("medicine_id");
 
                     b.Property<Guid>("PrescriptionId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("prescription_id");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.HasKey("PrescriptionDetailId")
@@ -580,23 +580,23 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.PurchaseOrder", b =>
                 {
                     b.Property<Guid>("PoId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("po_id");
 
                     b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("approved_by");
 
                     b.Property<Guid>("BranchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("branch_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("created_by");
 
                     b.Property<DateOnly?>("ExpectedDate")
@@ -610,15 +610,15 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.Property<string>("PoStatus")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("po_status");
 
                     b.Property<Guid>("SupplierId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("supplier_id");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("PoId")
@@ -638,7 +638,7 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.PurchaseOrderDetail", b =>
                 {
                     b.Property<Guid>("PoDetailId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("po_detail_id");
 
                     b.Property<decimal>("LineTotal")
@@ -646,15 +646,15 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("line_total");
 
                     b.Property<Guid>("MedicineId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("medicine_id");
 
                     b.Property<int>("OrderedQuantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("ordered_quantity");
 
                     b.Property<Guid>("PoId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("po_id");
 
                     b.Property<decimal>("UnitPrice")
@@ -674,16 +674,16 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Report", b =>
                 {
                     b.Property<Guid>("ReportId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("report_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("FileUri")
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("file_uri");
 
                     b.Property<DateOnly?>("FromDate")
@@ -691,19 +691,19 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("from_date");
 
                     b.Property<Guid>("GeneratedBy")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("generated_by");
 
                     b.Property<string>("ReportType")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("report_type");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<DateOnly?>("ToDate")
@@ -711,7 +711,7 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("to_date");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("ReportId")
@@ -730,20 +730,20 @@ namespace PharmacyChainsManagementBE.Migrations
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
                     b.Property<string>("RoleCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("role_code");
 
                     b.Property<string>("RoleName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("role_name");
 
                     b.HasKey("RoleId")
@@ -788,11 +788,11 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.StockTransfer", b =>
                 {
                     b.Property<Guid>("TransferId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("transfer_id");
 
                     b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("approved_by");
 
                     b.Property<DateOnly?>("ApprovedDate")
@@ -800,15 +800,15 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("approved_date");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<Guid>("FromBranchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("from_branch_id");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
                     b.Property<DateOnly>("RequestDate")
@@ -816,21 +816,21 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnName("request_date");
 
                     b.Property<Guid>("RequestedBy")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("requested_by");
 
                     b.Property<Guid>("ToBranchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("to_branch_id");
 
                     b.Property<string>("TransferStatus")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("transfer_status");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("TransferId")
@@ -850,23 +850,23 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.StockTransferDetail", b =>
                 {
                     b.Property<Guid>("TransferDetailId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("transfer_detail_id");
 
                     b.Property<Guid>("BatchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("batch_id");
 
                     b.Property<Guid>("MedicineId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("medicine_id");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<Guid>("TransferId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("transfer_id");
 
                     b.HasKey("TransferDetailId")
@@ -884,52 +884,52 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Supplier", b =>
                 {
                     b.Property<Guid>("SupplierId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("supplier_id");
 
                     b.Property<string>("Address")
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("address");
 
                     b.Property<string>("ContactPerson")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("contact_person");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Email")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("email");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("phone");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<string>("SupplierName")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("supplier_name");
 
                     b.Property<string>("TaxCode")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("tax_code");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("SupplierId")
@@ -941,60 +941,64 @@ namespace PharmacyChainsManagementBE.Migrations
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.User", b =>
                 {
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("BranchId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("branch_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("email");
 
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("full_name");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
                     b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("MustChangePassword")
-                        .HasColumnType("bit")
+                        .HasColumnType("boolean")
                         .HasColumnName("must_change_password");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("password_hash");
 
                     b.Property<string>("PasswordResetToken")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("phone");
 
                     b.Property<string>("ProfilePhotoUri")
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("profile_photo_uri");
 
                     b.Property<DateTimeOffset?>("ResetTokenExpiry")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<short>("RoleId")
                         .HasColumnType("smallint")
@@ -1003,17 +1007,21 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("UserId")
                         .HasName("PK__USER__B9BE370FD5688795");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("IX_User_IsDeleted_Filtered")
+                        .HasFilter("\"is_deleted\" = false");
 
                     b.HasIndex("RoleId");
 
@@ -1027,158 +1035,166 @@ namespace PharmacyChainsManagementBE.Migrations
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111111"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1358),
+                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8388),
                             Email = "businessadmin@pharmacy.com",
                             FullName = "Admin User",
+                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1362)
+                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8394)
                         },
                         new
                         {
                             UserId = new Guid("22222222-2222-2222-2222-222222222222"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1368),
+                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8399),
                             Email = "manager@pharmacy.com",
                             FullName = "Manager User",
+                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)2,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1369)
+                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8399)
                         },
                         new
                         {
                             UserId = new Guid("33333333-3333-3333-3333-333333333333"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1373),
+                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8438),
                             Email = "staff@pharmacy.com",
                             FullName = "Staff User",
+                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)3,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1374)
+                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8439)
                         },
                         new
                         {
                             UserId = new Guid("44444444-4444-4444-4444-444444444444"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1425),
+                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8443),
                             Email = "inventory@pharmacy.com",
                             FullName = "Inventory Manager",
+                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)4,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1426)
+                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8443)
                         },
                         new
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111112"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1430),
+                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8446),
                             Email = "businessadmin2@pharmacy.com",
                             FullName = "Admin User 2",
+                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1431)
+                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8447)
                         },
                         new
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111113"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1435),
+                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8450),
                             Email = "businessadmin3@pharmacy.com",
                             FullName = "Admin User 3",
+                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1436)
+                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8450)
                         },
                         new
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111114"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1442),
+                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8458),
                             Email = "businessadmin4@pharmacy.com",
                             FullName = "Admin User 4",
+                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1442)
+                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8459)
                         },
                         new
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111115"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1446),
+                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8462),
                             Email = "businessadmin5@pharmacy.com",
                             FullName = "Admin User 5",
+                            IsDeleted = false,
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1447)
+                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8463)
                         });
                 });
 
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.UserSession", b =>
                 {
                     b.Property<Guid>("SessionId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("session_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DeviceId")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("device_id");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_at");
 
                     b.Property<string>("IpAddress")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("ip_address");
 
                     b.Property<bool>("IsRevoked")
-                        .HasColumnType("bit")
+                        .HasColumnType("boolean")
                         .HasColumnName("is_revoked");
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("refresh_token");
 
                     b.Property<string>("ReplacedByToken")
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("replaced_by_token");
 
                     b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("revoked_at");
 
                     b.Property<string>("UserAgent")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("user_agent");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("SessionId")

@@ -15,6 +15,22 @@ class BusinessAdminEntity extends Equatable {
     required this.phone,
   });
 
+  BusinessAdminEntity copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? status,
+    String? phone,
+  }) {
+    return BusinessAdminEntity(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      status: status ?? this.status,
+      phone: phone ?? this.phone,
+    );
+  }
+
   @override
   List<Object?> get props => [id, name, email, status, phone];
 }

@@ -4,11 +4,13 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
+using PharmacyChainsManagementBE.Common.Interfaces;
+
 namespace PharmacyChainsManagementBE.Models;
 
 [Table("USER")]
 [Index("Email", Name = "UQ__USER__AB6E6164A2B157E7", IsUnique = true)]
-public partial class User
+public partial class User : ISoftDeletable
 {
     [Key]
     [Column("user_id")]
@@ -84,4 +86,7 @@ public partial class User
 
     [InverseProperty("RequestedByNavigation")]
     public virtual ICollection<StockTransfer> StockTransferRequestedByNavigations { get; set; } = new List<StockTransfer>();
+
+    [Column("is_deleted")]
+    public bool IsDeleted { get; set; } = false;
 }

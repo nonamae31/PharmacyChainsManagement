@@ -8,4 +8,6 @@ abstract class BusinessAdminRepository {
   Future<void> createBusinessAdmin(BusinessAdminRequestModel request);
   Future<Either<Failure, void>> updateBusinessAdmin(String id, BusinessAdminRequestModel request);
   Future<Either<Failure, void>> deactivateBusinessAdmin(String id, String reason);
+  Future<Either<Failure, void>> softDeleteBusinessAdmin(String id);
+  Future<Either<Failure, void>> reactivateBusinessAdmin(String id);
 }

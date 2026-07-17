@@ -44,8 +44,10 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
-    builder.Services.AddDbContext<PharmacyDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    builder.Services.AddSingleton<PharmacyChainsManagementBE.Common.Interceptors.SoftDeleteInterceptor>();
+    builder.Services.AddDbContext<PharmacyDbContext>((sp, options) =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+               .AddInterceptors(sp.GetRequiredService<PharmacyChainsManagementBE.Common.Interceptors.SoftDeleteInterceptor>()));
 
     var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
     builder.Services.Configure<JwtSettings>(jwtSettingsSection);

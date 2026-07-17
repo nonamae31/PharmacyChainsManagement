@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PharmacyChainsManagementBE.Migrations
 {
     /// <inheritdoc />
-    public partial class SeedRolesAndUsers : Migration
+    public partial class InitialSupabaseMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,15 +17,15 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "BRANCH",
                 columns: table => new
                 {
-                    branch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    branch_name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    address = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    phone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    latitude = table.Column<decimal>(type: "decimal(10,7)", nullable: true),
-                    longitude = table.Column<decimal>(type: "decimal(10,7)", nullable: true),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    branch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    branch_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    address = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    phone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    latitude = table.Column<decimal>(type: "numeric(10,7)", nullable: true),
+                    longitude = table.Column<decimal>(type: "numeric(10,7)", nullable: true),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -36,15 +36,15 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "MEDICINE",
                 columns: table => new
                 {
-                    medicine_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    medicine_name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    unit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    standard_price = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    usage_description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    medicine_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    medicine_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    category = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    standard_price = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
+                    usage_description = table.Column<string>(type: "text", nullable: true),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -56,9 +56,9 @@ namespace PharmacyChainsManagementBE.Migrations
                 columns: table => new
                 {
                     gateway_id = table.Column<short>(type: "smallint", nullable: false),
-                    gateway_code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    provider = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    is_active = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
+                    gateway_code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    provider = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -70,9 +70,9 @@ namespace PharmacyChainsManagementBE.Migrations
                 columns: table => new
                 {
                     role_id = table.Column<short>(type: "smallint", nullable: false),
-                    role_code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    role_name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    is_active = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
+                    role_code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    role_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -83,16 +83,16 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "SUPPLIER",
                 columns: table => new
                 {
-                    supplier_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    supplier_name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    contact_person = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
-                    email = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
-                    phone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    address = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    tax_code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    supplier_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    supplier_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    contact_person = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
+                    email = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
+                    phone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    address = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    tax_code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -103,17 +103,17 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "USER_SESSION",
                 columns: table => new
                 {
-                    session_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    user_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    refresh_token = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    expires_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    is_revoked = table.Column<bool>(type: "bit", nullable: false),
-                    revoked_at = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    replaced_by_token = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    user_agent = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ip_address = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    device_id = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                    session_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    refresh_token = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    expires_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    is_revoked = table.Column<bool>(type: "boolean", nullable: false),
+                    revoked_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    replaced_by_token = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    user_agent = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ip_address = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    device_id = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -124,21 +124,23 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "USER",
                 columns: table => new
                 {
-                    user_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AccessFailedCount = table.Column<int>(type: "int", nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    PasswordResetToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ResetTokenExpiry = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "integer", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    PasswordResetToken = table.Column<string>(type: "text", nullable: true),
+                    ResetTokenExpiry = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     role_id = table.Column<short>(type: "smallint", nullable: false),
-                    branch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    full_name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    email = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    password_hash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    phone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    profile_photo_uri = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    branch_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    full_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    email = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    password_hash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    phone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    profile_photo_uri = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    must_change_password = table.Column<bool>(type: "boolean", nullable: false),
+                    is_deleted = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -159,16 +161,16 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "MEDICINE_BATCH",
                 columns: table => new
                 {
-                    batch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    medicine_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    supplier_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    batch_number = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    batch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    medicine_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    supplier_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    batch_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     manufacturing_date = table.Column<DateOnly>(type: "date", nullable: true),
                     expiry_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    qc_status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    qc_status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -189,14 +191,14 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "AUDIT_LOG",
                 columns: table => new
                 {
-                    audit_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    actor_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    entity_name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    entity_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    action = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    old_value = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    new_value = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    audit_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    actor_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    entity_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    entity_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    action = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    old_value = table.Column<string>(type: "text", nullable: true),
+                    new_value = table.Column<string>(type: "text", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -212,15 +214,15 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "PRESCRIPTION",
                 columns: table => new
                 {
-                    prescription_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    branch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    staff_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    customer_name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    doctor_name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
+                    prescription_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    branch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    staff_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    customer_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    doctor_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
                     prescription_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -241,16 +243,16 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "PURCHASE_ORDER",
                 columns: table => new
                 {
-                    po_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    supplier_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    branch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    created_by = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    approved_by = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    po_status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    po_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    supplier_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    branch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    approved_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    po_status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
                     order_date = table.Column<DateOnly>(type: "date", nullable: false),
                     expected_date = table.Column<DateOnly>(type: "date", nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -281,15 +283,15 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "REPORT",
                 columns: table => new
                 {
-                    report_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    report_type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    report_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    report_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     from_date = table.Column<DateOnly>(type: "date", nullable: true),
                     to_date = table.Column<DateOnly>(type: "date", nullable: true),
-                    generated_by = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    file_uri = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    generated_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    file_uri = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -305,17 +307,17 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "STOCK_TRANSFER",
                 columns: table => new
                 {
-                    transfer_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    from_branch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    to_branch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    requested_by = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    approved_by = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    transfer_status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    transfer_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    from_branch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    to_branch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    requested_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    approved_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    transfer_status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
                     request_date = table.Column<DateOnly>(type: "date", nullable: false),
                     approved_date = table.Column<DateOnly>(type: "date", nullable: true),
-                    notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    notes = table.Column<string>(type: "text", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -346,15 +348,15 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "INVENTORY",
                 columns: table => new
                 {
-                    inventory_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    branch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    medicine_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    batch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    quantity_on_hand = table.Column<int>(type: "int", nullable: false),
-                    safety_stock_level = table.Column<int>(type: "int", nullable: false),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    inventory_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    branch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    medicine_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    batch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    quantity_on_hand = table.Column<int>(type: "integer", nullable: false),
+                    safety_stock_level = table.Column<int>(type: "integer", nullable: false),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -380,17 +382,17 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "INVOICE",
                 columns: table => new
                 {
-                    invoice_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    branch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    staff_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    prescription_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    invoice_code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    invoice_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    branch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    staff_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    prescription_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    invoice_code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     invoice_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    total_amount = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    payment_status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    total_amount = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
+                    payment_status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -416,13 +418,13 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "PRESCRIPTION_DETAIL",
                 columns: table => new
                 {
-                    prescription_detail_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    prescription_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    medicine_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    dosage = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    frequency = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    duration = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    quantity = table.Column<int>(type: "int", nullable: false)
+                    prescription_detail_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    prescription_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    medicine_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    dosage = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    frequency = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    duration = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    quantity = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -443,12 +445,12 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "PURCHASE_ORDER_DETAIL",
                 columns: table => new
                 {
-                    po_detail_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    po_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    medicine_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ordered_quantity = table.Column<int>(type: "int", nullable: false),
-                    unit_price = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    line_total = table.Column<decimal>(type: "decimal(12,2)", nullable: false)
+                    po_detail_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    po_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    medicine_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ordered_quantity = table.Column<int>(type: "integer", nullable: false),
+                    unit_price = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
+                    line_total = table.Column<decimal>(type: "numeric(12,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -469,11 +471,11 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "STOCK_TRANSFER_DETAIL",
                 columns: table => new
                 {
-                    transfer_detail_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    transfer_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    medicine_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    batch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    quantity = table.Column<int>(type: "int", nullable: false)
+                    transfer_detail_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    transfer_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    medicine_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    batch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    quantity = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -499,13 +501,13 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "INVOICE_DETAIL",
                 columns: table => new
                 {
-                    invoice_detail_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    invoice_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    medicine_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    batch_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    quantity = table.Column<int>(type: "int", nullable: false),
-                    unit_price = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    line_total = table.Column<decimal>(type: "decimal(12,2)", nullable: false)
+                    invoice_detail_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    invoice_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    medicine_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    batch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    quantity = table.Column<int>(type: "integer", nullable: false),
+                    unit_price = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
+                    line_total = table.Column<decimal>(type: "numeric(12,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -531,16 +533,16 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "PAYMENT_TRANSACTION",
                 columns: table => new
                 {
-                    payment_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    invoice_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    payment_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    invoice_id = table.Column<Guid>(type: "uuid", nullable: false),
                     gateway_id = table.Column<short>(type: "smallint", nullable: true),
-                    amount = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    payment_method = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    payment_status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    payment_date = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    gateway_reference = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    amount = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
+                    payment_method = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    payment_status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    payment_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    gateway_reference = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -570,13 +572,17 @@ namespace PharmacyChainsManagementBE.Migrations
 
             migrationBuilder.InsertData(
                 table: "USER",
-                columns: new[] { "user_id", "AccessFailedCount", "branch_id", "created_at", "email", "full_name", "LockoutEnd", "password_hash", "PasswordResetToken", "phone", "profile_photo_uri", "ResetTokenExpiry", "role_id", "status", "updated_at" },
+                columns: new[] { "user_id", "AccessFailedCount", "branch_id", "created_at", "email", "full_name", "is_deleted", "LockoutEnd", "must_change_password", "password_hash", "PasswordResetToken", "phone", "profile_photo_uri", "ResetTokenExpiry", "role_id", "status", "updated_at" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-1111-1111-1111-111111111111"), 0, null, new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2176), "admin@pharmacy.com", "Admin User", null, "$2a$11$NMSJsKiD6hr4KnXcEnV5vOCbPKnfHRtJKJLZxMPJ6EPgxFstFsSUi", null, null, null, null, (short)1, "ACTIVE", new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2183) },
-                    { new Guid("22222222-2222-2222-2222-222222222222"), 0, null, new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2192), "manager@pharmacy.com", "Manager User", null, "$2a$11$NMSJsKiD6hr4KnXcEnV5vOCbPKnfHRtJKJLZxMPJ6EPgxFstFsSUi", null, null, null, null, (short)2, "ACTIVE", new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2192) },
-                    { new Guid("33333333-3333-3333-3333-333333333333"), 0, null, new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2196), "staff@pharmacy.com", "Staff User", null, "$2a$11$NMSJsKiD6hr4KnXcEnV5vOCbPKnfHRtJKJLZxMPJ6EPgxFstFsSUi", null, null, null, null, (short)3, "ACTIVE", new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2197) },
-                    { new Guid("44444444-4444-4444-4444-444444444444"), 0, null, new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2291), "inventory@pharmacy.com", "Inventory Manager", null, "$2a$11$NMSJsKiD6hr4KnXcEnV5vOCbPKnfHRtJKJLZxMPJ6EPgxFstFsSUi", null, null, null, null, (short)4, "ACTIVE", new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2292) }
+                    { new Guid("11111111-1111-1111-1111-111111111111"), 0, null, new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8388), "businessadmin@pharmacy.com", "Admin User", false, null, false, "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a", null, null, null, null, (short)1, "ACTIVE", new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8394) },
+                    { new Guid("11111111-1111-1111-1111-111111111112"), 0, null, new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8446), "businessadmin2@pharmacy.com", "Admin User 2", false, null, false, "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a", null, null, null, null, (short)1, "ACTIVE", new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8447) },
+                    { new Guid("11111111-1111-1111-1111-111111111113"), 0, null, new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8450), "businessadmin3@pharmacy.com", "Admin User 3", false, null, false, "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a", null, null, null, null, (short)1, "ACTIVE", new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8450) },
+                    { new Guid("11111111-1111-1111-1111-111111111114"), 0, null, new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8458), "businessadmin4@pharmacy.com", "Admin User 4", false, null, false, "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a", null, null, null, null, (short)1, "ACTIVE", new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8459) },
+                    { new Guid("11111111-1111-1111-1111-111111111115"), 0, null, new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8462), "businessadmin5@pharmacy.com", "Admin User 5", false, null, false, "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a", null, null, null, null, (short)1, "ACTIVE", new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8463) },
+                    { new Guid("22222222-2222-2222-2222-222222222222"), 0, null, new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8399), "manager@pharmacy.com", "Manager User", false, null, false, "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a", null, null, null, null, (short)2, "ACTIVE", new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8399) },
+                    { new Guid("33333333-3333-3333-3333-333333333333"), 0, null, new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8438), "staff@pharmacy.com", "Staff User", false, null, false, "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a", null, null, null, null, (short)3, "ACTIVE", new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8439) },
+                    { new Guid("44444444-4444-4444-4444-444444444444"), 0, null, new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8443), "inventory@pharmacy.com", "Inventory Manager", false, null, false, "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a", null, null, null, null, (short)4, "ACTIVE", new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8443) }
                 });
 
             migrationBuilder.CreateIndex(
@@ -763,6 +769,12 @@ namespace PharmacyChainsManagementBE.Migrations
                 name: "IX_USER_branch_id",
                 table: "USER",
                 column: "branch_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_User_IsDeleted_Filtered",
+                table: "USER",
+                column: "is_deleted",
+                filter: "\"is_deleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_USER_role_id",

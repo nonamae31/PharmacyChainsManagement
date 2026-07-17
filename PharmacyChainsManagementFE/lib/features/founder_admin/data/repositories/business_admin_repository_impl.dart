@@ -106,4 +106,46 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
       return Left(ServerFailure('Lỗi kết nối hoặc xử lý từ server: $e'));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> softDeleteBusinessAdmin(String id) async {
+    try {
+      final dio = ApiClient.createDio();
+      final response = await dio.delete('/api/v1/business-admin/$id');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response.data['message'] ?? 'Xóa thất bại.'));
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data is Map) {
+        return Left(ServerFailure(e.response?.data['message'] ?? 'Lỗi từ server'));
+      }
+      return Left(ServerFailure('Lỗi kết nối: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Lỗi không xác định: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> reactivateBusinessAdmin(String id) async {
+    try {
+      final dio = ApiClient.createDio();
+      final response = await dio.patch('/api/v1/business-admin/$id/reactivate');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response.data['message'] ?? 'Kích hoạt lại thất bại.'));
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data is Map) {
+        return Left(ServerFailure(e.response?.data['message'] ?? 'Lỗi từ server'));
+      }
+      return Left(ServerFailure('Lỗi kết nối: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Lỗi không xác định: $e'));
+    }
+  }
 }

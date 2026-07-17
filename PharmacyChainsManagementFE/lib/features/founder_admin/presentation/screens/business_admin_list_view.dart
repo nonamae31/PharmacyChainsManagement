@@ -7,8 +7,7 @@ import '../cubit/business_admin_state.dart';
 import '../../domain/entities/business_admin_entity.dart';
 import '../widgets/create_admin_bottom_sheet.dart';
 import '../cubit/create_admin_cubit.dart';
-import '../widgets/deactivate_admin_dialog.dart';
-import '../cubit/deactivate_admin_cubit.dart';
+
 import '../widgets/business_admin_edit_bottom_sheet.dart';
 import '../../../../injection_container.dart';
 
@@ -44,7 +43,7 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
               } else if (state is BusinessAdminError) {
                 return Center(child: Text('Error: ${state.message}'));
               } else if (state is BusinessAdminLoaded) {
-                return _buildContent(context, state.admins);
+                return _buildContent(context, state);
               }
               return const SizedBox.shrink();
             },
@@ -80,24 +79,7 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
     );
   }
 
-  Future<void> _showDeactivateDialog(BuildContext context, String adminId) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (_) {
-        return BlocProvider(
-          create: (_) => sl<DeactivateAdminCubit>(),
-          child: DeactivateAdminDialog(adminId: adminId),
-        );
-      },
-    );
 
-    if (result == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vô hiệu hóa thành công.'), backgroundColor: Colors.green),
-      );
-      context.read<BusinessAdminCubit>().fetchBusinessAdmins(forceRefresh: true);
-    }
-  }
 
   Widget _buildSkeleton(BuildContext context) {
     final isDesktop = MediaQuery.sizeOf(context).width > 800;
@@ -109,11 +91,79 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
     );
   }
 
-  Widget _buildContent(BuildContext context, List<BusinessAdminEntity> admins) {
+  Widget _buildContent(BuildContext context, BusinessAdminLoaded state) {
     final isDesktop = MediaQuery.sizeOf(context).width > 800;
-    return RefreshIndicator(
-      onRefresh: () => context.read<BusinessAdminCubit>().fetchBusinessAdmins(forceRefresh: true),
-      child: isDesktop ? _buildDesktopTable(admins) : _buildMobileList(admins),
+    return Column(
+      children: [
+        _buildFilterChips(context, state),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () => context.read<BusinessAdminCubit>().fetchBusinessAdmins(forceRefresh: true),
+            child: isDesktop ? _buildDesktopTable(state.admins) : _buildMobileList(state.admins),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChips(BuildContext context, BusinessAdminLoaded state) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: AdminFilter.values.map((filter) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: ChoiceChip(
+              label: Text(filter.name.toUpperCase()),
+              selected: state.filter == filter,
+              onSelected: (selected) {
+                if (selected) {
+                  context.read<BusinessAdminCubit>().setFilter(filter);
+                }
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _handleSoftDelete(BuildContext context, BusinessAdminEntity admin) {
+    final cubit = context.read<BusinessAdminCubit>();
+    cubit.softDeleteBusinessAdmin(admin.id);
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã xóa ${admin.name}'),
+        action: SnackBarAction(
+          label: 'Hoàn tác',
+          onPressed: () {
+            cubit.reactivateBusinessAdmin(admin.id);
+          },
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _handleReactivate(BuildContext context, BusinessAdminEntity admin) {
+    final cubit = context.read<BusinessAdminCubit>();
+    cubit.reactivateBusinessAdmin(admin.id);
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã khôi phục ${admin.name}'),
+        action: SnackBarAction(
+          label: 'Hoàn tác',
+          onPressed: () {
+            cubit.softDeleteBusinessAdmin(admin.id);
+          },
+        ),
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 
@@ -159,9 +209,15 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
                     ),
                     if (admin.status == 'Active')
                       IconButton(
-                        icon: const Icon(Icons.block, color: Colors.red),
-                        tooltip: 'Deactivate',
-                        onPressed: () => _showDeactivateDialog(context, admin.id),
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Delete',
+                        onPressed: () => _handleSoftDelete(context, admin),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.restore, color: Colors.green),
+                        tooltip: 'Reactivate',
+                        onPressed: () => _handleReactivate(context, admin),
                       ),
                   ],
                 ),
@@ -202,20 +258,27 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
           ),
         );
 
-        if (!isActive) return card;
-
         return Dismissible(
-          key: ValueKey('dismiss_${admin.id}'),
-          direction: DismissDirection.endToStart,
-          background: Container(
+          key: ValueKey('dismiss_${admin.id}_${admin.status}'),
+          direction: isActive ? DismissDirection.endToStart : DismissDirection.startToEnd,
+          background: isActive ? Container() : Container(
+            color: Colors.green,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const Icon(Icons.restore, color: Colors.white),
+          ),
+          secondaryBackground: isActive ? Container(
             color: Colors.red,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: const Icon(Icons.block, color: Colors.white),
-          ),
-          confirmDismiss: (direction) async {
-            await _showDeactivateDialog(context, admin.id);
-            return false; // Dialog fetches data, no need to actually dismiss UI element here
+            child: const Icon(Icons.delete, color: Colors.white),
+          ) : Container(),
+          onDismissed: (direction) {
+            if (isActive) {
+              _handleSoftDelete(context, admin);
+            } else {
+              _handleReactivate(context, admin);
+            }
           },
           child: card,
         );

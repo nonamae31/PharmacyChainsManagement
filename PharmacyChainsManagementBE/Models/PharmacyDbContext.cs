@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,9 +54,12 @@ public partial class PharmacyDbContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=SQL1002.site4now.net;Initial Catalog=db_acafda_pharmacychains;User Id=db_acafda_pharmacychains_admin;Password=29033108@hm;Encrypt=True;TrustServerCertificate=True;");
-
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseNpgsql("Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.mohzctrdjgwajlxiylkn;Password=29032004h@H310824miku@M");
+        }
+    }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AuditLog>(entity =>
@@ -318,6 +321,12 @@ public partial class PharmacyDbContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_USER_ROLE");
+
+            entity.HasIndex(u => u.IsDeleted)
+                .HasFilter("\"is_deleted\" = false")
+                .HasDatabaseName("IX_User_IsDeleted_Filtered");
+
+            entity.HasQueryFilter(u => !u.IsDeleted);
         });
 
         OnModelCreatingPartial(modelBuilder);

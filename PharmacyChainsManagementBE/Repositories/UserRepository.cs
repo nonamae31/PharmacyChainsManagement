@@ -69,4 +69,9 @@ public class UserRepository : IUserRepository
             .OrderByDescending(u => u.CreatedAt)
             .ToListAsync(cancellationToken);
     }
+
+    public void Remove(User user)
+    {
+        _context.Users.Remove(user);
+    }
 }

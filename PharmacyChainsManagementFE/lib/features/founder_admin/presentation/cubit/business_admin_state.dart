@@ -12,13 +12,40 @@ class BusinessAdminInitial extends BusinessAdminState {}
 
 class BusinessAdminLoading extends BusinessAdminState {}
 
-class BusinessAdminLoaded extends BusinessAdminState {
-  final List<BusinessAdminEntity> admins;
+enum AdminFilter { all, active, deactivated }
 
-  const BusinessAdminLoaded({required this.admins});
+class BusinessAdminLoaded extends BusinessAdminState {
+  final List<BusinessAdminEntity> allAdmins;
+  final AdminFilter filter;
+
+  const BusinessAdminLoaded({
+    required this.allAdmins,
+    this.filter = AdminFilter.all,
+  });
+
+  List<BusinessAdminEntity> get admins {
+    switch (filter) {
+      case AdminFilter.active:
+        return allAdmins.where((a) => a.status == 'Active').toList();
+      case AdminFilter.deactivated:
+        return allAdmins.where((a) => a.status != 'Active').toList();
+      case AdminFilter.all:
+        return allAdmins;
+    }
+  }
+
+  BusinessAdminLoaded copyWith({
+    List<BusinessAdminEntity>? allAdmins,
+    AdminFilter? filter,
+  }) {
+    return BusinessAdminLoaded(
+      allAdmins: allAdmins ?? this.allAdmins,
+      filter: filter ?? this.filter,
+    );
+  }
 
   @override
-  List<Object?> get props => [admins];
+  List<Object?> get props => [allAdmins, filter];
 }
 
 class BusinessAdminError extends BusinessAdminState {

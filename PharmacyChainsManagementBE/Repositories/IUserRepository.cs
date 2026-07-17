@@ -15,4 +15,5 @@ public interface IUserRepository
     Task<Role?> GetRoleByCodeAsync(string roleCode, CancellationToken cancellationToken = default);
     Task<User?> GetBusinessAdminByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<System.Collections.Generic.IEnumerable<User>> GetUsersByRoleCodeAsync(string roleCode, CancellationToken cancellationToken = default);
+    void Remove(User user);
 }
