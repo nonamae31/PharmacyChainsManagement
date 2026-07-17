@@ -17,7 +17,7 @@ using PharmacyChainsManagementBE.Services;
 namespace PharmacyChainsManagementBE.Controllers;
 
 [ApiController]
-[Authorize(Roles = "BRANCH_MANAGER")]
+[Authorize(Roles = "BranchManager")]
 [Route("api/v1/branch-manager")]
 public sealed class BranchManagerController : ControllerBase
 {

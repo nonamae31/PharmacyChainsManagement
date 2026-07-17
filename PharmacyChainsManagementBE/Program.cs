@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
@@ -140,7 +141,8 @@ try
                     foreach (var claim in claims)
                     {
                         if (string.IsNullOrEmpty(claim.Value)) continue;
-                        var normalizedRole = char.ToUpper(claim.Value[0]) + claim.Value.Substring(1).ToLower();
+                        var normalizedRole = string.Concat(claim.Value.Split('_', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(segment => char.ToUpper(segment[0]) + segment.Substring(1).ToLower()));
                         if (claim.Value != normalizedRole)
                         {
                             identity.RemoveClaim(claim);
