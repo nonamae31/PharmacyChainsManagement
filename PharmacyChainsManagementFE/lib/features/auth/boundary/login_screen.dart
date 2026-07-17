@@ -18,16 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _showAuthBottomSheet(context, true);
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            context.read<AuthBloc>().add(LoginRequested('founder@pharmacy.com', 'Founder@123'));
-          }
-        });
-      }
-    });
+    // Do not automatically show bottom sheet or auto-login
   }
   void _showAuthBottomSheet(BuildContext context, bool isLogin) {
     showModalBottomSheet(
@@ -152,8 +143,6 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
   void initState() {
     super.initState();
     isLogin = widget.isLogin;
-    _emailController.text = 'founder@pharmacy.com';
-    _passwordController.text = 'Founder@123';
   }
 
   void _submit() {
