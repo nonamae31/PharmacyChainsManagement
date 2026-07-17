@@ -10,6 +10,7 @@ import '../../../../shared/shared_components/app_responsive_metric_grid.dart';
 import '../../../../shared/shared_components/app_section_card.dart';
 import '../../../../shared/shared_components/app_status_chip.dart';
 import '../../control/branch_dashboard_state.dart';
+import '../../entity/branch_dashboard_dto.dart';
 
 class BranchDashboardContent extends StatelessWidget {
   final BranchDashboardLoadSuccess state;
@@ -280,128 +281,148 @@ class _InventoryPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              const heading = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.inventoryStatus,
-                    style: AppTextStyles.sectionTitle,
-                  ),
-                  SizedBox(height: AppSpacing.xxs),
-                  Text(
-                    AppStrings.inventoryStatusSubtitle,
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-              );
-              final action = OutlinedButton.icon(
-                onPressed: onFilterAlerts,
-                icon: const Icon(Icons.filter_list),
-                label: const Text(AppStrings.filterAlerts),
-              );
-              if (constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    heading,
-                    const SizedBox(height: AppSpacing.sm),
-                    SizedBox(width: double.infinity, child: action),
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  const Expanded(child: heading),
-                  action,
-                ],
-              );
-            },
-          ),
+          _InventoryPanelHeader(onFilterAlerts: onFilterAlerts),
           const SizedBox(height: AppSpacing.sm),
           if (state.visibleInventory.isEmpty)
             const AppEmptyState()
           else
             LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint) {
-                  return Column(
-                    children: [
-                      for (final item in state.visibleInventory) ...[
-                        AppMobileDetailCard(
-                          title: item.medicineName,
-                          subtitle: item.sku,
-                          leading: const Icon(
-                            Icons.medication_outlined,
-                            color: AppColors.primary,
-                          ),
-                          trailing: AppStatusChip(label: item.status),
-                          details: [
-                            AppMobileDetailItem(
-                              label: AppStrings.category,
-                              value: item.category,
-                            ),
-                            AppMobileDetailItem(
-                              label: AppStrings.currentStock,
-                              value: item.currentStock.toString(),
-                            ),
-                            AppMobileDetailItem(
-                              label: AppStrings.reorderPoint,
-                              value: item.reorderPoint.toString(),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                      ],
-                    ],
-                  );
-                }
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text(AppStrings.skuItemName)),
-                      DataColumn(label: Text(AppStrings.category)),
-                      DataColumn(label: Text(AppStrings.currentStock)),
-                      DataColumn(label: Text(AppStrings.reorderPoint)),
-                      DataColumn(label: Text(AppStrings.status)),
-                    ],
-                    rows: state.visibleInventory
-                        .map(
-                          (item) => DataRow(
-                            cells: [
-                              DataCell(
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.sku,
-                                      style: AppTextStyles.caption,
-                                    ),
-                                    Text(
-                                      item.medicineName,
-                                      style: AppTextStyles.body.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              DataCell(Text(item.category)),
-                              DataCell(Text(item.currentStock.toString())),
-                              DataCell(Text(item.reorderPoint.toString())),
-                              DataCell(AppStatusChip(label: item.status)),
-                            ],
-                          ),
-                        )
-                        .toList(growable: false),
-                  ),
-                );
-              },
+              builder: (context, constraints) =>
+                  constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint
+                  ? _InventoryAlertsList(items: state.visibleInventory)
+                  : _InventoryAlertsTable(items: state.visibleInventory),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _InventoryPanelHeader extends StatelessWidget {
+  final VoidCallback onFilterAlerts;
+
+  const _InventoryPanelHeader({required this.onFilterAlerts});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const heading = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(AppStrings.inventoryStatus, style: AppTextStyles.sectionTitle),
+            SizedBox(height: AppSpacing.xxs),
+            Text(
+              AppStrings.inventoryStatusSubtitle,
+              style: AppTextStyles.caption,
+            ),
+          ],
+        );
+        final action = OutlinedButton.icon(
+          onPressed: onFilterAlerts,
+          icon: const Icon(Icons.filter_list),
+          label: const Text(AppStrings.filterAlerts),
+        );
+        if (constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              heading,
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(width: double.infinity, child: action),
+            ],
+          );
+        }
+        return Row(children: [const Expanded(child: heading), action]);
+      },
+    );
+  }
+}
+
+class _InventoryAlertsList extends StatelessWidget {
+  final List<DashboardInventoryDto> items;
+
+  const _InventoryAlertsList({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final item in items) ...[
+          AppMobileDetailCard(
+            title: item.medicineName,
+            subtitle: item.sku,
+            leading: const Icon(
+              Icons.medication_outlined,
+              color: AppColors.primary,
+            ),
+            trailing: AppStatusChip(label: item.status),
+            details: [
+              AppMobileDetailItem(
+                label: AppStrings.category,
+                value: item.category,
+              ),
+              AppMobileDetailItem(
+                label: AppStrings.currentStock,
+                value: item.currentStock.toString(),
+              ),
+              AppMobileDetailItem(
+                label: AppStrings.reorderPoint,
+                value: item.reorderPoint.toString(),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+}
+
+class _InventoryAlertsTable extends StatelessWidget {
+  final List<DashboardInventoryDto> items;
+
+  const _InventoryAlertsTable({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text(AppStrings.skuItemName)),
+          DataColumn(label: Text(AppStrings.category)),
+          DataColumn(label: Text(AppStrings.currentStock)),
+          DataColumn(label: Text(AppStrings.reorderPoint)),
+          DataColumn(label: Text(AppStrings.status)),
+        ],
+        rows: items
+            .map(
+              (item) => DataRow(
+                cells: [
+                  DataCell(
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.sku, style: AppTextStyles.caption),
+                        Text(
+                          item.medicineName,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  DataCell(Text(item.category)),
+                  DataCell(Text(item.currentStock.toString())),
+                  DataCell(Text(item.reorderPoint.toString())),
+                  DataCell(AppStatusChip(label: item.status)),
+                ],
+              ),
+            )
+            .toList(growable: false),
       ),
     );
   }

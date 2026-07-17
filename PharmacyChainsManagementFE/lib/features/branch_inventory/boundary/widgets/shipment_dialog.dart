@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/branch_manager_app_strings.dart';
+import '../../../../core/theme/branch_manager_app_theme.dart';
 import '../../entity/shipment_dto.dart';
 
 class ShipmentDialog extends StatefulWidget {
@@ -39,7 +40,7 @@ class _ShipmentDialogState extends State<ShipmentDialog> {
     return AlertDialog(
       title: const Text(AppStrings.newShipment),
       content: SizedBox(
-        width: 540,
+        width: AppSpacing.dialogWidthWide,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(

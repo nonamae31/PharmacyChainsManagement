@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/branch_manager_app_strings.dart';
 import '../../../../core/theme/branch_manager_app_theme.dart';
@@ -8,6 +9,10 @@ import '../../../../shared/shared_components/app_metric_card.dart';
 import '../../../../shared/shared_components/app_mobile_detail_card.dart';
 import '../../../../shared/shared_components/app_responsive_metric_grid.dart';
 import '../../../../shared/shared_components/app_section_card.dart';
+import '../../../../shared/shared_components/app_status_chip.dart';
+import '../../control/staff_performance_bloc.dart';
+import '../../control/staff_performance_event.dart';
+import '../../entity/staff_management_dto.dart';
 import '../../entity/staff_performance_dto.dart';
 
 class StaffPerformanceContent extends StatelessWidget {
@@ -143,176 +148,251 @@ class _StaffMatrix extends StatelessWidget {
             const AppEmptyState()
           else
             LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint) {
-                  return Column(
-                    children: [
-                      for (final staff in performance.staff) ...[
-                        AppMobileDetailCard(
-                          title: staff.fullName,
-                          subtitle: staff.roleName,
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.tealSoft,
-                            child: Text(
-                              staff.fullName.isEmpty ? '' : staff.fullName[0],
-                              style: AppTextStyles.body.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          details: [
-                            AppMobileDetailItem(
-                              label: AppStrings.salesRevenueLabel,
-                              value:
-                                  '${AppStrings.currencySymbol}${staff.salesRevenue.toStringAsFixed(0)}',
-                            ),
-                            AppMobileDetailItem(
-                              label: AppStrings.salesTarget,
-                              value: staff.salesTarget == null
-                                  ? AppStrings.unavailable
-                                  : '${AppStrings.currencySymbol}${staff.salesTarget!.toStringAsFixed(0)}',
-                            ),
-                            AppMobileDetailItem(
-                              label: AppStrings.targetProgress,
-                              value: staff.targetProgressPercent == null
-                                  ? AppStrings.unavailable
-                                  : '${staff.targetProgressPercent!.toStringAsFixed(1)}${AppStrings.percentSymbol}',
-                            ),
-                            AppMobileDetailItem(
-                              label: AppStrings.customerRating,
-                              value:
-                                  staff.customerRating?.toStringAsFixed(1) ??
-                                  AppStrings.unavailable,
-                            ),
-                            AppMobileDetailItem(
-                              label: AppStrings.attendance,
-                              value: staff.attendancePercent == null
-                                  ? AppStrings.unavailable
-                                  : '${staff.attendancePercent!.toStringAsFixed(0)}${AppStrings.percentSymbol}',
-                            ),
-                            AppMobileDetailItem(
-                              label: AppStrings.performance,
-                              value: staff.performanceScore == null
-                                  ? AppStrings.unavailable
-                                  : '${staff.performanceScore!.toStringAsFixed(1)}${AppStrings.percentSymbol}',
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                      ],
-                    ],
-                  );
-                }
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text(AppStrings.teamMember)),
-                      DataColumn(label: Text(AppStrings.salesTarget)),
-                      DataColumn(label: Text(AppStrings.targetProgress)),
-                      DataColumn(label: Text(AppStrings.customerRating)),
-                      DataColumn(label: Text(AppStrings.attendance)),
-                      DataColumn(label: Text(AppStrings.performance)),
-                    ],
-                    rows: performance.staff
-                        .map(
-                          (staff) => DataRow(
-                            cells: [
-                              DataCell(
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: AppSpacing.md,
-                                      backgroundColor: AppColors.tealSoft,
-                                      child: Text(
-                                        staff.fullName.isEmpty
-                                            ? ''
-                                            : staff.fullName[0],
-                                        style: AppTextStyles.body.copyWith(
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          staff.fullName,
-                                          style: AppTextStyles.body.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        Text(
-                                          staff.roleName,
-                                          style: AppTextStyles.caption,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  '${AppStrings.currencySymbol}${staff.salesRevenue.toStringAsFixed(0)} / ${staff.salesTarget == null ? AppStrings.unavailable : '${AppStrings.currencySymbol}${staff.salesTarget!.toStringAsFixed(0)}'}',
-                                ),
-                              ),
-                              DataCell(
-                                staff.targetProgressPercent == null
-                                    ? const Text(AppStrings.unavailable)
-                                    : SizedBox(
-                                        width: AppSpacing.progressWidth,
-                                        child: LinearProgressIndicator(
-                                          value:
-                                              (staff.targetProgressPercent! /
-                                                      100)
-                                                  .clamp(0.0, 1.0)
-                                                  .toDouble(),
-                                          color:
-                                              staff.targetProgressPercent! < 70
-                                              ? AppColors.danger
-                                              : AppColors.primary,
-                                          backgroundColor: AppColors.border,
-                                        ),
-                                      ),
-                              ),
-                              DataCell(
-                                Text(
-                                  staff.customerRating?.toStringAsFixed(1) ??
-                                      AppStrings.unavailable,
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  staff.attendancePercent == null
-                                      ? AppStrings.unavailable
-                                      : '${staff.attendancePercent!.toStringAsFixed(0)}${AppStrings.percentSymbol}',
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  staff.performanceScore == null
-                                      ? AppStrings.unavailable
-                                      : '${staff.performanceScore!.toStringAsFixed(1)}${AppStrings.percentSymbol}',
-                                  style: AppTextStyles.body.copyWith(
-                                    color: AppColors.teal,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(growable: false),
-                  ),
-                );
-              },
+              builder: (context, constraints) =>
+                  constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint
+                  ? _StaffMobileList(staff: performance.staff)
+                  : _StaffTable(staff: performance.staff),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _StaffMobileList extends StatelessWidget {
+  final List<StaffPerformanceRowDto> staff;
+
+  const _StaffMobileList({required this.staff});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final member in staff) ...[
+          AppMobileDetailCard(
+            title: member.fullName,
+            subtitle: member.roleName,
+            leading: CircleAvatar(
+              backgroundColor: AppColors.tealSoft,
+              child: Text(
+                member.fullName.isEmpty ? '' : member.fullName[0],
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            trailing: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppStatusChip(label: member.status),
+                const SizedBox(height: AppSpacing.xxs),
+                _StaffStatusAction(staff: member),
+              ],
+            ),
+            details: [
+              AppMobileDetailItem(
+                label: AppStrings.salesRevenueLabel,
+                value:
+                    '${AppStrings.currencySymbol}${member.salesRevenue.toStringAsFixed(0)}',
+              ),
+              AppMobileDetailItem(
+                label: AppStrings.salesTarget,
+                value: member.salesTarget == null
+                    ? AppStrings.unavailable
+                    : '${AppStrings.currencySymbol}${member.salesTarget!.toStringAsFixed(0)}',
+              ),
+              AppMobileDetailItem(
+                label: AppStrings.targetProgress,
+                value: member.targetProgressPercent == null
+                    ? AppStrings.unavailable
+                    : '${member.targetProgressPercent!.toStringAsFixed(1)}${AppStrings.percentSymbol}',
+              ),
+              AppMobileDetailItem(
+                label: AppStrings.customerRating,
+                value:
+                    member.customerRating?.toStringAsFixed(1) ??
+                    AppStrings.unavailable,
+              ),
+              AppMobileDetailItem(
+                label: AppStrings.attendance,
+                value: member.attendancePercent == null
+                    ? AppStrings.unavailable
+                    : '${member.attendancePercent!.toStringAsFixed(0)}${AppStrings.percentSymbol}',
+              ),
+              AppMobileDetailItem(
+                label: AppStrings.performance,
+                value: member.performanceScore == null
+                    ? AppStrings.unavailable
+                    : '${member.performanceScore!.toStringAsFixed(1)}${AppStrings.percentSymbol}',
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+}
+
+class _StaffTable extends StatelessWidget {
+  final List<StaffPerformanceRowDto> staff;
+
+  const _StaffTable({required this.staff});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text(AppStrings.teamMember)),
+          DataColumn(label: Text(AppStrings.status)),
+          DataColumn(label: Text(AppStrings.salesTarget)),
+          DataColumn(label: Text(AppStrings.targetProgress)),
+          DataColumn(label: Text(AppStrings.customerRating)),
+          DataColumn(label: Text(AppStrings.attendance)),
+          DataColumn(label: Text(AppStrings.performance)),
+          DataColumn(label: Text('')),
+        ],
+        rows: staff.map(_buildRow).toList(growable: false),
+      ),
+    );
+  }
+
+  DataRow _buildRow(StaffPerformanceRowDto member) {
+    return DataRow(
+      cells: [
+        DataCell(
+          Row(
+            children: [
+              CircleAvatar(
+                radius: AppSpacing.md,
+                backgroundColor: AppColors.tealSoft,
+                child: Text(
+                  member.fullName.isEmpty ? '' : member.fullName[0],
+                  style: AppTextStyles.body.copyWith(color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    member.fullName,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(member.roleName, style: AppTextStyles.caption),
+                ],
+              ),
+            ],
+          ),
+        ),
+        DataCell(AppStatusChip(label: member.status)),
+        DataCell(
+          Text(
+            '${AppStrings.currencySymbol}${member.salesRevenue.toStringAsFixed(0)} / ${member.salesTarget == null ? AppStrings.unavailable : '${AppStrings.currencySymbol}${member.salesTarget!.toStringAsFixed(0)}'}',
+          ),
+        ),
+        DataCell(
+          member.targetProgressPercent == null
+              ? const Text(AppStrings.unavailable)
+              : SizedBox(
+                  width: AppSpacing.progressWidth,
+                  child: LinearProgressIndicator(
+                    value: (member.targetProgressPercent! / 100)
+                        .clamp(0.0, 1.0)
+                        .toDouble(),
+                    color: member.targetProgressPercent! < 70
+                        ? AppColors.danger
+                        : AppColors.primary,
+                    backgroundColor: AppColors.border,
+                  ),
+                ),
+        ),
+        DataCell(
+          Text(
+            member.customerRating?.toStringAsFixed(1) ??
+                AppStrings.unavailable,
+          ),
+        ),
+        DataCell(
+          Text(
+            member.attendancePercent == null
+                ? AppStrings.unavailable
+                : '${member.attendancePercent!.toStringAsFixed(0)}${AppStrings.percentSymbol}',
+          ),
+        ),
+        DataCell(
+          Text(
+            member.performanceScore == null
+                ? AppStrings.unavailable
+                : '${member.performanceScore!.toStringAsFixed(1)}${AppStrings.percentSymbol}',
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.teal,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        DataCell(_StaffStatusAction(staff: member)),
+      ],
+    );
+  }
+}
+
+class _StaffStatusAction extends StatelessWidget {
+  final StaffPerformanceRowDto staff;
+
+  const _StaffStatusAction({required this.staff});
+
+  bool get _isActive => staff.status.toUpperCase() == 'ACTIVE';
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: _isActive ? AppStrings.deactivateStaff : AppStrings.activateStaff,
+      icon: Icon(
+        _isActive ? Icons.person_off_outlined : Icons.person_outline,
+        color: _isActive ? AppColors.danger : AppColors.success,
+      ),
+      onPressed: () => _handleTap(context),
+    );
+  }
+
+  Future<void> _handleTap(BuildContext context) async {
+    final bloc = context.read<StaffPerformanceBloc>();
+    if (_isActive) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppStrings.deactivateStaff),
+          content: Text(
+            '${staff.fullName}\n\n${AppStrings.deactivateStaffConfirmMessage}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(AppStrings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(AppStrings.deactivateStaff),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    bloc.add(
+      StaffStatusUpdateRequested(
+        UpdateStaffStatusRequestDto(
+          staffId: staff.staffId,
+          status: _isActive ? 'INACTIVE' : 'ACTIVE',
+        ),
       ),
     );
   }

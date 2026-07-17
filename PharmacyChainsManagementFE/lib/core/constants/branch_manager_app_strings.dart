@@ -29,7 +29,7 @@ abstract final class AppStrings {
   static const year = 'Year';
   static const monitorStaff = 'Monitor Staff';
   static const viewAll = 'View All';
-  static const updateShiftRoster = 'Update Shift Roster';
+  static const updateShiftRoster = 'Manage Staff Shifts';
   static const inventoryStatus = 'Branch Inventory Status';
   static const inventoryStatusSubtitle =
       'Real-time tracking of critical stock levels';
@@ -63,7 +63,7 @@ abstract final class AppStrings {
   static const revenueTrendSubtitle =
       'Performance for the selected reporting period';
   static const byCategory = 'By Category';
-  static const recentPerformance = 'Recent Performance by Time';
+  static const recentPerformance = 'Sales by Time of Day';
   static const timeBlock = 'TIME BLOCK';
   static const averageOrder = 'AVG ORDER';
   static const performance = 'PERFORMANCE';
@@ -78,7 +78,7 @@ abstract final class AppStrings {
       'Sales productivity and operational indicators across your branch team.';
   static const filter = 'Filter';
   static const addStaff = 'Add Staff';
-  static const newAssessment = 'New Assessment';
+  static const newAssessment = 'New Performance Review';
   static const averageSalesTarget = 'AVERAGE SALES TARGET';
   static const customerSatisfaction = 'CUSTOMER SATISFACTION';
   static const teamAttendance = 'TEAM ATTENDANCE';
@@ -151,6 +151,12 @@ abstract final class AppStrings {
   static const inventoryCsvFile = 'branch_inventory.csv';
   static const invalidDateRange = 'Please select a valid date range.';
   static const staffCreated = 'Staff account created successfully.';
+  static const staffActivated = 'Staff account activated.';
+  static const staffDeactivated = 'Staff account deactivated.';
+  static const deactivateStaff = 'Deactivate staff';
+  static const activateStaff = 'Activate staff';
+  static const deactivateStaffConfirmMessage =
+      'This staff member will no longer be counted as active on your branch dashboard. You can reactivate them at any time.';
   static const shiftSaved = 'Shift roster saved successfully.';
   static const assessmentSaved = 'Staff assessment saved successfully.';
   static const shipmentCreated = 'Shipment request created successfully.';

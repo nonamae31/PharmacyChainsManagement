@@ -342,6 +342,28 @@ public static class BranchManagerDataService
                 .ToList());
     }
 
+    public static async Task<BranchStaffDto?> UpdateStaffStatusAsync(
+        PharmacyDbContext dbContext,
+        Guid branchId,
+        Guid staffId,
+        string status,
+        CancellationToken cancellationToken)
+    {
+        var staff = await dbContext.Users.SingleOrDefaultAsync(
+            user => user.UserId == staffId && user.BranchId == branchId && user.Role.RoleCode == StaffRoleCode,
+            cancellationToken);
+        if (staff is null)
+        {
+            return null;
+        }
+
+        staff.Status = status;
+        staff.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new BranchStaffDto(staff.UserId, staff.FullName, staff.Email, staff.Phone, staff.Status, staff.UpdatedAt);
+    }
+
     public static async Task<IReadOnlyList<StaffShiftDto>> GetStaffShiftsAsync(
         PharmacyDbContext dbContext,
         Guid branchId,

@@ -203,6 +203,35 @@ public sealed class BranchManagerController : ControllerBase
         return CreatedAtAction(nameof(GetStaffPerformance), new { search = staff.Email }, response);
     }
 
+    [HttpPatch("staff/{staffId:guid}/status")]
+    [ProducesResponseType(typeof(BranchStaffDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateStaffStatus(
+        Guid staffId,
+        [FromBody] UpdateStaffStatusRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var staff = await BranchManagerDataService.UpdateStaffStatusAsync(
+            _dbContext,
+            access.Value.BranchId,
+            staffId,
+            request.Status.Trim().ToUpperInvariant(),
+            cancellationToken);
+        return staff is null
+            ? BadRequest(new { message = "The selected staff member does not belong to this branch." })
+            : Ok(staff);
+    }
+
     [HttpGet("staff-shifts")]
     [ProducesResponseType(typeof(IReadOnlyList<StaffShiftDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStaffShifts(

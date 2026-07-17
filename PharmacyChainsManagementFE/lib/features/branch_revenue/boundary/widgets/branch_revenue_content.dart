@@ -10,6 +10,7 @@ import '../../../../shared/shared_components/app_responsive_metric_grid.dart';
 import '../../../../shared/shared_components/app_section_card.dart';
 import '../../../../shared/shared_components/app_status_chip.dart';
 import '../../control/branch_revenue_state.dart';
+import '../../entity/branch_revenue_dto.dart';
 
 class BranchRevenueContent extends StatelessWidget {
   final BranchRevenueLoadSuccess state;
@@ -45,32 +46,7 @@ class BranchRevenueContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          AppResponsiveMetricGrid(
-            children: [
-              AppMetricCard(
-                label: AppStrings.totalRevenue,
-                value: _currency(revenue.totalRevenue),
-                icon: Icons.account_balance_wallet_outlined,
-              ),
-              AppMetricCard(
-                label: AppStrings.averageTicket,
-                value: _currency(revenue.averageTicket),
-                icon: Icons.shopping_cart_outlined,
-              ),
-              AppMetricCard(
-                label: AppStrings.transactions,
-                value: revenue.transactions.toString(),
-                icon: Icons.group_add_outlined,
-              ),
-              AppMetricCard(
-                label: AppStrings.grossMargin,
-                value: revenue.grossMarginPercent == null
-                    ? AppStrings.unavailable
-                    : _percent(revenue.grossMarginPercent!),
-                icon: Icons.calculate_outlined,
-              ),
-            ],
-          ),
+          _RevenueMetricsGrid(revenue: revenue),
           const SizedBox(height: AppSpacing.md),
           LayoutBuilder(
             builder: (context, constraints) =>
@@ -94,51 +70,96 @@ class BranchRevenueContent extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           _PerformancePanel(state: state),
           const SizedBox(height: AppSpacing.md),
-          LayoutBuilder(
-            builder: (context, constraints) =>
-                constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint
-                ? const Column(
-                    children: [
-                      _InsightCard(
-                        title: AppStrings.revenueForecast,
-                        message: AppStrings.forecastMessage,
-                        emphasized: true,
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      _InsightCard(
-                        title: AppStrings.optimizationInsights,
-                        message: AppStrings.insightsMessage,
-                      ),
-                    ],
-                  )
-                : const Row(
-                    children: [
-                      Expanded(
-                        child: _InsightCard(
-                          title: AppStrings.revenueForecast,
-                          message: AppStrings.forecastMessage,
-                          emphasized: true,
-                        ),
-                      ),
-                      SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: _InsightCard(
-                          title: AppStrings.optimizationInsights,
-                          message: AppStrings.insightsMessage,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
+          const _InsightCardsRow(),
         ],
       ),
     );
   }
+}
 
-  String _currency(double value) =>
-      '${AppStrings.currencySymbol}${value.toStringAsFixed(2)}';
-  String _percent(double value) =>
-      '${value.toStringAsFixed(1)}${AppStrings.percentSymbol}';
+String _formatCurrency(double value) =>
+    '${AppStrings.currencySymbol}${value.toStringAsFixed(2)}';
+String _formatPercent(double value) =>
+    '${value.toStringAsFixed(1)}${AppStrings.percentSymbol}';
+
+class _RevenueMetricsGrid extends StatelessWidget {
+  final BranchRevenueDto revenue;
+
+  const _RevenueMetricsGrid({required this.revenue});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppResponsiveMetricGrid(
+      children: [
+        AppMetricCard(
+          label: AppStrings.totalRevenue,
+          value: _formatCurrency(revenue.totalRevenue),
+          icon: Icons.account_balance_wallet_outlined,
+        ),
+        AppMetricCard(
+          label: AppStrings.averageTicket,
+          value: _formatCurrency(revenue.averageTicket),
+          icon: Icons.shopping_cart_outlined,
+        ),
+        AppMetricCard(
+          label: AppStrings.transactions,
+          value: revenue.transactions.toString(),
+          icon: Icons.group_add_outlined,
+        ),
+        AppMetricCard(
+          label: AppStrings.grossMargin,
+          value: revenue.grossMarginPercent == null
+              ? AppStrings.unavailable
+              : _formatPercent(revenue.grossMarginPercent!),
+          icon: Icons.calculate_outlined,
+        ),
+      ],
+    );
+  }
+}
+
+class _InsightCardsRow extends StatelessWidget {
+  const _InsightCardsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint
+          ? const Column(
+              children: [
+                _InsightCard(
+                  title: AppStrings.revenueForecast,
+                  message: AppStrings.forecastMessage,
+                  emphasized: true,
+                ),
+                SizedBox(height: AppSpacing.sm),
+                _InsightCard(
+                  title: AppStrings.optimizationInsights,
+                  message: AppStrings.insightsMessage,
+                ),
+              ],
+            )
+          : const Row(
+              children: [
+                Expanded(
+                  child: _InsightCard(
+                    title: AppStrings.revenueForecast,
+                    message: AppStrings.forecastMessage,
+                    emphasized: true,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _InsightCard(
+                    title: AppStrings.optimizationInsights,
+                    message: AppStrings.insightsMessage,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
 }
 
 class _TrendPanel extends StatelessWidget {

@@ -10,7 +10,7 @@ class AppStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final normalized = label.toLowerCase();
-    final isDanger = normalized.contains('critical') || normalized.contains('out');
+    final isDanger = normalized.contains('critical') || normalized.contains('out') || normalized.contains('inactive');
     final isWarning = normalized.contains('low') || normalized.contains('high');
     final foreground = isDanger ? AppColors.danger : (isWarning ? AppColors.warning : AppColors.success);
     final background = isDanger ? AppColors.dangerSoft : (isWarning ? AppColors.warningSoft : AppColors.successSoft);

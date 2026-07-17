@@ -52,6 +52,9 @@ abstract final class AppSpacing {
   static const statusFilterWidth = 170.0;
   static const categoryFilterWidth = 190.0;
   static const confirmationDialogWidth = 440.0;
+  static const dialogWidthCompact = 420.0;
+  static const dialogWidthStandard = 480.0;
+  static const dialogWidthWide = 540.0;
   static const narrowMobileBreakpoint = 360.0;
   static const mobileHeaderBreakpoint = 720.0;
   static const stackedPanelBreakpoint = 820.0;

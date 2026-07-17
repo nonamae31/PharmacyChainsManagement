@@ -50,6 +50,14 @@ final class BranchManagerApiClientBase {
     }
   }
 
+  Future<Response<dynamic>> patch(String path, {Object? data}) async {
+    try {
+      return await _dio.patch(path, data: data);
+    } on DioException catch (error) {
+      throw _mapException(error);
+    }
+  }
+
   BranchManagerAppException _mapException(DioException error) {
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout) {

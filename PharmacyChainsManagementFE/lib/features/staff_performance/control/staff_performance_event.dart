@@ -50,3 +50,12 @@ final class StaffAssessmentCreateRequested extends StaffPerformanceEvent {
   @override
   List<Object?> get props => [request];
 }
+
+final class StaffStatusUpdateRequested extends StaffPerformanceEvent {
+  final UpdateStaffStatusRequestDto request;
+
+  const StaffStatusUpdateRequested(this.request);
+
+  @override
+  List<Object?> get props => [request];
+}

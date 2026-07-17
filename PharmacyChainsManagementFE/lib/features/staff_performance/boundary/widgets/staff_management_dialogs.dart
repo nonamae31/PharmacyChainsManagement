@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/branch_manager_app_strings.dart';
+import '../../../../core/theme/branch_manager_app_theme.dart';
 import '../../entity/staff_management_dto.dart';
 import '../../entity/staff_performance_dto.dart';
 
@@ -39,7 +40,7 @@ class _CreateStaffDialogState extends State<CreateStaffDialog> {
     return AlertDialog(
       title: const Text(AppStrings.addStaff),
       content: SizedBox(
-        width: 480,
+        width: AppSpacing.dialogWidthStandard,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -137,7 +138,7 @@ class _StaffFilterDialogState extends State<StaffFilterDialog> {
     return AlertDialog(
       title: const Text(AppStrings.filterStaff),
       content: SizedBox(
-        width: 420,
+        width: AppSpacing.dialogWidthCompact,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -160,7 +161,7 @@ class _StaffFilterDialogState extends State<StaffFilterDialog> {
               ],
               onChanged: (value) => setState(() => _status = value ?? 'all'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               initialValue: _sort,
               decoration: const InputDecoration(labelText: AppStrings.sortBy),
@@ -235,64 +236,21 @@ class _StaffAssessmentDialogState extends State<StaffAssessmentDialog> {
     return AlertDialog(
       title: const Text(AppStrings.newAssessment),
       content: SizedBox(
-        width: 520,
+        width: AppSpacing.dialogWidthWide,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _staffId,
-                  decoration: const InputDecoration(
-                    labelText: AppStrings.staffMember,
-                  ),
-                  items: widget.staff
-                      .map(
-                        (item) => DropdownMenuItem(
-                          value: item.staffId,
-                          child: Text(item.fullName),
-                        ),
-                      )
-                      .toList(growable: false),
-                  onChanged: (value) => setState(() => _staffId = value!),
-                ),
-                _DateField(
-                  label: AppStrings.assessmentDate,
-                  value: _date,
-                  onChanged: (value) => setState(() => _date = value),
-                ),
-                _NumberField(
-                  controller: _targetController,
-                  label: AppStrings.salesTarget,
-                  minimum: 0,
-                ),
-                _NumberField(
-                  controller: _ratingController,
-                  label: AppStrings.customerRating,
-                  minimum: 0,
-                  maximum: 5,
-                ),
-                _NumberField(
-                  controller: _attendanceController,
-                  label: AppStrings.attendance,
-                  minimum: 0,
-                  maximum: 100,
-                ),
-                _NumberField(
-                  controller: _scoreController,
-                  label: AppStrings.performanceScore,
-                  minimum: 0,
-                  maximum: 100,
-                ),
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: AppStrings.notes,
-                  ),
-                ),
-              ],
+            child: _AssessmentFormFields(
+              staff: widget.staff,
+              staffId: _staffId,
+              onStaffChanged: (value) => setState(() => _staffId = value),
+              date: _date,
+              onDateChanged: (value) => setState(() => _date = value),
+              targetController: _targetController,
+              ratingController: _ratingController,
+              attendanceController: _attendanceController,
+              scoreController: _scoreController,
+              notesController: _notesController,
             ),
           ),
         ),
@@ -352,68 +310,21 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
     return AlertDialog(
       title: const Text(AppStrings.updateShiftRoster),
       content: SizedBox(
-        width: 500,
+        width: AppSpacing.dialogWidthStandard,
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                initialValue: _staffId,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.staffMember,
-                ),
-                items: widget.staff
-                    .map(
-                      (item) => DropdownMenuItem(
-                        value: item.staffId,
-                        child: Text(item.fullName),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: (value) => setState(() => _staffId = value!),
-              ),
-              _DateField(
-                label: AppStrings.shiftDate,
-                value: _date,
-                onChanged: (value) => setState(() => _date = value),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text(AppStrings.startTime),
-                trailing: Text(_start.format(context)),
-                onTap: () => _pickTime(true),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text(AppStrings.endTime),
-                trailing: Text(_end.format(context)),
-                onTap: () => _pickTime(false),
-              ),
-              DropdownButtonFormField<String>(
-                initialValue: _status,
-                decoration: const InputDecoration(labelText: AppStrings.status),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'SCHEDULED',
-                    child: Text(AppStrings.scheduled),
-                  ),
-                  DropdownMenuItem(
-                    value: 'OFF',
-                    child: Text(AppStrings.dayOff),
-                  ),
-                  DropdownMenuItem(
-                    value: 'CANCELLED',
-                    child: Text(AppStrings.cancelled),
-                  ),
-                ],
-                onChanged: (value) => setState(() => _status = value!),
-              ),
-              TextField(
-                controller: _notesController,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: AppStrings.notes),
-              ),
-            ],
+          child: _ShiftFormFields(
+            staff: widget.staff,
+            staffId: _staffId,
+            onStaffChanged: (value) => setState(() => _staffId = value),
+            date: _date,
+            onDateChanged: (value) => setState(() => _date = value),
+            start: _start,
+            end: _end,
+            onPickStart: () => _pickTime(true),
+            onPickEnd: () => _pickTime(false),
+            status: _status,
+            onStatusChanged: (value) => setState(() => _status = value),
+            notesController: _notesController,
           ),
         ),
       ),
@@ -455,6 +366,190 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
         status: _status,
         notes: _notesController.text.trim(),
       ),
+    );
+  }
+}
+
+class _StaffMemberDropdown extends StatelessWidget {
+  final List<StaffPerformanceRowDto> staff;
+  final String staffId;
+  final ValueChanged<String> onChanged;
+
+  const _StaffMemberDropdown({
+    required this.staff,
+    required this.staffId,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      initialValue: staffId,
+      decoration: const InputDecoration(labelText: AppStrings.staffMember),
+      items: staff
+          .map(
+            (item) => DropdownMenuItem(
+              value: item.staffId,
+              child: Text(item.fullName),
+            ),
+          )
+          .toList(growable: false),
+      onChanged: (value) => onChanged(value!),
+    );
+  }
+}
+
+class _AssessmentFormFields extends StatelessWidget {
+  final List<StaffPerformanceRowDto> staff;
+  final String staffId;
+  final ValueChanged<String> onStaffChanged;
+  final DateTime date;
+  final ValueChanged<DateTime> onDateChanged;
+  final TextEditingController targetController;
+  final TextEditingController ratingController;
+  final TextEditingController attendanceController;
+  final TextEditingController scoreController;
+  final TextEditingController notesController;
+
+  const _AssessmentFormFields({
+    required this.staff,
+    required this.staffId,
+    required this.onStaffChanged,
+    required this.date,
+    required this.onDateChanged,
+    required this.targetController,
+    required this.ratingController,
+    required this.attendanceController,
+    required this.scoreController,
+    required this.notesController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _StaffMemberDropdown(
+          staff: staff,
+          staffId: staffId,
+          onChanged: onStaffChanged,
+        ),
+        _DateField(
+          label: AppStrings.assessmentDate,
+          value: date,
+          onChanged: onDateChanged,
+        ),
+        _NumberField(
+          controller: targetController,
+          label: AppStrings.salesTarget,
+          minimum: 0,
+        ),
+        _NumberField(
+          controller: ratingController,
+          label: AppStrings.customerRating,
+          minimum: 0,
+          maximum: 5,
+        ),
+        _NumberField(
+          controller: attendanceController,
+          label: AppStrings.attendance,
+          minimum: 0,
+          maximum: 100,
+        ),
+        _NumberField(
+          controller: scoreController,
+          label: AppStrings.performanceScore,
+          minimum: 0,
+          maximum: 100,
+        ),
+        TextFormField(
+          controller: notesController,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: AppStrings.notes),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShiftFormFields extends StatelessWidget {
+  final List<StaffPerformanceRowDto> staff;
+  final String staffId;
+  final ValueChanged<String> onStaffChanged;
+  final DateTime date;
+  final ValueChanged<DateTime> onDateChanged;
+  final TimeOfDay start;
+  final TimeOfDay end;
+  final VoidCallback onPickStart;
+  final VoidCallback onPickEnd;
+  final String status;
+  final ValueChanged<String> onStatusChanged;
+  final TextEditingController notesController;
+
+  const _ShiftFormFields({
+    required this.staff,
+    required this.staffId,
+    required this.onStaffChanged,
+    required this.date,
+    required this.onDateChanged,
+    required this.start,
+    required this.end,
+    required this.onPickStart,
+    required this.onPickEnd,
+    required this.status,
+    required this.onStatusChanged,
+    required this.notesController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _StaffMemberDropdown(
+          staff: staff,
+          staffId: staffId,
+          onChanged: onStaffChanged,
+        ),
+        _DateField(
+          label: AppStrings.shiftDate,
+          value: date,
+          onChanged: onDateChanged,
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text(AppStrings.startTime),
+          trailing: Text(start.format(context)),
+          onTap: onPickStart,
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text(AppStrings.endTime),
+          trailing: Text(end.format(context)),
+          onTap: onPickEnd,
+        ),
+        DropdownButtonFormField<String>(
+          initialValue: status,
+          decoration: const InputDecoration(labelText: AppStrings.status),
+          items: const [
+            DropdownMenuItem(
+              value: 'SCHEDULED',
+              child: Text(AppStrings.scheduled),
+            ),
+            DropdownMenuItem(value: 'OFF', child: Text(AppStrings.dayOff)),
+            DropdownMenuItem(
+              value: 'CANCELLED',
+              child: Text(AppStrings.cancelled),
+            ),
+          ],
+          onChanged: (value) => onStatusChanged(value!),
+        ),
+        TextField(
+          controller: notesController,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: AppStrings.notes),
+        ),
+      ],
     );
   }
 }

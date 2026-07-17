@@ -162,6 +162,12 @@ public sealed record BranchStaffDto(
     string Status,
     DateTime CreatedAt);
 
+public sealed class UpdateStaffStatusRequestDto
+{
+    [Required, RegularExpression("^(ACTIVE|INACTIVE)$")]
+    public string Status { get; init; } = string.Empty;
+}
+
 public sealed class UpsertStaffShiftRequestDto
 {
     [Required]

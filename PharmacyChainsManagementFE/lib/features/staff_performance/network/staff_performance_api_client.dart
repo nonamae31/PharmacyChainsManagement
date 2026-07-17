@@ -43,4 +43,11 @@ class StaffPerformanceApiClient {
       data: request.toJson(),
     );
   }
+
+  Future<void> updateStaffStatus(UpdateStaffStatusRequestDto request) async {
+    await _apiClient.patch(
+      '/api/v1/branch-manager/staff/${request.staffId}/status',
+      data: request.toJson(),
+    );
+  }
 }

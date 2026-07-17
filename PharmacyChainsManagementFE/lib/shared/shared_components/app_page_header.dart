@@ -61,16 +61,7 @@ class AppPageHeader extends StatelessWidget {
               search,
               if (actions.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
-                SizedBox(
-                  height: AppSpacing.xxl,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: actions.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(width: AppSpacing.xs),
-                    itemBuilder: (_, index) => actions[index],
-                  ),
-                ),
+                _MobileActionsLayout(actions: actions),
               ],
             ],
           );
@@ -101,6 +92,36 @@ class AppPageHeader extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _MobileActionsLayout extends StatelessWidget {
+  final List<Widget> actions;
+
+  const _MobileActionsLayout({required this.actions});
+
+  @override
+  Widget build(BuildContext context) {
+    if (actions.length == 1) {
+      return SizedBox(width: double.infinity, child: actions.single);
+    }
+    final secondaryActions = actions.sublist(0, actions.length - 1);
+    final primaryAction = actions.last;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            for (var index = 0; index < secondaryActions.length; index++) ...[
+              if (index > 0) const SizedBox(width: AppSpacing.xs),
+              Expanded(child: secondaryActions[index]),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        primaryAction,
+      ],
     );
   }
 }

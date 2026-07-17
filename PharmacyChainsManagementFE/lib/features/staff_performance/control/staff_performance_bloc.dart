@@ -16,6 +16,7 @@ class StaffPerformanceBloc
     on<BranchStaffCreateRequested>(_onCreateStaff);
     on<StaffShiftUpsertRequested>(_onUpsertShift);
     on<StaffAssessmentCreateRequested>(_onCreateAssessment);
+    on<StaffStatusUpdateRequested>(_onUpdateStatus);
   }
 
   Future<void> _onFetchRequested(
@@ -73,6 +74,19 @@ class StaffPerformanceBloc
       emit,
       () => _apiClient.createAssessment(event.request),
       AppStrings.assessmentSaved,
+    );
+  }
+
+  Future<void> _onUpdateStatus(
+    StaffStatusUpdateRequested event,
+    Emitter<StaffPerformanceState> emit,
+  ) async {
+    await _runOperation(
+      emit,
+      () => _apiClient.updateStaffStatus(event.request),
+      event.request.status == 'ACTIVE'
+          ? AppStrings.staffActivated
+          : AppStrings.staffDeactivated,
     );
   }
 

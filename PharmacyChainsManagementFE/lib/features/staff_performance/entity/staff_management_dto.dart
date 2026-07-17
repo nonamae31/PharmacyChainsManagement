@@ -24,6 +24,21 @@ class CreateBranchStaffRequestDto extends Equatable {
   List<Object?> get props => [fullName, email, password, phone];
 }
 
+class UpdateStaffStatusRequestDto extends Equatable {
+  final String staffId;
+  final String status;
+
+  const UpdateStaffStatusRequestDto({
+    required this.staffId,
+    required this.status,
+  });
+
+  Map<String, dynamic> toJson() => {'status': status};
+
+  @override
+  List<Object?> get props => [staffId, status];
+}
+
 class UpsertStaffShiftRequestDto extends Equatable {
   final String staffId;
   final DateTime shiftDate;

@@ -126,50 +126,7 @@ class _PortalNavigation extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                mainAxisAlignment: compact
-                    ? MainAxisAlignment.center
-                    : MainAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.xs),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.cardGradient,
-                      borderRadius: BorderRadius.circular(AppRadius.medium),
-                    ),
-                    child: const Icon(
-                      Icons.local_pharmacy,
-                      color: AppColors.surface,
-                      size: AppSpacing.iconMedium,
-                    ),
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(width: AppSpacing.sm),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            AppStrings.appTitle,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.sectionTitle,
-                          ),
-                          SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            AppStrings.appSubtitle,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.caption,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            _PortalNavigationHeader(compact: compact),
             const SizedBox(height: AppSpacing.xs),
             for (
               var index = 0;
@@ -197,6 +154,60 @@ class _PortalNavigation extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PortalNavigationHeader extends StatelessWidget {
+  final bool compact;
+
+  const _PortalNavigationHeader({required this.compact});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        mainAxisAlignment: compact
+            ? MainAxisAlignment.center
+            : MainAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.xs),
+            decoration: BoxDecoration(
+              gradient: AppColors.cardGradient,
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+            ),
+            child: const Icon(
+              Icons.local_pharmacy,
+              color: AppColors.surface,
+              size: AppSpacing.iconMedium,
+            ),
+          ),
+          if (!compact) ...[
+            const SizedBox(width: AppSpacing.sm),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    AppStrings.appTitle,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.sectionTitle,
+                  ),
+                  SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    AppStrings.appSubtitle,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
