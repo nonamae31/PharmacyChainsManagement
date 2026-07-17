@@ -4,11 +4,12 @@ import '../../features/auth/control/auth_bloc.dart';
 import '../../features/auth/control/auth_state.dart';
 import '../../features/auth/boundary/login_screen.dart';
 import '../../features/branch_portal/boundary/branch_manager_portal_screen.dart';
-import '../../features/home/boundary/founder_home_screen.dart';
+import '../../features/founder_admin/presentation/screens/founder_layout_screen.dart';
 import '../../features/home/boundary/business_admin_home_screen.dart';
 import '../../features/home/boundary/staff_home_screen.dart';
 import '../../features/home/boundary/inventory_home_screen.dart';
 import '../theme/branch_manager_app_theme.dart';
+import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
 import 'dart:async';
 
 class AppRouter {
@@ -21,7 +22,7 @@ class AppRouter {
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (BuildContext context, GoRouterState state) {
       final authState = authBloc.state;
-      final isLoggingIn = state.matchedLocation == '/login';
+      final isLoggingIn = state.uri.toString() == '/login';
 
       if (authState is! AuthAuthenticated) {
         return isLoggingIn ? null : '/login';
@@ -48,9 +49,10 @@ class AppRouter {
           break;
       }
 
-      if (isLoggingIn || state.matchedLocation != targetPath) {
+      if (isLoggingIn || state.uri.toString() != targetPath) {
         return targetPath;
       }
+
       return null;
     },
     routes: <RouteBase>[
@@ -62,7 +64,7 @@ class AppRouter {
       GoRoute(
         path: '/founder_home',
         pageBuilder: (context, state) =>
-            _buildTransition(context, state, const FounderHomeScreen()),
+            _buildTransition(context, state, const FounderLayoutScreen()),
       ),
       GoRoute(
         path: '/business_admin_home',
@@ -89,6 +91,10 @@ class AppRouter {
         path: '/inventory_home',
         pageBuilder: (context, state) =>
             _buildTransition(context, state, const InventoryHomeScreen()),
+      ),
+      GoRoute(
+        path: '/cash_flow',
+        pageBuilder: (context, state) => _buildTransition(context, state, const CashFlowScreen()),
       ),
     ],
   );

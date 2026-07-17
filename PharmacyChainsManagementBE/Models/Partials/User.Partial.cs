@@ -17,10 +17,4 @@ public partial class User
 
     public string? PasswordResetToken { get; set; }
     public DateTimeOffset? ResetTokenExpiry { get; set; }
-
-    [Column("must_change_password")]
-    public bool MustChangePassword { get; set; }
-
-    [Column("is_deleted")]
-    public bool IsDeleted { get; set; }
 }

@@ -66,6 +66,50 @@ public static class ModelBuilderExtensions
                 Status = "ACTIVE",
                 CreatedAt = seededAt,
                 UpdatedAt = seededAt
+            },
+            new User
+            {
+                UserId = Guid.Parse("11111111-1111-1111-1111-111111111112"),
+                RoleId = 1,
+                FullName = "Admin User 2",
+                Email = "businessadmin2@pharmacy.com",
+                PasswordHash = passwordHash,
+                Status = "ACTIVE",
+                CreatedAt = seededAt,
+                UpdatedAt = seededAt
+            },
+            new User
+            {
+                UserId = Guid.Parse("11111111-1111-1111-1111-111111111113"),
+                RoleId = 1,
+                FullName = "Admin User 3",
+                Email = "businessadmin3@pharmacy.com",
+                PasswordHash = passwordHash,
+                Status = "ACTIVE",
+                CreatedAt = seededAt,
+                UpdatedAt = seededAt
+            },
+            new User
+            {
+                UserId = Guid.Parse("11111111-1111-1111-1111-111111111114"),
+                RoleId = 1,
+                FullName = "Admin User 4",
+                Email = "businessadmin4@pharmacy.com",
+                PasswordHash = passwordHash,
+                Status = "ACTIVE",
+                CreatedAt = seededAt,
+                UpdatedAt = seededAt
+            },
+            new User
+            {
+                UserId = Guid.Parse("11111111-1111-1111-1111-111111111115"),
+                RoleId = 1,
+                FullName = "Admin User 5",
+                Email = "businessadmin5@pharmacy.com",
+                PasswordHash = passwordHash,
+                Status = "ACTIVE",
+                CreatedAt = seededAt,
+                UpdatedAt = seededAt
             }
         );
     }

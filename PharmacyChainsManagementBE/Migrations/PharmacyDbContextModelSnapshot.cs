@@ -1138,6 +1138,10 @@ namespace PharmacyChainsManagementBE.Migrations
 
                     b.HasIndex("BranchId");
 
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("IX_User_IsDeleted_Filtered")
+                        .HasFilter("\"is_deleted\" = false");
+
                     b.HasIndex("RoleId");
 
                     b.HasIndex(new[] { "Email" }, "UQ__USER__AB6E6164A2B157E7")
@@ -1199,6 +1203,62 @@ namespace PharmacyChainsManagementBE.Migrations
                             MustChangePassword = false,
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)4,
+                            Status = "ACTIVE",
+                            UpdatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111112"),
+                            AccessFailedCount = 0,
+                            CreatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "businessadmin2@pharmacy.com",
+                            FullName = "Admin User 2",
+                            IsDeleted = false,
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
+                            RoleId = (short)1,
+                            Status = "ACTIVE",
+                            UpdatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111113"),
+                            AccessFailedCount = 0,
+                            CreatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "businessadmin3@pharmacy.com",
+                            FullName = "Admin User 3",
+                            IsDeleted = false,
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
+                            RoleId = (short)1,
+                            Status = "ACTIVE",
+                            UpdatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111114"),
+                            AccessFailedCount = 0,
+                            CreatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "businessadmin4@pharmacy.com",
+                            FullName = "Admin User 4",
+                            IsDeleted = false,
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
+                            RoleId = (short)1,
+                            Status = "ACTIVE",
+                            UpdatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111115"),
+                            AccessFailedCount = 0,
+                            CreatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "businessadmin5@pharmacy.com",
+                            FullName = "Admin User 5",
+                            IsDeleted = false,
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
+                            RoleId = (short)1,
                             Status = "ACTIVE",
                             UpdatedAt = new DateTime(2026, 7, 12, 0, 0, 0, 0, DateTimeKind.Utc)
                         });

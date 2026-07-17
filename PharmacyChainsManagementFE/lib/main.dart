@@ -17,9 +17,11 @@ import 'features/branch_revenue/network/branch_revenue_api_client.dart';
 import 'features/staff_performance/control/staff_performance_bloc.dart';
 import 'features/staff_performance/network/staff_performance_api_client.dart';
 import 'firebase_options.dart';
+import 'injection_container.dart' as di;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await di.init();
 
   try {
     await dotenv.load(fileName: '.env');
