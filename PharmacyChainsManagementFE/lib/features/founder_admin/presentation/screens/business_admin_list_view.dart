@@ -9,6 +9,8 @@ import '../widgets/create_admin_bottom_sheet.dart';
 import '../cubit/create_admin_cubit.dart';
 
 import '../widgets/business_admin_edit_bottom_sheet.dart';
+import '../widgets/deactivate_admin_dialog.dart';
+import '../cubit/deactivate_admin_cubit.dart';
 import '../../../../injection_container.dart';
 
 class BusinessAdminListView extends StatefulWidget {
@@ -187,9 +189,9 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
               DataCell(
                 Chip(
                   label: Text(admin.status),
-                  backgroundColor: admin.status == 'Active' ? Colors.green.shade100 : Colors.red.shade100,
+                  backgroundColor: admin.status.toLowerCase() == 'active' ? Colors.green.shade100 : Colors.red.shade100,
                   labelStyle: TextStyle(
-                    color: admin.status == 'Active' ? Colors.green.shade800 : Colors.red.shade800,
+                    color: admin.status.toLowerCase() == 'active' ? Colors.green.shade800 : Colors.red.shade800,
                   ),
                   side: BorderSide.none,
                 ),
@@ -207,13 +209,30 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
                         });
                       },
                     ),
-                    if (admin.status == 'Active')
+                    if (admin.status.toLowerCase() == 'active') ...[
+                      IconButton(
+                        icon: const Icon(Icons.block, color: Colors.orange),
+                        tooltip: 'Deactivate',
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => BlocProvider(
+                              create: (_) => sl<DeactivateAdminCubit>(),
+                              child: DeactivateAdminDialog(adminId: admin.id),
+                            ),
+                          ).then((_) {
+                            if (context.mounted) {
+                              context.read<BusinessAdminCubit>().fetchBusinessAdmins(forceRefresh: true);
+                            }
+                          });
+                        },
+                      ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        tooltip: 'Delete',
+                        tooltip: 'Soft Delete',
                         onPressed: () => _handleSoftDelete(context, admin),
                       )
-                    else
+                    ] else
                       IconButton(
                         icon: const Icon(Icons.restore, color: Colors.green),
                         tooltip: 'Reactivate',
@@ -235,7 +254,7 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
       itemCount: admins.length,
       itemBuilder: (context, index) {
         final admin = admins[index];
-        final isActive = admin.status == 'Active';
+        final isActive = admin.status.toLowerCase() == 'active';
         final card = Card(
           margin: const EdgeInsets.only(bottom: 8.0),
           child: ListTile(

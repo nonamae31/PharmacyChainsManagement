@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 
 import 'core/routes/app_router.dart';
 import 'features/auth/control/auth_bloc.dart';
+import 'features/auth/control/auth_event.dart';
 import 'features/auth/network/auth_api_client.dart';
 
 import 'injection_container.dart' as di;
@@ -37,7 +38,8 @@ void main() async {
   final authBloc = AuthBloc(
     authApiClient: authApiClient,
     localAuth: localAuth,
-  );
+  )..add(AuthCheckRequested());
+  
   final appRouter = AppRouter(authBloc);
 
   runApp(MyApp(

@@ -5,6 +5,9 @@ import '../widgets/founder_bottom_nav.dart';
 import 'business_admin_list_view.dart';
 import '../cubit/business_admin_cubit.dart';
 import '../../data/repositories/business_admin_repository_impl.dart';
+import '../../../cash_flow/presentation/screens/cash_flow_screen.dart';
+import '../../../finance/presentation/pages/financial_export_screen.dart';
+import '../../../revenue_report/presentation/pages/revenue_report_screen.dart';
 
 class FounderLayoutScreen extends StatefulWidget {
   const FounderLayoutScreen({super.key});
@@ -22,6 +25,9 @@ class _FounderLayoutScreenState extends State<FounderLayoutScreen> {
       create: (context) => BusinessAdminCubit(repository: BusinessAdminRepositoryImpl()),
       child: const BusinessAdminListView(),
     ),
+    const RevenueReportScreen(),
+    const FinancialExportScreen(),
+    const CashFlowScreen(),
   ];
 
   @override

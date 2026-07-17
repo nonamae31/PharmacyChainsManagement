@@ -94,6 +94,21 @@ class FounderSidebar extends StatelessWidget {
           selectedIcon: Icon(Icons.people),
           label: Text('Admins'),
         ),
+        NavigationRailDestination(
+          icon: Icon(Icons.bar_chart_outlined),
+          selectedIcon: Icon(Icons.bar_chart),
+          label: Text('Revenue'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.file_download_outlined),
+          selectedIcon: Icon(Icons.file_download),
+          label: Text('Export'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.attach_money_outlined),
+          selectedIcon: Icon(Icons.attach_money),
+          label: Text('Cash Flow'),
+        ),
       ],
     );
   }
