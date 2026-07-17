@@ -12,7 +12,6 @@ public class SuspiciousLoginAlertBackgroundService : BackgroundService
     private readonly IEmailAlertQueue _queue;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<SuspiciousLoginAlertBackgroundService> _logger;
-
     public SuspiciousLoginAlertBackgroundService(IEmailAlertQueue queue, IServiceProvider serviceProvider, ILogger<SuspiciousLoginAlertBackgroundService> logger)
     {
         _queue = queue;
@@ -31,6 +30,10 @@ public class SuspiciousLoginAlertBackgroundService : BackgroundService
                 var message = await _queue.DequeueAsync(stoppingToken);
 
                 using var scope = _serviceProvider.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                
+                await emailService.SendEmailAsync(message.To, message.Subject, message.Body, stoppingToken);
+                
                 _logger.LogWarning("ALERT SENT: Email to {To}, Subject: {Subject}, Body: {Body}", message.To, message.Subject, message.Body);
                 await Task.Delay(500, stoppingToken);
             }

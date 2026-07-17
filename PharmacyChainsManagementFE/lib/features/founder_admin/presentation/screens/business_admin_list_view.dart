@@ -9,6 +9,7 @@ import '../widgets/create_admin_bottom_sheet.dart';
 import '../cubit/create_admin_cubit.dart';
 import '../widgets/deactivate_admin_dialog.dart';
 import '../cubit/deactivate_admin_cubit.dart';
+import '../widgets/business_admin_edit_bottom_sheet.dart';
 import '../../../../injection_container.dart';
 
 class BusinessAdminListView extends StatefulWidget {
@@ -103,8 +104,8 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
     return Skeletonizer(
       enabled: true,
       child: isDesktop 
-          ? _buildDesktopTable(List.generate(5, (index) => const BusinessAdminEntity(id: '', name: 'Loading Name', email: 'Loading Email', status: 'Active')))
-          : _buildMobileList(List.generate(5, (index) => const BusinessAdminEntity(id: '', name: 'Loading Name', email: 'Loading Email', status: 'Active'))),
+          ? _buildDesktopTable(List.generate(5, (index) => const BusinessAdminEntity(id: '', name: 'Loading Name', email: 'Loading Email', phone: '', status: 'Active')))
+          : _buildMobileList(List.generate(5, (index) => const BusinessAdminEntity(id: '', name: 'Loading Name', email: 'Loading Email', phone: '', status: 'Active'))),
     );
   }
 
@@ -144,13 +145,26 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
                 ),
               ),
               DataCell(
-                admin.status == 'Active'
-                    ? IconButton(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      tooltip: 'Edit',
+                      onPressed: () {
+                        BusinessAdminEditBottomSheet.show(context, admin, () {
+                          context.read<BusinessAdminCubit>().fetchBusinessAdmins(forceRefresh: true);
+                        });
+                      },
+                    ),
+                    if (admin.status == 'Active')
+                      IconButton(
                         icon: const Icon(Icons.block, color: Colors.red),
                         tooltip: 'Deactivate',
                         onPressed: () => _showDeactivateDialog(context, admin.id),
-                      )
-                    : const SizedBox.shrink(),
+                      ),
+                  ],
+                ),
               ),
             ],
           )).toList(),
@@ -172,6 +186,11 @@ class _BusinessAdminListViewState extends State<BusinessAdminListView> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             title: Text(admin.name, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(admin.email),
+            onTap: () {
+              BusinessAdminEditBottomSheet.show(context, admin, () {
+                context.read<BusinessAdminCubit>().fetchBusinessAdmins(forceRefresh: true);
+              });
+            },
             trailing: Chip(
               label: Text(admin.status),
               backgroundColor: isActive ? Colors.green.shade100 : Colors.red.shade100,

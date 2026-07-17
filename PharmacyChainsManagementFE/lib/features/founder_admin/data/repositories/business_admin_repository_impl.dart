@@ -5,6 +5,7 @@ import '../../../../core/error/failures.dart';
 import '../models/business_admin_request_model.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../domain/entities/business_admin_entity.dart';
+import 'package:dio/dio.dart';
 import '../../domain/repositories/business_admin_repository.dart';
 import '../models/business_admin_model.dart';
 
@@ -63,6 +64,27 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
       }
     } catch (e) {
       throw Exception('Lỗi kết nối hoặc xử lý từ server: $e');
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateBusinessAdmin(String id, BusinessAdminRequestModel request) async {
+    try {
+      final dio = ApiClient.createDio();
+      final response = await dio.put('/api/v1/business-admin/$id', data: request.toJson());
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response.data['message'] ?? 'Cập nhật thất bại.'));
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data is Map) {
+        return Left(ServerFailure(e.response?.data['message'] ?? 'Lỗi từ server'));
+      }
+      return Left(ServerFailure('Lỗi kết nối: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Lỗi không xác định: $e'));
     }
   }
 

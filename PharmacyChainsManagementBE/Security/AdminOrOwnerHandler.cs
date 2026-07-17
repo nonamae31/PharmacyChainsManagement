@@ -17,7 +17,12 @@ public class AdminOrOwnerHandler : AuthorizationHandler<AdminOrOwnerRequirement>
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, AdminOrOwnerRequirement requirement)
     {
-        if (context.User.IsInRole("SUPER_ADMIN"))
+        foreach (var claim in context.User.Claims)
+        {
+            System.Console.WriteLine($"CLAIM: {claim.Type} = {claim.Value}");
+        }
+
+        if (context.User.IsInRole("SUPER_ADMIN") || context.User.IsInRole("FOUNDER") || context.User.IsInRole("Founder") || context.User.IsInRole("founder"))
         {
             context.Succeed(requirement);
             return Task.CompletedTask;

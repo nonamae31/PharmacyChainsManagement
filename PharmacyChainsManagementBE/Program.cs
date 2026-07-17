@@ -17,6 +17,7 @@ using PharmacyChainsManagementBE.Middlewares;
 using PharmacyChainsManagementBE.Models;
 using PharmacyChainsManagementBE.Repositories;
 using PharmacyChainsManagementBE.Services;
+using PharmacyChainsManagementBE.Services.Strategies;
 using PharmacyChainsManagementBE.Validators;
 using PharmacyChainsManagementBE.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -75,17 +76,35 @@ try
             o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             o.QueueLimit = 2;
         });
+
+        options.AddFixedWindowLimiter("CreateAdminPolicy", o =>
+        {
+            o.PermitLimit = 5;
+            o.Window = TimeSpan.FromMinutes(1);
+            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            o.QueueLimit = 2;
+        });
+
+        options.AddFixedWindowLimiter("CashFlowReportPolicy", o =>
+        {
+            o.PermitLimit = 5;
+            o.Window = TimeSpan.FromMinutes(1);
+            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            o.QueueLimit = 2;
+        });
+
+        options.AddFixedWindowLimiter("export_policy", o =>
+        {
+            o.PermitLimit = 5;
+            o.Window = TimeSpan.FromMinutes(1);
+            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            o.QueueLimit = 2;
+        });
     });
 
     builder.Services.AddCors(options =>
     {
-        options.AddPolicy("Production", policy =>
-            policy.WithOrigins("https://yourtrusteddomain.com") 
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials());
-                  
-        options.AddPolicy("Development", policy =>
+        options.AddDefaultPolicy(policy =>
             policy.AllowAnyOrigin()
                   .AllowAnyMethod()
                   .AllowAnyHeader());
@@ -109,10 +128,33 @@ try
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
             ClockSkew = TimeSpan.Zero
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                if (context.Principal?.Identity is System.Security.Claims.ClaimsIdentity identity)
+                {
+                    var claims = new System.Collections.Generic.List<System.Security.Claims.Claim>(identity.FindAll(identity.RoleClaimType));
+                    foreach (var claim in claims)
+                    {
+                        if (string.IsNullOrEmpty(claim.Value)) continue;
+                        var normalizedRole = char.ToUpper(claim.Value[0]) + claim.Value.Substring(1).ToLower();
+                        if (claim.Value != normalizedRole)
+                        {
+                            identity.RemoveClaim(claim);
+                            identity.AddClaim(new System.Security.Claims.Claim(identity.RoleClaimType, normalizedRole));
+                        }
+                    }
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+    builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+    builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<ITokenService, TokenService>();
@@ -124,6 +166,12 @@ try
     builder.Services.AddHostedService<SuspiciousLoginAlertBackgroundService>();
 
     builder.Services.AddScoped<IBusinessAdminService, BusinessAdminService>();
+    builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
+    builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, PdfExportStrategy>();
+    builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, ExcelExportStrategy>();
+    builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, CsvExportStrategy>();
+
+    builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddSingleton<IAuthorizationHandler, AdminOrOwnerHandler>();
     builder.Services.AddAuthorization(options =>
@@ -137,26 +185,22 @@ try
     app.UseMiddleware<GlobalExceptionMiddleware>();
     app.UseMiddleware<CorrelationIdMiddleware>();
 
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-        app.UseCors("Development");
-    }
-    else 
-    {
-        app.UseCors("Production");
-    }
-
     app.UseHttpsRedirection();
     
     app.UseRateLimiter();
 
     app.UseRouting();
+    app.UseCors();
 
     app.UseAuthentication();
     app.UseMiddleware<JwtBlacklistMiddleware>();
     app.UseAuthorization();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
 
     app.MapControllers();
 

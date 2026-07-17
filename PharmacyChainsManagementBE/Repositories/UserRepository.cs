@@ -22,6 +22,13 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Email == email && u.Status == "ACTIVE", cancellationToken);
     }
 
+    public async Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+    }
+
     public async Task<User?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Users
@@ -40,11 +47,26 @@ public class UserRepository : IUserRepository
         await _context.Users.AddAsync(user, cancellationToken);
     }
 
+    public async Task<Role?> GetRoleByCodeAsync(string roleCode, CancellationToken cancellationToken = default)
+    {
+        return await _context.Roles.FirstOrDefaultAsync(r => r.RoleCode == roleCode, cancellationToken);
+    }
+
     public async Task<User?> GetBusinessAdminByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Users
             .AsNoTracking()
             .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.UserId == id && u.Role.RoleCode == "BUSINESS_ADMIN", cancellationToken);
+    }
+
+    public async Task<System.Collections.Generic.IEnumerable<User>> GetUsersByRoleCodeAsync(string roleCode, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .Where(u => u.Role.RoleCode == roleCode)
+            .OrderByDescending(u => u.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 }

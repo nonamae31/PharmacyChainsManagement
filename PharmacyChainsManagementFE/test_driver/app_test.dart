@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_driver/flutter_driver.dart';
 import 'package:test/test.dart';
 
@@ -32,25 +33,25 @@ void main() {
         final password = testCase['password']!;
         final expectedTitle = testCase['expectedTitle']!;
 
-        print('--- Testing login for $email ---');
+        debugPrint('--- Testing login for $email ---');
 
         // If not already on login screen (like just started or logged out), wait for 'Sign In'
         try {
           await driver.waitFor(signInButton, timeout: const Duration(seconds: 5));
           await driver.tap(signInButton);
         } catch (e) {
-          print('Sign In button not found, probably already in the form');
+          debugPrint('Sign In button not found, probably already in the form');
         }
 
         try {
           await driver.waitFor(emailField, timeout: const Duration(seconds: 3));
         } catch (e) {
-          print('Email field not found, maybe stuck on a dashboard. Attempting to logout...');
+          debugPrint('Email field not found, maybe stuck on a dashboard. Attempting to logout...');
           try {
             await driver.tap(find.byType('IconButton'));
             await driver.waitFor(emailField, timeout: const Duration(seconds: 3));
           } catch (e) {
-             print('Still no email field. Might be a different issue.');
+             debugPrint('Still no email field. Might be a different issue.');
           }
         }
         await driver.tap(emailField);
@@ -66,7 +67,7 @@ void main() {
         // Wait for Home Screen Dashboard Text to appear
         final homeDashboard = find.text(expectedTitle);
         await driver.waitFor(homeDashboard, timeout: const Duration(seconds: 15));
-        print('✅ Reached home dashboard for $email');
+        debugPrint('✅ Reached home dashboard for $email');
 
         // Tap Logout button (assuming it's a Tooltip 'Logout' or we tap back)
         // Since we didn't add a key, we'll try to find by type 'IconButton' or Tooltip 'Back' 
@@ -74,9 +75,9 @@ void main() {
         // Wait, since we are looping, let's use driver.requestData('restart') if we implemented it, or just tap the IconButton
         try {
             await driver.tap(find.byType('IconButton'));
-            print('✅ Logged out');
+            debugPrint('✅ Logged out');
         } catch (e) {
-            print('Logout button not found, restarting app state might be needed');
+            debugPrint('Logout button not found, restarting app state might be needed');
         }
       }
     }, timeout: const Timeout(Duration(minutes: 5)));

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -49,6 +49,9 @@ public partial class User
 
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
+
+    [Column("must_change_password")]
+    public bool MustChangePassword { get; set; }
 
     [InverseProperty("Actor")]
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();

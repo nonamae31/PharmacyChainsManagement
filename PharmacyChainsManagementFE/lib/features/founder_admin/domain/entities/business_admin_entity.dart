@@ -5,14 +5,16 @@ class BusinessAdminEntity extends Equatable {
   final String name;
   final String email;
   final String status;
+  final String phone;
 
   const BusinessAdminEntity({
     required this.id,
     required this.name,
     required this.email,
     required this.status,
+    required this.phone,
   });
 
   @override
-  List<Object?> get props => [id, name, email, status];
+  List<Object?> get props => [id, name, email, status, phone];
 }

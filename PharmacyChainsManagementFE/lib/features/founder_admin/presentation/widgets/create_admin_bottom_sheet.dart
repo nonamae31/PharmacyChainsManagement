@@ -5,7 +5,7 @@ import '../cubit/create_admin_cubit.dart';
 class CreateAdminBottomSheet extends StatefulWidget {
   final VoidCallback onSuccess;
 
-  const CreateAdminBottomSheet({Key? key, required this.onSuccess}) : super(key: key);
+  const CreateAdminBottomSheet({super.key, required this.onSuccess});
 
   @override
   State<CreateAdminBottomSheet> createState() => _CreateAdminBottomSheetState();

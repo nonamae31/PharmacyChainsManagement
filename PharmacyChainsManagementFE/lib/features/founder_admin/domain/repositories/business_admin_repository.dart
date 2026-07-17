@@ -6,5 +6,6 @@ import '../../../../core/error/failures.dart';
 abstract class BusinessAdminRepository {
   Future<List<BusinessAdminEntity>> getBusinessAdmins({bool forceRefresh = false});
   Future<void> createBusinessAdmin(BusinessAdminRequestModel request);
+  Future<Either<Failure, void>> updateBusinessAdmin(String id, BusinessAdminRequestModel request);
   Future<Either<Failure, void>> deactivateBusinessAdmin(String id, String reason);
 }

@@ -737,3 +737,6 @@ PharmacyChainsManagementFE/android/app/src/main/res/values/strings.xml
 /.swarm-backend
 /.swarm-flutter
 /PharmacyChainsManagementFE/test
+/.swarm-workspace
+*.docx
+/docs/uat

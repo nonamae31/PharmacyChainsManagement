@@ -970,6 +970,10 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("bit")
+                        .HasColumnName("must_change_password");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1023,49 +1027,105 @@ namespace PharmacyChainsManagementBE.Migrations
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111111"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2176),
-                            Email = "admin@pharmacy.com",
+                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1358),
+                            Email = "businessadmin@pharmacy.com",
                             FullName = "Admin User",
-                            PasswordHash = "$2a$11$NMSJsKiD6hr4KnXcEnV5vOCbPKnfHRtJKJLZxMPJ6EPgxFstFsSUi",
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2183)
+                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1362)
                         },
                         new
                         {
                             UserId = new Guid("22222222-2222-2222-2222-222222222222"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2192),
+                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1368),
                             Email = "manager@pharmacy.com",
                             FullName = "Manager User",
-                            PasswordHash = "$2a$11$NMSJsKiD6hr4KnXcEnV5vOCbPKnfHRtJKJLZxMPJ6EPgxFstFsSUi",
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)2,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2192)
+                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1369)
                         },
                         new
                         {
                             UserId = new Guid("33333333-3333-3333-3333-333333333333"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2196),
+                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1373),
                             Email = "staff@pharmacy.com",
                             FullName = "Staff User",
-                            PasswordHash = "$2a$11$NMSJsKiD6hr4KnXcEnV5vOCbPKnfHRtJKJLZxMPJ6EPgxFstFsSUi",
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)3,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2197)
+                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1374)
                         },
                         new
                         {
                             UserId = new Guid("44444444-4444-4444-4444-444444444444"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2291),
+                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1425),
                             Email = "inventory@pharmacy.com",
                             FullName = "Inventory Manager",
-                            PasswordHash = "$2a$11$NMSJsKiD6hr4KnXcEnV5vOCbPKnfHRtJKJLZxMPJ6EPgxFstFsSUi",
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)4,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 12, 15, 37, 1, 66, DateTimeKind.Utc).AddTicks(2292)
+                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1426)
+                        },
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111112"),
+                            AccessFailedCount = 0,
+                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1430),
+                            Email = "businessadmin2@pharmacy.com",
+                            FullName = "Admin User 2",
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
+                            RoleId = (short)1,
+                            Status = "ACTIVE",
+                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1431)
+                        },
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111113"),
+                            AccessFailedCount = 0,
+                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1435),
+                            Email = "businessadmin3@pharmacy.com",
+                            FullName = "Admin User 3",
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
+                            RoleId = (short)1,
+                            Status = "ACTIVE",
+                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1436)
+                        },
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111114"),
+                            AccessFailedCount = 0,
+                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1442),
+                            Email = "businessadmin4@pharmacy.com",
+                            FullName = "Admin User 4",
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
+                            RoleId = (short)1,
+                            Status = "ACTIVE",
+                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1442)
+                        },
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111115"),
+                            AccessFailedCount = 0,
+                            CreatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1446),
+                            Email = "businessadmin5@pharmacy.com",
+                            FullName = "Admin User 5",
+                            MustChangePassword = false,
+                            PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
+                            RoleId = (short)1,
+                            Status = "ACTIVE",
+                            UpdatedAt = new DateTime(2026, 7, 16, 17, 7, 24, 92, DateTimeKind.Utc).AddTicks(1447)
                         });
                 });
 
