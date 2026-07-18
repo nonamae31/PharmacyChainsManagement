@@ -1,8 +1,28 @@
 class AppStrings {
   AppStrings._();
 
-  static const String appTitle = 'Pharmacy Chain Management';
-  
+  static const String appTitle = 'Pharmacy Chains Management';
+
+  // Business Admin
+  static const String businessAdminDashboard = 'Business Admin';
+  static const String profile = 'Profile';
+  static const String branchManagement = 'Branches';
+  static const String medicineStatistics = 'Medicine Statistics';
+  static const String businessAnalysisReport = 'Business Report';
+  static const String forgotPassword = 'Forgot Password';
+  static const String login = 'Login';
+  static const String logout = 'Logout';
+  static const String saveChanges = 'Save Changes';
+  static const String refresh = 'Refresh';
+  static const String exportCsv = 'Export CSV';
+  static const String exportPdf = 'Export PDF';
+  static const String exportExcel = 'Export Excel';
+  static const String search = 'Search';
+  static const String retry = 'Retry';
+  static const String noData = 'No data';
+  static const String notAvailable = 'N/A';
+  static const String sessionExpired = 'Your session has expired.';
+
   // Inventory Generic
   static const String inventoryDashboard = 'Inventory Dashboard';
   static const String receiveGoods = 'Receive Goods';

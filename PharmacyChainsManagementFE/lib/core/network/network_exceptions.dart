@@ -1,20 +1,24 @@
 sealed class AppException implements Exception {
   final String message;
+
   const AppException(this.message);
+
+  @override
+  String toString() => message;
 }
 
-class NetworkTimeoutException extends AppException {
-  const NetworkTimeoutException() : super('Kết nối mạng bị gián đoạn.');
+final class NetworkTimeoutException extends AppException {
+  const NetworkTimeoutException() : super('Network timeout. Please try again.');
 }
 
-class UnauthorizedException extends AppException {
-  const UnauthorizedException() : super('Phiên đăng nhập đã hết hạn.');
+final class UnauthorizedException extends AppException {
+  const UnauthorizedException() : super('Your session has expired.');
 }
 
-class ServerException extends AppException {
+final class ServerException extends AppException {
   const ServerException(super.message);
 }
 
-class UnknownException extends AppException {
+final class UnknownException extends AppException {
   const UnknownException(super.message);
 }

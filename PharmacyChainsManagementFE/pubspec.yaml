@@ -40,7 +40,7 @@ dependencies:
   dio: any
   flutter_dotenv: ^5.1.0
   flutter_secure_storage: ^9.0.0
-  firebase_core: any
+  firebase_core: ^4.12.1
   firebase_auth: any
   google_sign_in: ^6.2.1
   shimmer: ^3.0.0
@@ -60,6 +60,7 @@ dependencies:
   universal_html: ^2.3.0
   cached_network_image: ^3.4.1
   image_picker: ^1.2.3
+  url_launcher: any
 
 dev_dependencies:
   flutter_test:
