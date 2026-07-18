@@ -489,7 +489,6 @@ class _CashFlowViewState extends State<CashFlowView> {
                           const SizedBox(height: 16),
                           _buildChart(data.dailyData),
                           _buildLiquidityForecastChart(data.liquidityForecasts),
-                          _buildBudgetAllocationPieChart(data.budgetAllocations),
                           _buildRecentTransactions(data.recentTransactions),
                         ],
                       ),
@@ -557,62 +556,7 @@ class _CashFlowViewState extends State<CashFlowView> {
     );
   }
 
-  Widget _buildBudgetAllocationPieChart(List<BudgetAllocationEntity> allocations) {
-    if (allocations.isEmpty) return const SizedBox.shrink();
-    final List<Color> colors = [Colors.blue, Colors.orange, Colors.purple, Colors.teal, Colors.amber];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 24),
-        const Text('Budget Allocation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: Row(
-            children: [
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 40,
-                    sections: allocations.asMap().entries.map((e) {
-                      final color = colors[e.key % colors.length];
-                      return PieChartSectionData(
-                        color: color,
-                        value: e.value.percentage,
-                        title: '${e.value.percentage}%',
-                        radius: 50,
-                        titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: allocations.asMap().entries.map((e) {
-                    final color = colors[e.key % colors.length];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Row(
-                        children: [
-                          Container(width: 16, height: 16, color: color),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(e.value.categoryName, style: const TextStyle(fontSize: 12))),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildRecentTransactions(List<RecentTransactionEntity> transactions) {
     if (transactions.isEmpty) return const SizedBox.shrink();
