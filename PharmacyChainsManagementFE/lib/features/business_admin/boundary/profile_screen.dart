@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/app_strings.dart';
@@ -29,7 +31,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _dateOfBirthController = TextEditingController();
   final _genderController = TextEditingController();
   final _imagePicker = ImagePicker();
+  final _profileStorage = const FlutterSecureStorage();
   Uint8List? _avatarBytes;
+  String? _activeProfileEmail;
+  String? _avatarStorageEmail;
+  bool _isAvatarLoading = false;
 
   @override
   void initState() {
@@ -48,6 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context, state) {
         if (state is BusinessAdminLoading) return const AppLoadingIndicator();
         if (state is BusinessAdminProfileLoadSuccess) {
+          _activeProfileEmail = state.profile.email;
+          _loadAvatarForProfile(state.profile.email);
           return _ProfileView(
             profile: state.profile,
             fullNameController: _fullNameController,
@@ -79,21 +87,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _pickAvatar() async {
-    final pickedImage = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: _ProfileDimensions.avatarPickerMaxSize,
-      maxHeight: _ProfileDimensions.avatarPickerMaxSize,
-      imageQuality: _ProfileDimensions.avatarPickerQuality,
-    );
-    if (pickedImage == null) return;
+    try {
+      final pickedImage = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: _ProfileDimensions.avatarPickerMaxSize,
+        maxHeight: _ProfileDimensions.avatarPickerMaxSize,
+        imageQuality: _ProfileDimensions.avatarPickerQuality,
+      );
+      if (pickedImage == null) return;
 
-    final bytes = await pickedImage.readAsBytes();
-    if (!mounted) return;
+      final bytes = await pickedImage.readAsBytes();
+      final profileEmail =
+          _activeProfileEmail ?? _ProfileCopy.avatarFallbackKey;
+      await _profileStorage.write(
+        key: _avatarStorageKey(profileEmail),
+        value: base64Encode(bytes),
+      );
+      if (!mounted) return;
 
-    setState(() => _avatarBytes = bytes);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text(_ProfileCopy.photoUpdated)));
+      setState(() {
+        _avatarBytes = bytes;
+        _avatarStorageEmail = profileEmail;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text(_ProfileCopy.photoUpdated)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(_ProfileCopy.photoUpdateFailed)),
+      );
+    }
+  }
+
+  Future<void> _loadAvatarForProfile(String profileEmail) async {
+    if (_avatarStorageEmail == profileEmail || _isAvatarLoading) return;
+
+    _isAvatarLoading = true;
+    try {
+      final encodedAvatar = await _profileStorage.read(
+        key: _avatarStorageKey(profileEmail),
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _avatarStorageEmail = profileEmail;
+        _avatarBytes = encodedAvatar == null
+            ? null
+            : base64Decode(encodedAvatar);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _avatarStorageEmail = profileEmail;
+        _avatarBytes = null;
+      });
+    } finally {
+      _isAvatarLoading = false;
+    }
   }
 }
 
@@ -552,10 +603,18 @@ class _EditableAvatar extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          _ProfileAvatar(
-            profile: profile,
-            avatarBytes: avatarBytes,
-            size: size,
+          Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onChangePhoto,
+              child: _ProfileAvatar(
+                profile: profile,
+                avatarBytes: avatarBytes,
+                size: size,
+              ),
+            ),
           ),
           Positioned(
             right: 0,
@@ -874,6 +933,9 @@ String _fieldValue(String? value, String? fallback) {
   return _displayValue(fallback);
 }
 
+String _avatarStorageKey(String profileEmail) =>
+    '${_ProfileCopy.avatarStoragePrefix}${profileEmail.trim().toLowerCase()}';
+
 class _ProfileCopy {
   const _ProfileCopy._();
 
@@ -887,6 +949,9 @@ class _ProfileCopy {
   static const editProfile = 'Edit Profile';
   static const cancel = 'Cancel';
   static const photoUpdated = 'Profile photo updated';
+  static const photoUpdateFailed = 'Unable to update profile photo';
+  static const avatarFallbackKey = 'business_admin_profile';
+  static const avatarStoragePrefix = 'business_admin_avatar_';
   static const defaultAddress = 'Ha Noi';
   static const defaultDateOfBirth = '11/7/1996';
   static const defaultGender = 'Male';
