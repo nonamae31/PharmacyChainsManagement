@@ -20,5 +20,7 @@ public partial class PharmacyDbContext
 
             entity.HasIndex(e => e.UserId);
         });
+
+        modelBuilder.SeedRolesAndUsers();
     }
 }

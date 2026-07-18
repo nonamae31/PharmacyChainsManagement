@@ -4,15 +4,16 @@ import 'secure_storage_service.dart';
 import '../../../core/app_logger.dart';
 import '../entity/login_request_dto.dart';
 import '../entity/auth_result_dto.dart';
+import '../../../core/exceptions.dart';
 
 class AuthApiClient {
   late final Dio _dio;
   
   AuthApiClient() {
     _dio = Dio(BaseOptions(
-      baseUrl: dotenv.env['BASE_URL'] ?? 'https://fallback.api.com',
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
+      baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000',
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
       headers: {'Content-Type': 'application/json'},
     ));
 
@@ -72,17 +73,14 @@ class AuthApiClient {
         if (e.response?.data != null && e.response?.data is Map) {
           final data = e.response!.data as Map;
           if (data.containsKey('message') && data['message'] != null) {
-            throw data['message'].toString();
+            throw ServerException(data['message'].toString());
           } else if (data.containsKey('title') && data['title'] != null) {
-            throw data['title'].toString();
+            throw ServerException(data['title'].toString());
           }
         }
-        if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-          throw 'Email hoặc mật khẩu không chính xác.';
-        }
-        throw 'Không thể kết nối đến máy chủ. Vui lòng thử lại.';
+        throw ServerException('Lỗi mạng: ${e.message}');
       }
-      throw 'Đã xảy ra lỗi không xác định.';
+      throw ServerException('Lỗi hệ thống: $e');
     }
   }
 
@@ -98,12 +96,12 @@ class AuthApiClient {
       if (e is DioException && e.response?.data != null && e.response?.data is Map) {
         final data = e.response!.data as Map;
         if (data.containsKey('title')) {
-          throw data['title'].toString();
+          throw ServerException(data['title'].toString());
         } else if (data.containsKey('message')) {
-          throw data['message'].toString();
+          throw ServerException(data['message'].toString());
         }
       }
-      throw 'Không thể đăng ký. Vui lòng thử lại.';
+      throw const ServerException('Không thể đăng ký. Vui lòng thử lại.');
     }
   }
 
@@ -116,7 +114,15 @@ class AuthApiClient {
       return AuthResultDto.fromJson(response.data);
     } catch (e) {
       AppLogger.error('Google login error', e);
-      throw 'Đăng nhập Google thất bại.';
+      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+        final data = e.response!.data as Map;
+        if (data.containsKey('message') && data['message'] != null) {
+          throw ServerException(data['message'].toString());
+        } else if (data.containsKey('title') && data['title'] != null) {
+          throw ServerException(data['title'].toString());
+        }
+      }
+      throw const ServerException('Đăng nhập Google thất bại.');
     }
   }
 

@@ -1,41 +1,38 @@
--- Create SeedData/Seed_TestUser.sql
--- This script seeds a ROLE and a test USER for login.
--- Use this strictly for testing/demonstration purposes.
+-- Seed_TestUser.sql
+-- Insert 4 Roles
+IF NOT EXISTS (SELECT 1 FROM [ROLE] WHERE role_code = 'BUSINESS_ADMIN')
+    INSERT INTO [ROLE] (role_id, role_code, role_name, is_active) VALUES (2, 'BUSINESS_ADMIN', 'Business Admin', 1);
 
--- USE PharmacyDb; -- Uncomment and adjust as needed
-GO
+IF NOT EXISTS (SELECT 1 FROM [ROLE] WHERE role_code = 'BRANCH_MANAGER')
+    INSERT INTO [ROLE] (role_id, role_code, role_name, is_active) VALUES (3, 'BRANCH_MANAGER', 'Branch Manager', 1);
 
--- 1. Ensure a default role exists (e.g. USER)
-IF NOT EXISTS (SELECT 1 FROM [ROLE] WHERE role_code = 'USER')
-BEGIN
-    -- Depending on Identity properties, role_id might be IDENTITY(1,1).
-    -- If it's identity, you might need SET IDENTITY_INSERT [ROLE] ON, but we'll try standard.
-    INSERT INTO [ROLE] (role_code, role_name, is_active)
-    VALUES ('USER', 'User', 1);
-END
-GO
+IF NOT EXISTS (SELECT 1 FROM [ROLE] WHERE role_code = 'STAFF')
+    INSERT INTO [ROLE] (role_id, role_code, role_name, is_active) VALUES (4, 'STAFF', 'Staff', 1);
 
-DECLARE @role_id SMALLINT;
-SELECT @role_id = role_id FROM [ROLE] WHERE role_code = 'USER';
+IF NOT EXISTS (SELECT 1 FROM [ROLE] WHERE role_code = 'INVENTORY_MANAGER')
+    INSERT INTO [ROLE] (role_id, role_code, role_name, is_active) VALUES (5, 'INVENTORY_MANAGER', 'Inventory Manager', 1);
 
--- 2. Insert test user with a BCrypt hash for "User@123"
-IF NOT EXISTS (SELECT 1 FROM [USER] WHERE email = 'user@pharmacy.com')
-BEGIN
-    INSERT INTO [USER] (
-        user_id, role_id, branch_id, full_name, email, password_hash, phone, profile_photo_uri, status, created_at, updated_at
-    )
-    VALUES (
-        NEWID(), 
-        @role_id, 
-        NULL,
-        'Test User', 
-        'user@pharmacy.com', 
-        '$2a$11$7v1b1lK3v6e5G9w1Y7z2A.B3c4D5e6F7g8H9i0J1k2L3m4N5o6P', -- Note: use proper hash for production
-        '1234567890', 
-        NULL,
-        'ACTIVE', 
-        GETUTCDATE(), 
-        GETUTCDATE()
-    );
-END
+DECLARE @admin_id SMALLINT, @manager_id SMALLINT, @staff_id SMALLINT, @inventory_id SMALLINT;
+SELECT @admin_id = role_id FROM [ROLE] WHERE role_code = 'BUSINESS_ADMIN';
+SELECT @manager_id = role_id FROM [ROLE] WHERE role_code = 'BRANCH_MANAGER';
+SELECT @staff_id = role_id FROM [ROLE] WHERE role_code = 'STAFF';
+SELECT @inventory_id = role_id FROM [ROLE] WHERE role_code = 'INVENTORY_MANAGER';
+
+DECLARE @hash NVARCHAR(255) = '$2a$11$7v1b1lK3v6e5G9w1Y7z2A.B3c4D5e6F7g8H9i0J1k2L3m4N5o6P'; -- User@123
+
+IF NOT EXISTS (SELECT 1 FROM [USER] WHERE email = 'admin@pharmacy.com')
+    INSERT INTO [USER] (user_id, role_id, full_name, email, password_hash, status, created_at, updated_at)
+    VALUES (NEWID(), @admin_id, 'Business Admin', 'admin@pharmacy.com', @hash, 'ACTIVE', GETUTCDATE(), GETUTCDATE());
+
+IF NOT EXISTS (SELECT 1 FROM [USER] WHERE email = 'manager@pharmacy.com')
+    INSERT INTO [USER] (user_id, role_id, full_name, email, password_hash, status, created_at, updated_at)
+    VALUES (NEWID(), @manager_id, 'Branch Manager', 'manager@pharmacy.com', @hash, 'ACTIVE', GETUTCDATE(), GETUTCDATE());
+
+IF NOT EXISTS (SELECT 1 FROM [USER] WHERE email = 'staff@pharmacy.com')
+    INSERT INTO [USER] (user_id, role_id, full_name, email, password_hash, status, created_at, updated_at)
+    VALUES (NEWID(), @staff_id, 'Staff', 'staff@pharmacy.com', @hash, 'ACTIVE', GETUTCDATE(), GETUTCDATE());
+
+IF NOT EXISTS (SELECT 1 FROM [USER] WHERE email = 'inventory@pharmacy.com')
+    INSERT INTO [USER] (user_id, role_id, full_name, email, password_hash, status, created_at, updated_at)
+    VALUES (NEWID(), @inventory_id, 'Inventory Manager', 'inventory@pharmacy.com', @hash, 'ACTIVE', GETUTCDATE(), GETUTCDATE());
 GO

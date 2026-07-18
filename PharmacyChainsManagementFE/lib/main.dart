@@ -17,9 +17,12 @@ import 'features/inventory/control/stocktake_bloc.dart';
 import 'features/inventory/control/receive_goods_bloc.dart';
 import 'features/inventory/control/issue_stock_bloc.dart';
 import 'features/inventory/network/inventory_api_client.dart';
+import 'core/routes/app_router.dart';
+import 'injection_container.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await di.init();
   
   try {
     await dotenv.load(fileName: ".env");
@@ -40,31 +43,40 @@ void main() async {
   final authApiClient = AuthApiClient();
   final localAuth = LocalAuthentication();
 
+  final authBloc = AuthBloc(
+    authApiClient: authApiClient,
+    localAuth: localAuth,
+  );
+  final appRouter = AppRouter(authBloc);
+
   runApp(MyApp(
     authApiClient: authApiClient,
     localAuth: localAuth,
+    appRouter: appRouter,
+    authBloc: authBloc,
   ));
 }
 
 class MyApp extends StatelessWidget {
   final AuthApiClient authApiClient;
   final LocalAuthentication localAuth;
+  final AppRouter appRouter;
+  final AuthBloc authBloc;
 
   const MyApp({
     super.key, 
     required this.authApiClient, 
     required this.localAuth,
+    required this.appRouter,
+    required this.authBloc,
   });
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<AuthBloc>(
-          create: (context) => AuthBloc(
-            authApiClient: authApiClient,
-            localAuth: localAuth,
-          ),
+        BlocProvider<AuthBloc>.value(
+          value: authBloc,
         ),
         BlocProvider<InventoryDashboardBloc>(
           create: (context) => InventoryDashboardBloc(
@@ -87,24 +99,13 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'Pharmacy Chains Management',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
           useMaterial3: true,
         ),
-        home: BlocProvider(
-          create: (context) => InventoryDashboardBloc(
-            InventoryApiClient(Dio()),
-          ),
-          child: const InventoryDashboardScreen(branchId: '00000000-0000-0000-0000-000000000000'),
-        ),
-        routes: {
-          '/admin_home': (context) => const HomeScreen(role: 'Admin'),
-          '/manager_home': (context) => const HomeScreen(role: 'Manager'),
-          '/user_home': (context) => const HomeScreen(role: 'User'),
-          '/founder_home': (context) => const HomeScreen(role: 'Founder'),
-        },
+        routerConfig: appRouter.router,
       ),
     );
   }

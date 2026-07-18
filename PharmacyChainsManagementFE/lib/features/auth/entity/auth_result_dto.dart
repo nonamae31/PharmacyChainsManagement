@@ -13,10 +13,10 @@ class AuthResultDto {
 
   factory AuthResultDto.fromJson(Map<String, dynamic> json) {
     return AuthResultDto(
-      accessToken: json['access_token'] ?? '',
-      refreshToken: json['refresh_token'] ?? '',
-      role: json['role'] ?? '',
-      userId: json['user_id'] ?? '',
+      accessToken: (json['token'] ?? json['access_token'])?.toString() ?? '',
+      refreshToken: json['refresh_token']?.toString() ?? '',
+      role: (json['roleCode'] ?? json['role'])?.toString() ?? '',
+      userId: (json['userId'] ?? json['user_id'])?.toString() ?? '',
     );
   }
 }

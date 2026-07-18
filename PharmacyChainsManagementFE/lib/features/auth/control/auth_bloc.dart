@@ -17,6 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<RegisterRequested>(_onRegisterRequested);
     on<GoogleLoginRequested>(_onGoogleLoginRequested);
     on<BiometricLoginRequested>(_onBiometricLoginRequested);
+    on<LogoutRequested>(_onLogoutRequested);
   }
 
   Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
@@ -29,10 +30,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await SecureStorageService.saveRefreshToken(result.refreshToken);
       AppLogger.info('Auth success, token prefix: ${AppLogger.maskToken(result.accessToken)}');
       
-      emit(AuthSuccess(result.role));
+      emit(AuthAuthenticated(result.role));
     } catch (e) {
       AppLogger.error('Login request failed', e);
-      emit(AuthFailure(e.toString()));
+      emit(AuthError(e.toString()));
     }
   }
 
@@ -46,21 +47,33 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await SecureStorageService.saveRefreshToken(result.refreshToken);
       AppLogger.info('Register success, token prefix: ${AppLogger.maskToken(result.accessToken)}');
       
-      emit(AuthSuccess(result.role));
+      emit(AuthAuthenticated(result.role));
     } catch (e) {
       AppLogger.error('Register request failed', e);
-      emit(AuthFailure(e.toString()));
+      emit(AuthError(e.toString()));
     }
   }
 
   Future<void> _onGoogleLoginRequested(GoogleLoginRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final googleUser = await GoogleSignIn.instance.authenticate();
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final googleSignIn = GoogleSignIn(
+        serverClientId: '186467490377-boumjq0i8ms7uhkpqs4ejpbvpo2ol8fp.apps.googleusercontent.com',
+        scopes: ['email', 'profile', 'openid'],
+      );
+      await googleSignIn.signOut();
+      final googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        emit(const AuthError('Đăng nhập Google bị hủy.'));
+        return;
+      }
+      
+      final googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
+      
       if (idToken == null) {
-        emit(const AuthFailure('Không thể lấy Google ID token.'));
+        emit(const AuthError('Không thể lấy Google ID token.'));
         return;
       }
       final result = await authApiClient.googleLogin(idToken);
@@ -69,10 +82,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await SecureStorageService.saveRefreshToken(result.refreshToken);
       AppLogger.info('Google auth success, token prefix: ${AppLogger.maskToken(result.accessToken)}');
       
-      emit(AuthSuccess(result.role));
+      emit(AuthAuthenticated(result.role));
     } catch (e) {
       AppLogger.error('Google auth failed', e);
-      emit(AuthFailure(e.toString()));
+      emit(AuthError(e.toString()));
     }
   }
 
@@ -83,7 +96,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final isDeviceSupported = await localAuth.isDeviceSupported();
       
       if (!canCheckBiometrics || !isDeviceSupported) {
-        emit(const AuthFailure('Biometric authentication not supported on this device.'));
+        emit(const AuthError('Biometric authentication not supported on this device.'));
         return;
       }
       
@@ -97,16 +110,32 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         if (token != null && token.isNotEmpty) {
           // Defaults to User role via biometrics without an API call if offline,
           // though typically this should verify against backend or decoded JWT
-          emit(const AuthSuccess('User'));
+          emit(const AuthAuthenticated('User'));
         } else {
-          emit(const AuthFailure('No active session found. Please login with credentials first.'));
+          emit(const AuthError('No active session found. Please login with credentials first.'));
         }
       } else {
-        emit(const AuthFailure('Biometric authentication failed.'));
+        emit(const AuthError('Biometric authentication failed.'));
       }
     } catch (e) {
       AppLogger.error('Biometric authentication error', e);
-      emit(AuthFailure(e.toString()));
+      emit(AuthError(e.toString()));
+    }
+  }
+
+  Future<void> _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      await SecureStorageService.clearAll();
+      final googleSignIn = GoogleSignIn(
+        serverClientId: '186467490377-boumjq0i8ms7uhkpqs4ejpbvpo2ol8fp.apps.googleusercontent.com',
+      );
+      await googleSignIn.signOut();
+      AppLogger.info('Logout successful');
+      emit(AuthInitial());
+    } catch (e) {
+      AppLogger.error('Logout error', e);
+      emit(AuthError(e.toString()));
     }
   }
 }
