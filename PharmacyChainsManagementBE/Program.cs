@@ -168,6 +168,7 @@ try
     builder.Services.AddHostedService<SuspiciousLoginAlertBackgroundService>();
 
     builder.Services.AddScoped<IBusinessAdminService, BusinessAdminService>();
+    builder.Services.AddScoped<IStaffSalesService, StaffSalesService>();
     builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
     builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, PdfExportStrategy>();
     builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, ExcelExportStrategy>();
