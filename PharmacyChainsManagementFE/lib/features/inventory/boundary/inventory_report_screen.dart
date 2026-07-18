@@ -87,7 +87,7 @@ class _InventoryReportScreenState extends State<InventoryReportScreen> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 950),
+                  constraints: const BoxConstraints(minWidth: 1050),
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Column(
@@ -99,7 +99,7 @@ class _InventoryReportScreenState extends State<InventoryReportScreen> {
                             SizedBox(width: 160, child: _buildTableHeader('SKU COUNT (SỐ LƯỢNG SKU)')),
                             SizedBox(width: 180, child: _buildTableHeader('TOTAL VALUE (TỔNG GIÁ TRỊ TỒN)')),
                             SizedBox(width: 180, child: _buildTableHeader('TURNOVER RATE (VÒNG QUAY HÀNG)')),
-                            SizedBox(width: 180, child: _buildTableHeader('EVALUATION (ĐÁNH GIÁ)')),
+                            SizedBox(width: 240, child: _buildTableHeader('EVALUATION (ĐÁNH GIÁ)')),
                           ],
                         ),
                         const Divider(height: 24, color: AppColors.divider),
@@ -117,16 +117,18 @@ class _InventoryReportScreenState extends State<InventoryReportScreen> {
                                 SizedBox(width: 180, child: Text(item['totalValue'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.primaryDark))),
                                 SizedBox(width: 180, child: Text(item['turnoverRate'], style: const TextStyle(fontSize: 14, color: AppColors.textPrimary))),
                                 SizedBox(
-                                  width: 180,
+                                  width: 240,
                                   child: Row(
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: item['status'].toString().contains('Optimal') ? AppColors.success.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(20),
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: item['status'].toString().contains('Optimal') ? AppColors.success.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Text(item['status'], style: TextStyle(color: item['status'].toString().contains('Optimal') ? AppColors.success : AppColors.warning, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 1),
                                         ),
-                                        child: Text(item['status'], style: TextStyle(color: item['status'].toString().contains('Optimal') ? AppColors.success : AppColors.warning, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 1),
                                       ),
                                     ],
                                   ),

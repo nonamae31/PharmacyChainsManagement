@@ -966,14 +966,14 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   }
 
   void _showQuickOrderDialog(Map<String, dynamic> item) {
-    int qty = (item['reorderPt'] as int) - (item['currentStock'] as int);
-    if (qty < 50) qty = 100;
+    int qty = item['receiveBatchQty'] ?? ((item['reorderPt'] as int) - (item['currentStock'] as int));
+    if (qty <= 0) qty = 100;
     final qtyCtrl = TextEditingController(text: qty.toString());
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Quick Purchase Order (PO) - ${item['sku']}'),
+        title: Text('Receive / Order Quantity - ${item['sku']}'),
         content: SizedBox(
           width: 400,
           child: Column(
@@ -987,7 +987,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                 controller: qtyCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Order Quantity (${item['unit']})',
+                  labelText: 'Receive / Order Quantity (${item['unit']})',
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.shopping_cart_outlined),
                 ),
@@ -1000,7 +1000,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   children: [
                     Icon(Icons.info_outline, color: Color(0xFF2563EB), size: 20),
                     SizedBox(width: 8),
-                    Expanded(child: Text('Đơn hàng sẽ được gửi trực tiếp đến hệ thống ERP của nhà cung cấp.', style: TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
+                    Expanded(child: Text('Thay đổi số lượng tại đây sẽ lập tức cập nhật con số hiển thị trên nút Nhập Lô (+X) và cộng chính xác số lượng vào tồn kho.', style: TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
                   ],
                 ),
               ),
@@ -1013,14 +1013,62 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             onPressed: () {
               final added = int.tryParse(qtyCtrl.text) ?? 100;
               setState(() {
+                item['receiveBatchQty'] = added;
                 item['currentStock'] = (item['currentStock'] as int) + added;
                 _updateStockStatus(item);
               });
               Navigator.pop(ctx);
-              _showToast('Đã tạo PO nhập thêm +$added ${item['unit']} cho "${item['name']}"!');
+              _showToast('✅ Đã cập nhật lô nhập +$added ${item['unit']} cho "${item['name']}"!');
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
-            child: const Text('Confirm Order'),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+            child: const Text('Confirm Receive Batch'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPickAdjustDialog(Map<String, dynamic> item) {
+    int qty = item['issueBatchQty'] ?? 10;
+    final qtyCtrl = TextEditingController(text: qty.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Adjust Picking Quantity - ${item['sku']}'),
+        content: SizedBox(
+          width: 380,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Product: ${item['name']}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: qtyCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Picking / Issue Quantity (${item['unit']})',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.local_shipping_outlined),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final pickQty = int.tryParse(qtyCtrl.text) ?? 10;
+              setState(() {
+                item['issueBatchQty'] = pickQty;
+              });
+              Navigator.pop(ctx);
+              _showToast('✅ Đã cấu hình mức xuất (-$pickQty ${item['unit']}) cho "${item['name']}"!');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
+            child: const Text('Save Pick Quantity'),
           ),
         ],
       ),
@@ -1513,25 +1561,39 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             children: [
               const Text('WMS Inbound Inspection & Batch Putaway (Nhập hàng & Đề xuất vị trí cất)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
               const SizedBox(height: 16),
-              ..._inventoryList.map((item) => ListTile(
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                    title: Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text('Current Stock: ${item['currentStock']} ${item['unit']} | Vendor: ${item['supplier']}'),
-                        const SizedBox(height: 2),
-                        Text('📍 WMS Putaway Recommendation: ${item['wmsLocation'] ?? "Zone A - Rack 01 - Bin B"}', style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    trailing: ElevatedButton.icon(
-                      onPressed: () => _showQuickOrderDialog(item),
-                      icon: const Icon(Icons.add_box, size: 18),
-                      label: const Text('Receive Batch / Nhập lô (+100)'),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
-                    ),
-                  )),
+              ..._inventoryList.map((item) {
+                final receiveQty = item['receiveBatchQty'] ?? ((item['reorderPt'] as int) - (item['currentStock'] as int) > 0 ? (item['reorderPt'] as int) - (item['currentStock'] as int) : 100);
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  title: Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text('Current Stock: ${item['currentStock']} ${item['unit']} | Vendor: ${item['supplier']}'),
+                      const SizedBox(height: 2),
+                      Text('📍 WMS Putaway Recommendation: ${item['wmsLocation'] ?? "Zone A - Rack 01 - Bin B"}', style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => _showQuickOrderDialog(item),
+                        icon: const Icon(Icons.add_box, size: 18),
+                        label: Text('Receive Batch / Nhập lô (+$receiveQty)'),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Đổi con số lô nhập (+X)',
+                        icon: const Icon(Icons.edit_note, color: Color(0xFF2563EB), size: 24),
+                        onPressed: () => _showQuickOrderDialog(item),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         ),
@@ -1590,35 +1652,49 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             children: [
               const Text('Outbound Picking & Branch Dispatch (Xuất kho về Store / Phân phối)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
               const SizedBox(height: 16),
-              ..._inventoryList.map((item) => ListTile(
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                    title: Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text('Available Stock: ${item['currentStock']} ${item['unit']} | Allocated Batch: ${item['fefoBatch'] ?? "LOT-2026-GSK-081"}'),
-                        const SizedBox(height: 2),
-                        Text('📍 Picking Bin Coordinates: ${item['wmsLocation'] ?? "Zone A - Rack 04 - Bin B02"}', style: const TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    trailing: ElevatedButton.icon(
-                      onPressed: () {
-                        if ((item['currentStock'] as int) >= 10) {
-                          setState(() {
-                            item['currentStock'] = (item['currentStock'] as int) - 10;
-                            _updateStockStatus(item);
-                          });
-                          _showToast('Đã xuất -10 ${item['unit']} (theo chuẩn FEFO) cho "${item['name']}"!');
-                        } else {
-                          _showToast('Không đủ hàng trong kho để xuất!');
-                        }
-                      },
-                      icon: const Icon(Icons.local_shipping_outlined, size: 18),
-                      label: const Text('Pick & Issue (-10)'),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
-                    ),
-                  )),
+              ..._inventoryList.map((item) {
+                final pickQty = item['issueBatchQty'] ?? 10;
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  title: Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text('Available Stock: ${item['currentStock']} ${item['unit']} | Allocated Batch: ${item['fefoBatch'] ?? "LOT-2026-GSK-081"}'),
+                      const SizedBox(height: 2),
+                      Text('📍 Picking Bin Coordinates: ${item['wmsLocation'] ?? "Zone A - Rack 04 - Bin B02"}', style: const TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          if ((item['currentStock'] as int) >= pickQty) {
+                            setState(() {
+                              item['currentStock'] = (item['currentStock'] as int) - pickQty;
+                              _updateStockStatus(item);
+                            });
+                            _showToast('Đã xuất -$pickQty ${item['unit']} (theo chuẩn FEFO) cho "${item['name']}"!');
+                          } else {
+                            _showToast('Không đủ hàng trong kho để xuất!');
+                          }
+                        },
+                        icon: const Icon(Icons.local_shipping_outlined, size: 18),
+                        label: Text('Pick & Issue (-$pickQty)'),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Đổi con số xuất lô (-Y)',
+                        icon: const Icon(Icons.edit_note, color: Color(0xFFD97706), size: 24),
+                        onPressed: () => _showPickAdjustDialog(item),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         ),

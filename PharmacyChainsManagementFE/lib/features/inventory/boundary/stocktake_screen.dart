@@ -9,7 +9,8 @@ import '../control/stocktake_state.dart';
 import '../entity/stocktake_request_dto.dart';
 
 class StocktakeScreen extends StatefulWidget {
-  const StocktakeScreen({super.key});
+  final VoidCallback? onBackToDashboard;
+  const StocktakeScreen({super.key, this.onBackToDashboard});
 
   @override
   State<StocktakeScreen> createState() => _StocktakeScreenState();
@@ -68,7 +69,12 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
             showAppSuccessDialog(
               context,
               message: '✅ Stocktake audit completed! Multi-level approval triggered: Counter Verified ➔ Supervisor Approval ➔ Inventory Manager Sign-off.',
-              onClose: () => Navigator.of(context).pop(),
+              onClose: () {
+                Navigator.of(context).pop();
+                if (widget.onBackToDashboard != null) {
+                  widget.onBackToDashboard!();
+                }
+              },
             );
           }
         },
@@ -283,7 +289,17 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () {
+                        if (widget.onBackToDashboard != null) {
+                          widget.onBackToDashboard!();
+                        } else if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Bạn đang ở màn hình Kiểm kê kho. Sử dụng menu bên trái để chuyển đổi chức năng khác.')),
+                          );
+                        }
+                      },
                       style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14)),
                       child: const Text('Cancel / Back (Hủy / Quay lại)'),
                     ),
