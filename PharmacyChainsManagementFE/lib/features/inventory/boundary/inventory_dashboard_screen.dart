@@ -846,7 +846,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              if (nameCtrl.text.trim().isEmpty) return;
+              if (nameCtrl.text.trim().isEmpty) {
+                _showToast('⚠️ Vui lòng nhập tên thuốc (Medicine Name không được để trống!)');
+                return;
+              }
               final newItem = {
                 'sku': skuCtrl.text.trim(),
                 'name': nameCtrl.text.trim(),
@@ -866,7 +869,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                 _inventoryList.insert(0, newItem);
               });
               Navigator.pop(ctx);
-              _showToast('Đã thêm sản phẩm mới "${newItem['name']}" thành công!');
+              _showToast('✅ Đã thêm sản phẩm mới "${newItem['name']}" thành công!');
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
             child: const Text('Save SKU'),
