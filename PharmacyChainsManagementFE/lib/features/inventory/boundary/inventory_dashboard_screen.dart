@@ -1276,8 +1276,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                       _showToast('Không đủ hàng trong kho để xuất!');
                     }
                   },
+                  icon: const Icon(Icons.remove_circle_outline, size: 18),
+                  label: const Text('Issue Stock / Xuất kho (-10)'),
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
-                  child: const Text('Issue Stock / Xuất kho (-10)'),
                 ),
               )),
         ],
