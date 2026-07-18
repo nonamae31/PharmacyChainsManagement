@@ -6,6 +6,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../auth/network/secure_storage_service.dart';
 import '../../inventory/network/inventory_api_client.dart';
+import '../../inventory/control/stocktake_bloc.dart';
+import '../../inventory/control/receive_goods_bloc.dart';
+import '../../inventory/control/issue_stock_bloc.dart';
 
 class HomeScreen extends StatelessWidget {
   final String role;
@@ -80,11 +83,22 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => BlocProvider(
-                          create: (context) => InventoryDashboardBloc(
-                            InventoryApiClient(dio),
-                          ),
-                          child: const InventoryDashboardScreen(branchId: '00000000-0000-0000-0000-000000000000'), // Dummy branch id cho lúc test
+                        builder: (context) => MultiBlocProvider(
+                          providers: [
+                            BlocProvider<InventoryDashboardBloc>(
+                              create: (context) => InventoryDashboardBloc(InventoryApiClient(dio)),
+                            ),
+                            BlocProvider<StocktakeBloc>(
+                              create: (context) => StocktakeBloc(InventoryApiClient(dio)),
+                            ),
+                            BlocProvider<ReceiveGoodsBloc>(
+                              create: (context) => ReceiveGoodsBloc(InventoryApiClient(dio)),
+                            ),
+                            BlocProvider<IssueStockBloc>(
+                              create: (context) => IssueStockBloc(InventoryApiClient(dio)),
+                            ),
+                          ],
+                          child: const InventoryDashboardScreen(branchId: '00000000-0000-0000-0000-000000000000'),
                         ),
                       ),
                     );

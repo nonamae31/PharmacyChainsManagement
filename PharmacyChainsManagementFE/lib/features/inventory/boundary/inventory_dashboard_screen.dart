@@ -7,7 +7,18 @@ import '../../../shared/shared_components/app_loading_indicator.dart';
 import '../control/inventory_dashboard_bloc.dart';
 import '../control/inventory_dashboard_event.dart';
 import '../control/inventory_dashboard_state.dart';
+import 'package:dio/dio.dart';
+import '../network/inventory_api_client.dart';
+import '../control/stocktake_bloc.dart';
+import '../control/receive_goods_bloc.dart';
+import '../control/issue_stock_bloc.dart';
 import 'widgets/inventory_summary_card.dart';
+import 'qc_inspection_screen.dart';
+import 'internal_transfer_approval_screen.dart';
+import 'stocktake_screen.dart';
+import 'expired_stock_management_screen.dart';
+import 'batch_expiry_management_screen.dart';
+import 'inventory_report_screen.dart';
 
 class InventoryDashboardScreen extends StatefulWidget {
   final String branchId;
@@ -186,7 +197,20 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         return const Center(child: AppLoadingIndicator());
                       }
 
-                      return _buildMainBody(state);
+                      return MultiBlocProvider(
+                        providers: [
+                          BlocProvider<StocktakeBloc>(
+                            create: (context) => StocktakeBloc(InventoryApiClient(Dio())),
+                          ),
+                          BlocProvider<ReceiveGoodsBloc>(
+                            create: (context) => ReceiveGoodsBloc(InventoryApiClient(Dio())),
+                          ),
+                          BlocProvider<IssueStockBloc>(
+                            create: (context) => IssueStockBloc(InventoryApiClient(Dio())),
+                          ),
+                        ],
+                        child: _buildMainBody(state),
+                      );
                     },
                   ),
                 ),
@@ -246,16 +270,16 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Column(
                 children: [
-                  _buildSidebarItem(0, 'Dashboard', Icons.dashboard_outlined),
-                  _buildSidebarItem(1, 'Receive Goods', Icons.move_to_inbox_outlined),
-                  _buildSidebarItem(2, 'QC Inspection', Icons.fact_check_outlined),
-                  _buildSidebarItem(3, 'Issue Stock', Icons.outbox_outlined),
-                  _buildSidebarItem(4, 'Internal Transfers', Icons.swap_horiz_outlined),
-                  _buildSidebarItem(5, 'Stocktake', Icons.assignment_outlined),
-                  _buildSidebarItem(6, 'Safety Stock', Icons.warning_amber_rounded, isAlert: true),
-                  _buildSidebarItem(7, 'Expired/Damaged Stock', Icons.remove_circle_outline),
-                  _buildSidebarItem(8, 'Batch Tracking', Icons.qr_code_2_outlined),
-                  _buildSidebarItem(9, 'Reports', Icons.bar_chart_outlined),
+                  _buildSidebarItem(0, 'Dashboard (Tổng quan)', Icons.dashboard_outlined),
+                  _buildSidebarItem(1, 'Receive Goods (Nhập hàng)', Icons.move_to_inbox_outlined),
+                  _buildSidebarItem(2, 'QC Inspection (Kiểm tra CL)', Icons.fact_check_outlined),
+                  _buildSidebarItem(3, 'Issue Stock (Xuất hàng)', Icons.outbox_outlined),
+                  _buildSidebarItem(4, 'Internal Transfers (Chuyển kho)', Icons.swap_horiz_outlined),
+                  _buildSidebarItem(5, 'Stocktake (Kiểm kê)', Icons.assignment_outlined),
+                  _buildSidebarItem(6, 'Safety Stock (Tồn an toàn)', Icons.warning_amber_rounded, isAlert: true),
+                  _buildSidebarItem(7, 'Expired/Damaged (Hết hạn)', Icons.remove_circle_outline),
+                  _buildSidebarItem(8, 'Batch Tracking (Tra cứu lô)', Icons.qr_code_2_outlined),
+                  _buildSidebarItem(9, 'Reports (Báo cáo)', Icons.bar_chart_outlined),
                 ],
               ),
             ),
@@ -265,8 +289,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             padding: const EdgeInsets.all(12.0),
             child: Column(
               children: [
-                _buildBottomSidebarItem('Profile', Icons.person_outline, _showUserProfileDialog),
-                _buildBottomSidebarItem('Logout', Icons.logout_outlined, () {
+                _buildBottomSidebarItem('Profile (Hồ sơ)', Icons.person_outline, _showUserProfileDialog),
+                _buildBottomSidebarItem('Logout (Đăng xuất)', Icons.logout_outlined, () {
                   Navigator.of(context).pop();
                 }),
               ],
@@ -452,6 +476,13 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   // MAIN CONTENT BODY & INTERACTIVE PANELS
   // ---------------------------------------------------------------------------
   Widget _buildMainBody(InventoryDashboardState state) {
+    if (_selectedIndex == 2) return const QcInspectionScreen();
+    if (_selectedIndex == 4) return const InternalTransferApprovalScreen();
+    if (_selectedIndex == 5) return const StocktakeScreen();
+    if (_selectedIndex == 7) return const ExpiredStockManagementScreen();
+    if (_selectedIndex == 8) return const BatchExpiryManagementScreen();
+    if (_selectedIndex == 9) return const InventoryReportScreen();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32.0),
       child: Column(
@@ -1201,19 +1232,19 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Nhập hàng vào kho (Receive Goods Portal)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          const Text('Receive Goods Portal (Nhập hàng từ NCC / Vào kho)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
           const SizedBox(height: 8),
-          const Text('Chọn sản phẩm và nhập số lượng lô hàng mới đến từ nhà cung cấp:', style: TextStyle(color: Color(0xFF64748B))),
+          const Text('Select product and enter new batch quantity arrived from vendor (Chọn sản phẩm và nhập số lượng lô mới đến từ NCC):', style: TextStyle(color: Color(0xFF64748B))),
           const SizedBox(height: 24),
           ..._inventoryList.map((item) => ListTile(
                 title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('SKU: ${item['sku']} | Hiện có: ${item['currentStock']} ${item['unit']}'),
+                subtitle: Text('SKU: ${item['sku']} | Current Stock (Tồn hiện có): ${item['currentStock']} ${item['unit']}'),
                 trailing: ElevatedButton.icon(
                   onPressed: () {
                     _showQuickOrderDialog(item);
                   },
                   icon: const Icon(Icons.add_box, size: 18),
-                  label: const Text('Nhập lô mới (+100)'),
+                  label: const Text('Receive Batch / Nhập lô (+100)'),
                 ),
               )),
         ],
@@ -1228,12 +1259,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Xuất kho bán hàng / Phân phối (Issue Stock Portal)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          const Text('Issue Stock Portal (Xuất kho bán hàng / Phân phối về Store)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
           const SizedBox(height: 24),
           ..._inventoryList.map((item) => ListTile(
                 title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('SKU: ${item['sku']} | Tồn khả dụng: ${item['currentStock']} ${item['unit']}'),
-                trailing: ElevatedButton(
+                subtitle: Text('SKU: ${item['sku']} | Available Stock (Tồn khả dụng): ${item['currentStock']} ${item['unit']}'),
+                trailing: ElevatedButton.icon(
                   onPressed: () {
                     if ((item['currentStock'] as int) >= 10) {
                       setState(() {
@@ -1246,7 +1277,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
-                  child: const Text('Xuất kho (-10)'),
+                  child: const Text('Issue Stock / Xuất kho (-10)'),
                 ),
               )),
         ],
@@ -1256,17 +1287,17 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
 
   String _getMenuTitle(int index) {
     switch (index) {
-      case 0: return 'Dashboard Overview';
-      case 1: return 'Receive Goods (Nhập hàng)';
-      case 2: return 'QC Inspection (Kiểm tra chất lượng)';
-      case 3: return 'Issue Stock (Xuất kho)';
-      case 4: return 'Internal Transfers (Chuyển kho)';
-      case 5: return 'Stocktake (Kiểm kê định kỳ)';
-      case 6: return 'Safety Stock Alerts (Tồn kho an toàn)';
-      case 7: return 'Expired/Damaged Stock Management';
-      case 8: return 'Batch Traceability & Tracking';
-      case 9: return 'Inventory Analytics & Reports';
-      default: return 'Safety Stock Alerts';
+      case 0: return 'Dashboard Overview (Tổng quan Kho)';
+      case 1: return 'Receive Goods Portal (Nhập hàng từ NCC)';
+      case 2: return 'QC Inspection Management (Kiểm tra Chất lượng GSP)';
+      case 3: return 'Issue Stock Portal (Xuất hàng về Store)';
+      case 4: return 'Inter-Branch Stock Transfers (Chuyển kho Nội bộ)';
+      case 5: return 'Stocktake Management (Kiểm kê Thực tế)';
+      case 6: return 'Safety Stock Alerts (Quản lý Tồn kho An toàn)';
+      case 7: return 'Expired & Damaged Stock (Thuốc Hết hạn & Hư hỏng)';
+      case 8: return 'Batch Traceability & Tracking (Tra cứu Số lô & Hạn dùng)';
+      case 9: return 'Inventory Reports & Analytics (Báo cáo Thống kê & Định giá)';
+      default: return 'Safety Stock Alerts (Quản lý Tồn kho An toàn)';
     }
   }
 }

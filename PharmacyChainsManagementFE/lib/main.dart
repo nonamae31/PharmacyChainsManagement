@@ -13,6 +13,9 @@ import 'features/auth/network/auth_api_client.dart';
 import 'features/home/boundary/home_screen.dart';
 import 'features/inventory/boundary/inventory_dashboard_screen.dart';
 import 'features/inventory/control/inventory_dashboard_bloc.dart';
+import 'features/inventory/control/stocktake_bloc.dart';
+import 'features/inventory/control/receive_goods_bloc.dart';
+import 'features/inventory/control/issue_stock_bloc.dart';
 import 'features/inventory/network/inventory_api_client.dart';
 
 void main() async {
@@ -61,6 +64,26 @@ class MyApp extends StatelessWidget {
           create: (context) => AuthBloc(
             authApiClient: authApiClient,
             localAuth: localAuth,
+          ),
+        ),
+        BlocProvider<InventoryDashboardBloc>(
+          create: (context) => InventoryDashboardBloc(
+            InventoryApiClient(Dio()),
+          ),
+        ),
+        BlocProvider<StocktakeBloc>(
+          create: (context) => StocktakeBloc(
+            InventoryApiClient(Dio()),
+          ),
+        ),
+        BlocProvider<ReceiveGoodsBloc>(
+          create: (context) => ReceiveGoodsBloc(
+            InventoryApiClient(Dio()),
+          ),
+        ),
+        BlocProvider<IssueStockBloc>(
+          create: (context) => IssueStockBloc(
+            InventoryApiClient(Dio()),
           ),
         ),
       ],
