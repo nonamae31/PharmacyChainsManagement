@@ -17,7 +17,7 @@ namespace PharmacyChainsManagementBE.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "8.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -847,6 +847,125 @@ namespace PharmacyChainsManagementBE.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PharmacyChainsManagementBE.Models.StaffAssessment", b =>
+                {
+                    b.Property<Guid>("AssessmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assessment_id");
+
+                    b.Property<Guid>("AssessedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assessed_by");
+
+                    b.Property<DateOnly>("AssessmentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("assessment_date");
+
+                    b.Property<decimal>("AttendancePercent")
+                        .HasColumnType("decimal(5, 2)")
+                        .HasColumnName("attendance_percent");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("CustomerRating")
+                        .HasColumnType("decimal(3, 2)")
+                        .HasColumnName("customer_rating");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<decimal>("PerformanceScore")
+                        .HasColumnType("decimal(5, 2)")
+                        .HasColumnName("performance_score");
+
+                    b.Property<decimal>("SalesTarget")
+                        .HasColumnType("decimal(12, 2)")
+                        .HasColumnName("sales_target");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("staff_id");
+
+                    b.HasKey("AssessmentId");
+
+                    b.HasIndex("AssessedBy");
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex(new[] { "BranchId", "StaffId", "AssessmentDate" }, "IX_STAFF_ASSESSMENT_BranchStaffDate");
+
+                    b.ToTable("STAFF_ASSESSMENT");
+                });
+
+            modelBuilder.Entity("PharmacyChainsManagementBE.Models.StaffShift", b =>
+                {
+                    b.Property<Guid>("ShiftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shift_id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("end_time");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateOnly>("ShiftDate")
+                        .HasColumnType("date")
+                        .HasColumnName("shift_date");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("staff_id");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("start_time");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("ShiftId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex(new[] { "BranchId", "StaffId", "ShiftDate" }, "UQ_STAFF_SHIFT_BranchStaffDate")
+                        .IsUnique();
+
+                    b.ToTable("STAFF_SHIFT");
+                });
+
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.StockTransfer", b =>
                 {
                     b.Property<Guid>("TransferId")
@@ -1511,6 +1630,42 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasConstraintName("FK_REP_GENERATED_BY");
 
                     b.Navigation("GeneratedByNavigation");
+                });
+
+            modelBuilder.Entity("PharmacyChainsManagementBE.Models.StaffAssessment", b =>
+                {
+                    b.HasOne("PharmacyChainsManagementBE.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssessedBy")
+                        .IsRequired();
+
+                    b.HasOne("PharmacyChainsManagementBE.Models.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .IsRequired();
+
+                    b.HasOne("PharmacyChainsManagementBE.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PharmacyChainsManagementBE.Models.StaffShift", b =>
+                {
+                    b.HasOne("PharmacyChainsManagementBE.Models.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .IsRequired();
+
+                    b.HasOne("PharmacyChainsManagementBE.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .IsRequired();
+
+                    b.HasOne("PharmacyChainsManagementBE.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.StockTransfer", b =>
