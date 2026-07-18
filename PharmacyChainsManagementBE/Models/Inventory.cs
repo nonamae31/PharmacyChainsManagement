@@ -39,9 +39,6 @@ public partial class Inventory
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 
-    [Timestamp]
-    [Column("row_version")]
-    public byte[] RowVersion { get; set; } = null!;
 
     [ForeignKey("BatchId")]
     [InverseProperty("Inventories")]
