@@ -26,6 +26,8 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
       'coaStatus': 'Verified (Đã đạt COA lab)',
       'recallStatus': 'Safe (An toàn)',
       'warehouseZone': 'Zone A - Rack 04 - Bin B',
+      'serialRange': 'SN99887000 - SN99888200 (GS1 2D DataMatrix)',
+      'traceabilityTree': 'GSK Factory UK ➔ Customs Clear ➔ QC Passed (Lê Văn Hùng) ➔ Putaway Zone A ➔ Dispatched 200 boxes to Store District 1 & District 3 ➔ 42 units sold to patients via POS.',
     },
     {
       'lotNo': 'LOT-2025-PFI-112',
@@ -39,6 +41,8 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
       'coaStatus': 'Verified',
       'recallStatus': 'Safe (An toàn)',
       'warehouseZone': 'Zone B - Rack 01 - Bin C',
+      'serialRange': 'SN44551000 - SN44551450',
+      'traceabilityTree': 'Pfizer Plant Belgium ➔ Air Freight ➔ QC Passed ➔ Putaway Zone B ➔ Allocated to B2B Hospital contracts.',
     },
     {
       'lotNo': 'LOT-2023-VC09',
@@ -50,10 +54,70 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
       'unit': 'tubes',
       'supplier': 'Sanofi Aventis',
       'coaStatus': 'Verified',
-      'recallStatus': 'Alert: Near Expiry',
+      'recallStatus': 'Alert: Near Expiry (3 days left)',
       'warehouseZone': 'Quarantine Zone Q - Shelf 02',
+      'serialRange': 'SN11220001 - SN11220045',
+      'traceabilityTree': 'Sanofi Plant France ➔ QC Verified ➔ Putaway Zone C ➔ Transferred to Quarantine Zone Q due to near-expiry alert.',
     },
   ];
+
+  void _showTraceabilityModal(Map<String, dynamic> item) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.account_tree, color: Color(0xFF2563EB)),
+            const SizedBox(width: 10),
+            Expanded(child: Text('End-to-End Pharma Traceability Tree: ${item['lotNo']}')),
+          ],
+        ),
+        content: SizedBox(
+          width: 580,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Product: ${item['medicineName']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('Serialization Range: ${item['serialRange']}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFF93C5FD))),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🔗 Chain of Custody & Lifecycle Roadmap:', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
+                    const SizedBox(height: 10),
+                    Text(item['traceabilityTree'], style: const TextStyle(height: 1.6, fontSize: 13, color: Color(0xFF1E293B))),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text('✅ Fully verified with GS1 EPCIS serialization protocols. Suitable for rapid targeted recall.', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 12)),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close Traceability View')),
+        ],
+      ),
+    );
+  }
+
+  void _triggerRecall(int index) {
+    setState(() {
+      _batches[index]['recallStatus'] = '🚨 QUARANTINED - RECALL ACTIVE';
+      _batches[index]['warehouseZone'] = 'Quarantine Zone Q - Locked';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('⚠️ Emergency Recall triggered for Batch ${_batches[index]['lotNo']}! All POS sales locked and supplier notified immediately.'),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -71,7 +135,7 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Batch Traceability & Tracking (Tra cứu Số lô & Hạn sử dụng)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        title: const Text('Batch Traceability & Serialization Tracking (Tra cứu Số lô, Hạn dùng & Serialization)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         backgroundColor: AppColors.surface,
         elevation: 1,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
@@ -96,9 +160,9 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Lot Traceability Matrix (Hệ thống truy xuất nguồn gốc số lô)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A))),
+                        Text('Lot Traceability & Serialization Matrix (Hệ thống truy xuất nguồn gốc & Serialization GS1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A))),
                         SizedBox(height: 4),
-                        Text('Quick lookup for Lot/Batch Number, Manufacturing Date (MFG), Expiry Date (EXP), warehouse location, and GSP COA status (Tra cứu nhanh số Lô, Ngày sản xuất, Hạn sử dụng, vị trí kho và COA).', style: TextStyle(fontSize: 13, color: Color(0xFF3B82F6))),
+                        Text('Full genealogy tracking from manufacturer to store shelf and patient. Supports instant quarantine & automated recall execution across branches.', style: TextStyle(fontSize: 13, color: Color(0xFF3B82F6))),
                       ],
                     ),
                   ),
@@ -109,7 +173,7 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Active Lot Register (Danh mục Số Lô Đang Lưu Hành)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                const Text('Active Lot & Serialization Register (Danh mục Lô & Serial Đang Lưu Hành)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 Container(
                   width: 380,
                   height: 42,
@@ -132,8 +196,10 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            ...filtered.map((item) {
-              final isNearExp = item['recallStatus'].toString().contains('Alert') || item['recallStatus'].toString().contains('Near');
+            ...filtered.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final item = entry.value;
+              final isNearExp = item['recallStatus'].toString().contains('Alert') || item['recallStatus'].toString().contains('Near') || item['recallStatus'].toString().contains('QUARANTINED');
               return Card(
                 elevation: 0,
                 margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -145,29 +211,28 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                     children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(20)),
+                                child: Text(item['lotNo'], style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 14)),
+                              ),
+                              const SizedBox(width: 12),
+                              Text('${item['medicineName']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                            ],
+                          ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(20)),
-                            child: Text(item['lotNo'], style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 14)),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('${item['medicineName']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis, maxLines: 2),
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(color: isNearExp ? AppColors.error.withOpacity(0.1) : AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                                  child: Text(item['recallStatus'], style: TextStyle(color: isNearExp ? AppColors.error : AppColors.success, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 2),
-                                ),
-                              ],
-                            ),
+                            decoration: BoxDecoration(color: isNearExp ? AppColors.error.withOpacity(0.1) : AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                            child: Text(item['recallStatus'], style: TextStyle(color: isNearExp ? AppColors.error : AppColors.success, fontWeight: FontWeight.bold, fontSize: 12)),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      Text('GS1 Serialization Range: ${item['serialRange']}', style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 24,
@@ -179,13 +244,35 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 4,
-                        runSpacing: 4,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.location_on, size: 16, color: AppColors.info),
-                          Text('Warehouse Location (Vị trí kho): ${item['warehouseZone']}  |  COA: ${item['coaStatus']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis, maxLines: 2),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 4,
+                            runSpacing: 4,
+                            children: [
+                              const Icon(Icons.location_on, size: 16, color: AppColors.info),
+                              Text('Warehouse Location: ${item['warehouseZone']}  |  COA: ${item['coaStatus']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: () => _showTraceabilityModal(item),
+                                icon: const Icon(Icons.account_tree_outlined, size: 16),
+                                label: const Text('Traceability Tree (Genealogy)'),
+                              ),
+                              const SizedBox(width: 8),
+                              if (!item['recallStatus'].toString().contains('QUARANTINED'))
+                                ElevatedButton.icon(
+                                  onPressed: () => _triggerRecall(idx),
+                                  icon: const Icon(Icons.warning_amber_rounded, size: 16),
+                                  label: const Text('Trigger Emergency Recall'),
+                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+                                ),
+                            ],
+                          ),
                         ],
                       ),
                     ],

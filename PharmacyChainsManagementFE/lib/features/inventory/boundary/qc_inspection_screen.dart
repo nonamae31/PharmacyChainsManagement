@@ -21,6 +21,10 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
       'packagingIntact': true,
       'coaVerified': true,
       'status': 'Pending Inspection',
+      'qcStage': 'Step 4: Lab Testing & Assay Check',
+      'retainedSample': 10,
+      'coaFile': 'COA_GSK_LOT_081_Signed.pdf',
+      'signedBy': 'e-Signed by QC Lead Pharmacist',
       'inspectorNote': 'Arrived via refrigerated transport (2-8°C zone verified).',
     },
     {
@@ -33,6 +37,10 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
       'packagingIntact': false,
       'coaVerified': true,
       'status': 'Quarantined - Damaged Box',
+      'qcStage': 'Step 1: Visual Inspection (Failed)',
+      'retainedSample': 5,
+      'coaFile': 'COA_PFI_LOT_112.pdf',
+      'signedBy': 'Pending e-Signature',
       'inspectorNote': '3 outer cartons show minor water stain during offloading.',
     },
     {
@@ -45,6 +53,10 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
       'packagingIntact': true,
       'coaVerified': true,
       'status': 'Passed QC',
+      'qcStage': 'Step 5: Released to Putaway',
+      'retainedSample': 8,
+      'coaFile': 'COA_SFO_LOT_045_Verified.pdf',
+      'signedBy': 'e-Signed by QC Inspector Trần Mai',
       'inspectorNote': 'Meets GSP standards. COA Lot matched lab specification.',
     },
   ];
@@ -52,6 +64,12 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
   void _updateStatus(int index, String newStatus) {
     setState(() {
       _qcBatches[index]['status'] = newStatus;
+      if (newStatus.contains('Passed')) {
+        _qcBatches[index]['qcStage'] = 'Step 5: Released to Putaway';
+        _qcBatches[index]['signedBy'] = 'e-Signed by Pharmacist on Duty';
+      } else {
+        _qcBatches[index]['qcStage'] = 'Quarantined / Return Process';
+      }
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -62,12 +80,56 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
     );
   }
 
+  void _showCoaViewer(String fileName, String batchNo) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.picture_as_pdf, color: Color(0xFFEF4444)),
+            const SizedBox(width: 10),
+            Text('COA Attachment: $fileName'),
+          ],
+        ),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Certificate of Analysis (COA) for Batch $batchNo', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFCBD5E1))),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('• Assay Content: 99.8% (Target: 95.0 - 105.0%)\n• Dissolution Rate: Passed in 15 mins\n• Impurities Test: < 0.05% (GSP Compliant)\n• Microbiological Limit Check: Sterile / Passed', style: TextStyle(fontSize: 13, height: 1.6, color: Color(0xFF1E293B))),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('📎 PDF document digitally verified against supplier lab hash.', style: TextStyle(color: Color(0xFF64748B), fontStyle: FontStyle.italic, fontSize: 12)),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close COA Viewer'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('QC Inspection (Kiểm tra chất lượng GSP/GDP)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        title: const Text('QC Inspection (Kiểm tra chất lượng GSP/GDP & Lưu mẫu)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         backgroundColor: AppColors.surface,
         elevation: 1,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
@@ -77,6 +139,7 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Multi-Step QC Workflow Banner
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
@@ -84,19 +147,24 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                 borderRadius: BorderRadius.circular(AppSpacing.borderRadiusMd),
                 border: Border.all(color: const Color(0xFFBFDBFE)),
               ),
-              child: const Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.fact_check, color: AppColors.primary, size: 28),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Incoming Quality Inspection Process (Quy trình Kiểm định Chất lượng Đầu vào)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A))),
-                        SizedBox(height: 4),
-                        Text('All incoming batches must be inspected for storage temperature compliance, packaging integrity, and valid Certificate of Analysis (COA) before warehouse entry (Mọi lô thuốc phải kiểm tra nhiệt độ, bao bì và chứng chỉ COA trước khi nhập kho).', style: TextStyle(fontSize: 13, color: Color(0xFF3B82F6))),
-                      ],
-                    ),
+                  const Row(
+                    children: [
+                      Icon(Icons.fact_check, color: AppColors.primary, size: 28),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Enterprise Multi-Step QC Inspection Workflow (Quy trình Kiểm định GSP 5 bước)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A))),
+                            SizedBox(height: 4),
+                            Text('1. Visual Inspection ➔ 2. Temperature Check (2-8°C / 15-25°C) ➔ 3. Document Check (COA) ➔ 4. Lab Testing & Retention ➔ 5. Release to Putaway', style: TextStyle(fontSize: 13, color: Color(0xFF3B82F6), fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -136,15 +204,37 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                               ),
                               const SizedBox(width: 12),
                               Text(item['batchNo'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(4)),
+                                child: Text(item['qcStage'], style: const TextStyle(color: Color(0xFF6B21A8), fontSize: 12, fontWeight: FontWeight.w600)),
+                              ),
                             ],
                           ),
-                          Text('PO: ${item['poNo']} • Received Date (Ngày nhận): ${item['receivedDate']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                          Text('PO: ${item['poNo']} • Received Date: ${item['receivedDate']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Text(item['medicineName'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
                       const SizedBox(height: 4),
-                      Text('Supplier (Nhà cung cấp): ${item['supplier']}', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Supplier (Nhà cung cấp): ${item['supplier']}', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                          Row(
+                            children: [
+                              Text('🧪 Sample Retention (Lưu mẫu): ${item['retainedSample']} boxes', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD97706), fontSize: 13)),
+                              const SizedBox(width: 16),
+                              OutlinedButton.icon(
+                                onPressed: () => _showCoaViewer(item['coaFile'], item['batchNo']),
+                                icon: const Icon(Icons.picture_as_pdf, size: 16, color: Color(0xFFEF4444)),
+                                label: Text('COA: ${item['coaFile']}', style: const TextStyle(fontSize: 12, color: Color(0xFFEF4444))),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                       const Divider(height: 24, color: AppColors.divider),
                       Row(
                         children: [
@@ -152,11 +242,17 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                           const SizedBox(width: 24),
                           _buildCheckItem('Intact Packaging (Bao bì nguyên vẹn)', item['packagingIntact']),
                           const SizedBox(width: 24),
-                          _buildCheckItem('Valid COA (COA hợp lệ)', item['coaVerified']),
+                          _buildCheckItem('Valid COA Verified (COA hợp lệ)', item['coaVerified']),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Text('Inspector Note (Ghi chú Kiểm định): ${item['inspectorNote']}', style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: AppColors.textPrimary)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(child: Text('Inspector Note: ${item['inspectorNote']}', style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: AppColors.textPrimary))),
+                          Text('✍️ ${item['signedBy']}', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF059669), fontSize: 12)),
+                        ],
+                      ),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -173,7 +269,7 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                             ElevatedButton.icon(
                               onPressed: () => _updateStatus(idx, 'Passed QC - Ready for Storage'),
                               icon: const Icon(Icons.check_circle_outline, size: 18),
-                              label: const Text('Pass QC & Approve (Duyệt đạt chuẩn QC)'),
+                              label: const Text('Pass QC & Approve (Duyệt đạt chuẩn QC & Ký số)'),
                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white),
                             ),
                         ],

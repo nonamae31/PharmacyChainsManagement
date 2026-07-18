@@ -17,13 +17,15 @@ class StocktakeScreen extends StatefulWidget {
 
 class _StocktakeScreenState extends State<StocktakeScreen> {
   final _branchController = TextEditingController(text: 'Warehouse 01 (Central Hub)');
-  final _notesController = TextEditingController();
+  final _notesController = TextEditingController(text: 'Cycle Count July 2026 - Zone A High Velocity');
+  bool _isBlindCount = false;
+  String _countMode = 'Cycle Count (Zone A - Fast Moving)';
 
   final List<Map<String, dynamic>> _stocktakeItems = [
-    {'sku': 'SKU-A001', 'name': 'Panadol Extra 500mg', 'unit': 'boxes', 'bookQty': 450, 'physicalQty': 450, 'notes': 'Matched (Khớp số liệu)'},
-    {'sku': 'SKU-B002', 'name': 'Amoxicillin 500mg Capsules', 'unit': 'boxes', 'bookQty': 120, 'physicalQty': 118, 'notes': 'Missing 2 boxes due to tear (Thiếu 2 hộp do rách vỏ)'},
-    {'sku': 'SKU-V003', 'name': 'Vitamin C Sủi 1000mg', 'unit': 'tubes', 'bookQty': 45, 'physicalQty': 47, 'notes': 'Surplus 2 tubes unrecorded (Dư 2 tuýp chưa nhập sổ)'},
-    {'sku': 'SKU-I006', 'name': 'Ibuprofen 400mg Tablets', 'unit': 'boxes', 'bookQty': 15, 'physicalQty': 15, 'notes': 'Matched (Khớp số liệu)'},
+    {'sku': 'SKU-A001', 'name': 'Panadol Extra 500mg', 'unit': 'boxes', 'bookQty': 450, 'physicalQty': 450, 'wmsBin': 'Zone A - Rack 01 - Bin A', 'notes': 'Matched (Khớp số liệu)'},
+    {'sku': 'SKU-B002', 'name': 'Amoxicillin 500mg Capsules', 'unit': 'boxes', 'bookQty': 120, 'physicalQty': 118, 'wmsBin': 'Zone A - Rack 02 - Bin C', 'notes': 'Missing 2 boxes due to tear (Thiếu 2 hộp do rách vỏ)'},
+    {'sku': 'SKU-V003', 'name': 'Vitamin C Sủi 1000mg', 'unit': 'tubes', 'bookQty': 45, 'physicalQty': 47, 'wmsBin': 'Zone A - Rack 03 - Bin B', 'notes': 'Surplus 2 tubes unrecorded (Dư 2 tuýp chưa nhập sổ)'},
+    {'sku': 'SKU-I006', 'name': 'Ibuprofen 400mg Tablets', 'unit': 'boxes', 'bookQty': 15, 'physicalQty': 15, 'wmsBin': 'Zone A - Rack 01 - Bin D', 'notes': 'Matched (Khớp số liệu)'},
   ];
 
   void _submit() {
@@ -53,7 +55,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Stocktake Management (Kiểm kê kho Thực tế)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        title: const Text('Stocktake Management (Kiểm kê kho Thực tế & Blind Count)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         backgroundColor: AppColors.surface,
         elevation: 1,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
@@ -65,7 +67,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
           } else if (state is StocktakeSuccess) {
             showAppSuccessDialog(
               context,
-              message: '✅ Stocktake audit completed and adjustment report created successfully (Đã hoàn tất kiểm kê và ghi nhận biên bản)!',
+              message: '✅ Stocktake audit completed! Multi-level approval triggered: Counter Verified ➔ Supervisor Approval ➔ Inventory Manager Sign-off.',
               onClose: () => Navigator.of(context).pop(),
             );
           }
@@ -83,17 +85,36 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                     borderRadius: BorderRadius.circular(AppSpacing.borderRadiusMd),
                     border: Border.all(color: const Color(0xFFBFDBFE)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.fact_check_outlined, color: AppColors.primary, size: 28),
-                      SizedBox(width: 16),
-                      Expanded(
+                      const Icon(Icons.fact_check_outlined, color: AppColors.primary, size: 28),
+                      const SizedBox(width: 16),
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Physical vs Book Stock Reconciliation Process (Quy trình Kiểm kê Đối soát Thực tế vs Sổ sách)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A))),
+                            Text('Enterprise WMS Cycle Counting & Blind Reconciliation Process', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A))),
                             SizedBox(height: 4),
-                            Text('Enter physical shelf count. The system automatically calculates variance and logs discrepancy reasons for inventory balancing (Nhập số lượng đếm thực tế, tự động tính độ lệch và cân bằng kho).', style: TextStyle(fontSize: 13, color: Color(0xFF3B82F6))),
+                            Text('Blind Count mode conceals book quantities to ensure unbiased physical shelf counts. Multi-level approval sign-off required for inventory adjustment.', style: TextStyle(fontSize: 13, color: Color(0xFF3B82F6))),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFF93C5FD))),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('🙈 Blind Count Mode (Che số sổ sách): ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isBlindCount ? const Color(0xFFD97706) : AppColors.textSecondary)),
+                            Switch(
+                              value: _isBlindCount,
+                              activeColor: const Color(0xFFD97706),
+                              onChanged: (val) {
+                                setState(() {
+                                  _isBlindCount = val;
+                                });
+                              },
+                            ),
                           ],
                         ),
                       ),
@@ -105,9 +126,26 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                   children: [
                     Expanded(
                       flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _countMode,
+                        decoration: const InputDecoration(labelText: 'Stocktake Scope (Phạm vi kiểm kê)', border: OutlineInputBorder(), isDense: true, filled: true, fillColor: Colors.white),
+                        items: const [
+                          DropdownMenuItem(value: 'Cycle Count (Zone A - Fast Moving)', child: Text('Cycle Count (Zone A - Fast Moving)')),
+                          DropdownMenuItem(value: 'Cycle Count (Zone B - Moderate)', child: Text('Cycle Count (Zone B - Moderate)')),
+                          DropdownMenuItem(value: 'Cold Chain Quarantine Zone Check', child: Text('Cold Chain Quarantine Zone Check')),
+                          DropdownMenuItem(value: 'Full Annual Warehouse Stocktake', child: Text('Full Annual Warehouse Stocktake')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) setState(() => _countMode = val);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
                       child: TextField(
                         controller: _branchController,
-                        decoration: const InputDecoration(labelText: 'Branch / Warehouse Code (Mã chi nhánh / Kho kiểm kê)', border: OutlineInputBorder(), isDense: true, filled: true, fillColor: Colors.white),
+                        decoration: const InputDecoration(labelText: 'Branch / Warehouse Code (Mã chi nhánh / Kho)', border: OutlineInputBorder(), isDense: true, filled: true, fillColor: Colors.white),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -115,13 +153,23 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                       flex: 3,
                       child: TextField(
                         controller: _notesController,
-                        decoration: const InputDecoration(labelText: 'Stocktake Notes (Ghi chú đợt kiểm kê tháng 7/2026)', border: OutlineInputBorder(), isDense: true, filled: true, fillColor: Colors.white),
+                        decoration: const InputDecoration(labelText: 'Stocktake Notes & Audit Reference', border: OutlineInputBorder(), isDense: true, filled: true, fillColor: Colors.white),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                const Text('Product Stocktake Sheet (Bảng Kiểm Kê Chi Tiết Sản Phẩm)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Product Stocktake Sheet (Bảng Kiểm Kê Chi Tiết Sản Phẩm)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFFDE68A))),
+                      child: const Text('📋 Multi-Level Sign-off: Step 1 Counter Count (In Progress)', style: TextStyle(color: Color(0xFFB45309), fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Card(
                   elevation: 0,
@@ -132,7 +180,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                       children: [
                         Row(
                           children: [
-                            Expanded(flex: 3, child: _buildTableHeader('PRODUCT / SKU (SẢN PHẨM)')),
+                            Expanded(flex: 3, child: _buildTableHeader('PRODUCT / SKU (SẢN PHẨM & VỊ TRÍ)')),
                             Expanded(flex: 2, child: _buildTableHeader('BOOK QTY (SỔ SÁCH)')),
                             Expanded(flex: 2, child: _buildTableHeader('PHYSICAL QTY (THỰC TẾ)')),
                             Expanded(flex: 2, child: _buildTableHeader('VARIANCE (CHÊNH LỆCH)')),
@@ -159,11 +207,21 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
-                                      Text('SKU: ${item['sku']}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                      const SizedBox(height: 2),
+                                      Text('${item['sku']} • 📍 ${item['wmsBin']}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                     ],
                                   ),
                                 ),
-                                Expanded(flex: 2, child: Text('$bookQty ${item['unit']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary))),
+                                Expanded(
+                                  flex: 2,
+                                  child: _isBlindCount
+                                      ? Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
+                                          child: const Text('[🙈 HIDDEN BLIND]', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                                        )
+                                      : Text('$bookQty ${item['unit']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                                ),
                                 Expanded(
                                   flex: 2,
                                   child: Row(
@@ -190,21 +248,23 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                                 ),
                                 Expanded(
                                   flex: 2,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: isMatch ? AppColors.success.withOpacity(0.1) : (variance < 0 ? AppColors.error.withOpacity(0.1) : AppColors.warning.withOpacity(0.1)),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      isMatch ? 'Matched (Khớp 0)' : (variance > 0 ? '+$variance ${item['unit']}' : '$variance ${item['unit']}'),
-                                      style: TextStyle(
-                                        color: isMatch ? AppColors.success : (variance < 0 ? AppColors.error : const Color(0xFFD97706)),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
+                                  child: _isBlindCount
+                                      ? const Text('Auto-calculating on submit', style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Color(0xFF64748B)))
+                                      : Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: isMatch ? AppColors.success.withOpacity(0.1) : (variance < 0 ? AppColors.error.withOpacity(0.1) : AppColors.warning.withOpacity(0.1)),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            isMatch ? 'Matched (Khớp 0)' : (variance > 0 ? '+$variance ${item['unit']}' : '$variance ${item['unit']}'),
+                                            style: TextStyle(
+                                              color: isMatch ? AppColors.success : (variance < 0 ? AppColors.error : const Color(0xFFD97706)),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
                                 ),
                                 Expanded(
                                   flex: 3,
@@ -231,7 +291,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                     ElevatedButton.icon(
                       onPressed: state is StocktakeLoading ? null : _submit,
                       icon: const Icon(Icons.check_circle, size: 20),
-                      label: Text(state is StocktakeLoading ? 'Submitting (Đang gửi)...' : 'Confirm & Log Stocktake (Xác nhận & Ghi nhận Kiểm kê)'),
+                      label: Text(state is StocktakeLoading ? 'Submitting (Đang gửi)...' : 'Confirm & Log Stocktake (Submit to Supervisor & Manager)'),
                       style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14)),
                     ),
                   ],

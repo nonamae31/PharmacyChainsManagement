@@ -50,7 +50,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     super.initState();
     context.read<InventoryDashboardBloc>().add(InventoryDashboardFetchRequested(widget.branchId));
     
-    // Initialize rich interactive inventory data
+    // Initialize rich interactive inventory data with WMS/Pharma Enterprise fields
     _inventoryList = [
       {
         'sku': 'SKU-P001',
@@ -64,6 +64,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         'unit': 'boxes',
         'selected': false,
         'supplier': 'GSK Pharma Vietnam',
+        'abcClass': 'Class A',
+        'xyzClass': 'X (Stable Demand)',
+        'demandForecast': '+18% surge (Flu Season peak)',
+        'wmsLocation': 'Zone A - Rack 04 - Bin B02',
+        'fefoBatch': 'LOT-2026-GSK-081 (Exp: 01/2027)',
+        'leadTimeDays': 3,
       },
       {
         'sku': 'SKU-A002',
@@ -77,6 +83,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         'unit': 'capsules',
         'selected': false,
         'supplier': 'Dược Hậu Giang (DHG)',
+        'abcClass': 'Class A',
+        'xyzClass': 'Y (Moderate Fluctuation)',
+        'demandForecast': '+5% steady hospital orders',
+        'wmsLocation': 'Zone A - Rack 02 - Bin A01',
+        'fefoBatch': 'LOT-2025-DHG-442 (Exp: 08/2026)',
+        'leadTimeDays': 4,
       },
       {
         'sku': 'SKU-V003',
@@ -90,6 +102,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         'unit': 'tubes',
         'selected': false,
         'supplier': 'Bayer Vietnam',
+        'abcClass': 'Class B',
+        'xyzClass': 'Z (Volatile Demand)',
+        'demandForecast': '+35% high seasonal surge',
+        'wmsLocation': 'Zone B - Rack 01 - Bin C05',
+        'fefoBatch': 'LOT-2024-BYR-109 (Exp: 11/2026)',
+        'leadTimeDays': 2,
       },
       {
         'sku': 'SKU-M004',
@@ -103,6 +121,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         'unit': 'packs',
         'selected': false,
         'supplier': 'MedPro Medicals',
+        'abcClass': 'Class C',
+        'xyzClass': 'X (Stable Demand)',
+        'demandForecast': 'Stable baseline consumption',
+        'wmsLocation': 'Zone C - Bulk Storage Pallet 09',
+        'fefoBatch': 'LOT-2026-MED-990 (Exp: 12/2029)',
+        'leadTimeDays': 5,
       },
       {
         'sku': 'SKU-O005',
@@ -116,6 +140,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         'unit': 'boxes',
         'selected': false,
         'supplier': 'Dr. Reddy\'s Lab',
+        'abcClass': 'Class B',
+        'xyzClass': 'Y (Moderate Fluctuation)',
+        'demandForecast': '+8% regular clinic replenishment',
+        'wmsLocation': 'Zone B - Rack 03 - Bin D02',
+        'fefoBatch': 'LOT-2025-DRL-551 (Exp: 05/2027)',
+        'leadTimeDays': 3,
       },
       {
         'sku': 'SKU-I006',
@@ -129,6 +159,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         'unit': 'boxes',
         'selected': false,
         'supplier': 'Sanofi Aventis',
+        'abcClass': 'Class A',
+        'xyzClass': 'Z (Volatile Demand)',
+        'demandForecast': '+22% high prescription rate',
+        'wmsLocation': 'Zone A - Rack 01 - Bin A04',
+        'fefoBatch': 'LOT-2025-SNF-302 (Exp: 03/2027)',
+        'leadTimeDays': 2,
       },
     ];
   }
@@ -184,32 +220,26 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               children: [
                 _buildTopBar(),
                 Expanded(
-                  child: BlocConsumer<InventoryDashboardBloc, InventoryDashboardState>(
-                    listener: (context, state) {
-                      if (state is InventoryDashboardLoadFailure) {
-                        showAppErrorDialog(context, message: state.message);
-                      }
-                    },
-                    builder: (context, state) {
-                      if (state is InventoryDashboardLoading) {
-                        return const Center(child: AppLoadingIndicator());
-                      }
-
-                      return MultiBlocProvider(
-                        providers: [
-                          BlocProvider<StocktakeBloc>(
-                            create: (context) => StocktakeBloc(InventoryApiClient(Dio())),
-                          ),
-                          BlocProvider<ReceiveGoodsBloc>(
-                            create: (context) => ReceiveGoodsBloc(InventoryApiClient(Dio())),
-                          ),
-                          BlocProvider<IssueStockBloc>(
-                            create: (context) => IssueStockBloc(InventoryApiClient(Dio())),
-                          ),
-                        ],
-                        child: _buildMainBody(state),
-                      );
-                    },
+                  child: MultiBlocProvider(
+                    providers: [
+                      BlocProvider<StocktakeBloc>(
+                        create: (context) => StocktakeBloc(InventoryApiClient(Dio())),
+                      ),
+                      BlocProvider<ReceiveGoodsBloc>(
+                        create: (context) => ReceiveGoodsBloc(InventoryApiClient(Dio())),
+                      ),
+                      BlocProvider<IssueStockBloc>(
+                        create: (context) => IssueStockBloc(InventoryApiClient(Dio())),
+                      ),
+                    ],
+                    child: BlocListener<InventoryDashboardBloc, InventoryDashboardState>(
+                      listener: (context, state) {
+                        if (state is InventoryDashboardLoadFailure) {
+                          showAppErrorDialog(context, message: state.message);
+                        }
+                      },
+                      child: _buildMainBody(),
+                    ),
                   ),
                 ),
               ],
@@ -301,8 +331,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
 
   Widget _buildSidebarItem(int index, String title, IconData icon, {bool isAlert = false}) {
     final isSelected = _selectedIndex == index;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+    final alertCount = _inventoryList.where((e) => e['status'] == 'Critical').length;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
       child: InkWell(
         onTap: () {
           setState(() {
@@ -311,32 +343,45 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         },
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFFEFF6FF) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: isSelected ? const Border(left: BorderSide(color: Color(0xFF2563EB), width: 4)) : null,
           ),
           child: Row(
             children: [
               Icon(
                 icon,
                 size: 20,
-                color: isSelected ? const Color(0xFF2563EB) : (isAlert ? const Color(0xFF0284C7) : const Color(0xFF64748B)),
+                color: isSelected
+                    ? const Color(0xFF2563EB)
+                    : isAlert
+                        ? const Color(0xFFEF4444)
+                        : const Color(0xFF64748B),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? const Color(0xFF2563EB) : (isAlert ? const Color(0xFF0284C7) : const Color(0xFF475569)),
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF334155),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
                 ),
               ),
+              if (isAlert && alertCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$alertCount',
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
             ],
           ),
         ),
@@ -480,7 +525,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   // ---------------------------------------------------------------------------
   // MAIN CONTENT BODY & INTERACTIVE PANELS
   // ---------------------------------------------------------------------------
-  Widget _buildMainBody(InventoryDashboardState state) {
+  Widget _buildMainBody() {
     if (_selectedIndex == 2) return const QcInspectionScreen();
     if (_selectedIndex == 4) return const InternalTransferApprovalScreen();
     if (_selectedIndex == 5) return const StocktakeScreen();
@@ -495,7 +540,17 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         children: [
           // Interactive menu content switcher
           if (_selectedIndex == 0) ...[
-            if (state is InventoryDashboardLoadSuccess) InventorySummaryCard(valuation: state.valuation),
+            BlocBuilder<InventoryDashboardBloc, InventoryDashboardState>(
+              builder: (context, state) {
+                if (state is InventoryDashboardLoading) {
+                  return const Center(child: Padding(padding: EdgeInsets.all(20), child: AppLoadingIndicator()));
+                }
+                if (state is InventoryDashboardLoadSuccess) {
+                  return InventorySummaryCard(valuation: state.valuation);
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             const SizedBox(height: 24),
             _buildDashboardAnalyticsWidget(),
           ] else if (_selectedIndex == 1) ...[
@@ -649,22 +704,23 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         },
                       ),
                     ),
-                    SizedBox(width: 230, child: _buildTableHeaderText('PRODUCT / SKU')),
-                    SizedBox(width: 130, child: _buildTableHeaderText('CURRENT STOCK')),
+                    SizedBox(width: 210, child: _buildTableHeaderText('PRODUCT / SKU')),
+                    SizedBox(width: 110, child: _buildTableHeaderText('ABC / XYZ')),
+                    SizedBox(width: 130, child: _buildTableHeaderText('WMS LOCATION')),
+                    SizedBox(width: 110, child: _buildTableHeaderText('STOCK')),
                     SizedBox(
-                      width: 130,
+                      width: 120,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(color: const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(4)),
                         child: const Text(
-                          'SAFETY STOCK',
+                          'SAFETY / ROP',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8), letterSpacing: 0.5),
                         ),
                       ),
                     ),
-                    SizedBox(width: 120, child: _buildTableHeaderText('REORDER PT.')),
-                    SizedBox(width: 130, child: _buildTableHeaderText('SUGGESTED')),
-                    SizedBox(width: 140, child: _buildTableHeaderText('STATUS')),
+                    SizedBox(width: 160, child: _buildTableHeaderText('AI DEMAND FORECAST')),
+                    SizedBox(width: 120, child: _buildTableHeaderText('STATUS')),
                     SizedBox(width: 170, child: _buildTableHeaderText('ACTIONS', alignRight: true)),
                   ],
                 ),
@@ -703,6 +759,13 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   }
 
   Widget _buildTableRow({required Map<String, dynamic> item, bool isLast = false}) {
+    final abc = item['abcClass'] ?? 'Class B';
+    final xyz = item['xyzClass'] ?? 'Y';
+    final wmsLoc = item['wmsLocation'] ?? 'Zone A - Rack 1';
+    final forecast = item['demandForecast'] ?? 'Stable';
+    final leadTime = item['leadTimeDays'] ?? 3;
+    final rop = item['reorderPt'] ?? 100;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
@@ -720,7 +783,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             ),
           ),
           SizedBox(
-            width: 230,
+            width: 210,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -731,30 +794,53 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             ),
           ),
           SizedBox(
-            width: 130,
-            child: Text('${item['currentStock']} ${item['unit']}', style: const TextStyle(color: Color(0xFF334155), fontSize: 13, fontWeight: FontWeight.w500)),
-          ),
-          SizedBox(
-            width: 130,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Text('${item['safetyStock']} ${item['unit']}', style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 13, fontWeight: FontWeight.w600)),
-            ),
-          ),
-          SizedBox(width: 120, child: Text('${item['reorderPt']} ${item['unit']}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13))),
-          SizedBox(
-            width: 130,
-            child: Text(
-              item['suggested'],
-              style: TextStyle(
-                color: item['suggested'] == '0' ? const Color(0xFF94A3B8) : const Color(0xFF2563EB),
-                fontWeight: item['suggested'] == '0' ? FontWeight.normal : FontWeight.bold,
-                fontSize: 13,
-              ),
+            width: 110,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: abc == 'Class A' ? const Color(0xFFFEF3C7) : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(abc, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: abc == 'Class A' ? const Color(0xFFB45309) : const Color(0xFF475569))),
+                ),
+                const SizedBox(height: 2),
+                Text(xyz, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+              ],
             ),
           ),
           SizedBox(
-            width: 140,
+            width: 130,
+            child: Text(wmsLoc, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF334155))),
+          ),
+          SizedBox(
+            width: 110,
+            child: Text('${item['currentStock']} ${item['unit']}', style: const TextStyle(color: Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.bold)),
+          ),
+          SizedBox(
+            width: 120,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Safety: ${item['safetyStock']}', style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 12, fontWeight: FontWeight.w600)),
+                Text('ROP: $rop (LT:${leadTime}d)', style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 160,
+            child: Row(
+              children: [
+                const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF8B5CF6)),
+                const SizedBox(width: 4),
+                Expanded(child: Text(forecast, style: const TextStyle(fontSize: 12, color: Color(0xFF6D28D9), fontWeight: FontWeight.w500))),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 120,
             child: Row(
               children: [
                 Container(
@@ -1210,91 +1296,457 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   // INTERACTIVE PORTALS FOR OTHER SIDEBAR MENUS
   // ---------------------------------------------------------------------------
   Widget _buildDashboardAnalyticsWidget() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Top Critical Stock Alerts require immediate PO order:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-          const SizedBox(height: 16),
-          ..._inventoryList.where((e) => e['status'] == 'Critical').map((item) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFECACA))),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. TEMPERATURE & COLD CHAIN MONITORING BANNER (GSP compliance)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFFEFF6FF), Color(0xFFE0F2FE)]),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFBAE6FD)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.ac_unit, color: Color(0xFF0284C7), size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${item['name']} (${item['sku']}) - Only ${item['currentStock']} left!', style: const TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.w600)),
-                    ElevatedButton(
-                      onPressed: () => _showQuickOrderDialog(item),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
-                      child: const Text('Reorder Now'),
+                    const Text('Pharma Cold Chain & Temperature Monitoring (GSP Verified)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0369A1))),
+                    const SizedBox(height: 4),
+                    Text(
+                      '❄️ Cold Storage (2-8°C): 4.2°C [Optimal]   |   🌡️ Cool Storage (15-25°C): 21.5°C [Optimal]   |   ⚡ Humidity: 58% [Normal]',
+                      style: TextStyle(color: Colors.blue.shade900, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
-              )),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(20)),
+                child: const Text('ALL SENSORS OK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 2. PHARMA WMS KPI METRICS ROW
+        Row(
+          children: [
+            Expanded(child: _buildKpiCard('Inventory Turnover', '4.2x / yr', '+0.5 vs target', Icons.loop, const Color(0xFF3B82F6))),
+            const SizedBox(width: 16),
+            Expanded(child: _buildKpiCard('Days Inv. Outstanding (DIO)', '86 Days', 'Optimal cycle', Icons.calendar_today, const Color(0xFF10B981))),
+            const SizedBox(width: 16),
+            Expanded(child: _buildKpiCard('Order Fill Rate', '98.4%', 'Target > 98%', Icons.check_circle_outline, const Color(0xFF8B5CF6))),
+            const SizedBox(width: 16),
+            Expanded(child: _buildKpiCard('Stock Accuracy', '99.1%', 'Post-stocktake', Icons.verified_outlined, const Color(0xFFF59E0B))),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // 3. WAREHOUSE CAPACITY HEATMAP & ZONES
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Warehouse Capacity Heatmap by Zones (Sức chứa & Phân khu GSP)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: _buildHeatmapBar('Zone A (Fast Moving / ABC Class A)', 0.95, const Color(0xFFEF4444), '95% Full (High Load)')),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildHeatmapBar('Zone B (Moderate Moving / Class B)', 0.60, const Color(0xFF3B82F6), '60% Full (Optimal)')),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildHeatmapBar('Zone C (Bulk / Cold Storage)', 0.20, const Color(0xFF10B981), '20% Full (Available)')),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildHeatmapBar('Quarantine Zone Q (QC / Damaged)', 0.15, const Color(0xFFF59E0B), '15% Quarantined')),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 4. TOP CRITICAL ALERTS & RECALL WARNINGS
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Top Critical Alerts & Urgent Actions (PO Reorder / QC / Recalls):', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const SizedBox(height: 16),
+              ..._inventoryList.where((e) => e['status'] == 'Critical').map((item) => Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFECACA))),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('🚨 [CRITICAL STOCK] ${item['name']} (${item['sku']}) - Only ${item['currentStock']} left! (ROP: ${item['reorderPt']})', style: const TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.w600)),
+                        ElevatedButton(
+                          onPressed: () => _showQuickOrderDialog(item),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+                          child: const Text('Reorder Now'),
+                        ),
+                      ],
+                    ),
+                  )),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKpiCard(String title, String value, String subtitle, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                Text(subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeatmapBar(String zoneName, double ratio, Color color, String statusText) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(zoneName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 12,
+            backgroundColor: const Color(0xFFF1F5F9),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(statusText, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+      ],
     );
   }
 
   Widget _buildReceiveGoodsPortal() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Receive Goods Portal (Nhập hàng từ NCC / Vào kho)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-          const SizedBox(height: 8),
-          const Text('Select product and enter new batch quantity arrived from vendor (Chọn sản phẩm và nhập số lượng lô mới đến từ NCC):', style: TextStyle(color: Color(0xFF64748B))),
-          const SizedBox(height: 24),
-          ..._inventoryList.map((item) => ListTile(
-                title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('SKU: ${item['sku']} | Current Stock (Tồn hiện có): ${item['currentStock']} ${item['unit']}'),
-                trailing: ElevatedButton.icon(
-                  onPressed: () {
-                    _showQuickOrderDialog(item);
-                  },
-                  icon: const Icon(Icons.add_box, size: 18),
-                  label: const Text('Receive Batch / Nhập lô (+100)'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. ADVANCE SHIPPING NOTICE (ASN) & WMS PUTAWAY RECOMMENDATION
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('📦 Advance Shipping Notice (ASN) & Vendor Schedule', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => _showBarcodeScanSimulator(),
+                        icon: const Icon(Icons.qr_code_scanner, size: 18),
+                        label: const Text('Scan Barcode / QR (GS1 Datamatrix)'),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => _showShortageDiscrepancyModal(),
+                        icon: const Icon(Icons.report_problem_outlined, size: 18, color: Color(0xFFEF4444)),
+                        label: const Text('Report Shortage / Over Delivery', style: TextStyle(color: Color(0xFFEF4444))),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFCBD5E1))),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('🟢 ASN #ASN-20260718-01: 5 Pallets arrived from GSK Pharma (ETA: 08:30 AM) - Status: Offloading & Temperature Verified', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                    Text('Putaway Recommendation: Zone A - Rack 04', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                  ],
                 ),
-              )),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 2. RECEIVE GOODS ITEM LIST WITH PUTAWAY SUGGESTION
+        Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('WMS Inbound Inspection & Batch Putaway (Nhập hàng & Đề xuất vị trí cất)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const SizedBox(height: 16),
+              ..._inventoryList.map((item) => ListTile(
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    title: Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text('Current Stock: ${item['currentStock']} ${item['unit']} | Vendor: ${item['supplier']}'),
+                        const SizedBox(height: 2),
+                        Text('📍 WMS Putaway Recommendation: ${item['wmsLocation'] ?? "Zone A - Rack 01 - Bin B"}', style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    trailing: ElevatedButton.icon(
+                      onPressed: () => _showQuickOrderDialog(item),
+                      icon: const Icon(Icons.add_box, size: 18),
+                      label: const Text('Receive Batch / Nhập lô (+100)'),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+                    ),
+                  )),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIssueStockPortal() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. FEFO ENGINE & PICKING LIST BANNER
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('🚚 FEFO Engine Allocation & WMS Picking List', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                  ElevatedButton.icon(
+                    onPressed: () => _showPickingPackingSimulator(),
+                    icon: const Icon(Icons.fact_check_outlined, size: 18),
+                    label: const Text('Verify Picking & Packing Sealing'),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6), foregroundColor: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFDE68A))),
+                child: const Row(
+                  children: [
+                    Icon(Icons.rule, color: Color(0xFFB45309), size: 22),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text('FEFO Rule Active (First Expired, First Out): System automatically prioritizes batches with closest expiry date during allocation to prevent expired dead stock.', style: TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 2. ISSUE STOCK LIST
+        Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Outbound Picking & Branch Dispatch (Xuất kho về Store / Phân phối)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const SizedBox(height: 16),
+              ..._inventoryList.map((item) => ListTile(
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    title: Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text('Available Stock: ${item['currentStock']} ${item['unit']} | Allocated Batch: ${item['fefoBatch'] ?? "LOT-2026-GSK-081"}'),
+                        const SizedBox(height: 2),
+                        Text('📍 Picking Bin Coordinates: ${item['wmsLocation'] ?? "Zone A - Rack 04 - Bin B02"}', style: const TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    trailing: ElevatedButton.icon(
+                      onPressed: () {
+                        if ((item['currentStock'] as int) >= 10) {
+                          setState(() {
+                            item['currentStock'] = (item['currentStock'] as int) - 10;
+                            _updateStockStatus(item);
+                          });
+                          _showToast('Đã xuất -10 ${item['unit']} (theo chuẩn FEFO) cho "${item['name']}"!');
+                        } else {
+                          _showToast('Không đủ hàng trong kho để xuất!');
+                        }
+                      },
+                      icon: const Icon(Icons.local_shipping_outlined, size: 18),
+                      label: const Text('Pick & Issue (-10)'),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
+                    ),
+                  )),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showBarcodeScanSimulator() {
+    final barcodeCtrl = TextEditingController(text: '(01)08935001234567(17)270115(10)LOT-2026-GSK-081(21)SN99887766');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.qr_code_scanner, color: Color(0xFF8B5CF6)),
+            SizedBox(width: 10),
+            Text('GS1 Barcode / QR Scan Simulator'),
+          ],
+        ),
+        content: SizedBox(
+          width: 480,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('In enterprise pharma WMS, barcode scanning auto-populates Lot Number, Expiry Date, and Serial Number without manual data entry errors.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: barcodeCtrl,
+                decoration: const InputDecoration(labelText: 'Scanned GS1 DataMatrix String', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Parsed GS1 Attributes:', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
+                    SizedBox(height: 6),
+                    Text('• GTIN (Product Code): 08935001234567\n• Expiry Date (YYMMDD): 2027-01-15\n• Lot Number: LOT-2026-GSK-081\n• Serial Number (Serialization): SN99887766', style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showToast('✅ Scanned & verified Serialized Batch LOT-2026-GSK-081!');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white),
+            child: const Text('Confirm Putaway Entry'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildIssueStockPortal() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Issue Stock Portal (Xuất kho bán hàng / Phân phối về Store)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-          const SizedBox(height: 24),
-          ..._inventoryList.map((item) => ListTile(
-                title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('SKU: ${item['sku']} | Available Stock (Tồn khả dụng): ${item['currentStock']} ${item['unit']}'),
-                trailing: ElevatedButton.icon(
-                  onPressed: () {
-                    if ((item['currentStock'] as int) >= 10) {
-                      setState(() {
-                        item['currentStock'] = (item['currentStock'] as int) - 10;
-                        _updateStockStatus(item);
-                      });
-                      _showToast('Đã xuất -10 ${item['unit']} của "${item['name']}"!');
-                    } else {
-                      _showToast('Không đủ hàng trong kho để xuất!');
-                    }
-                  },
-                  icon: const Icon(Icons.remove_circle_outline, size: 18),
-                  label: const Text('Issue Stock / Xuất kho (-10)'),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
-                ),
-              )),
+  void _showShortageDiscrepancyModal() {
+    final poQtyCtrl = TextEditingController(text: '1000');
+    final actualQtyCtrl = TextEditingController(text: '970');
+    final reasonCtrl = TextEditingController(text: '3 outer cartons damaged and missing during carrier transport');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('⚠️ Record Shortage / Over Delivery Discrepancy', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
+        content: SizedBox(
+          width: 450,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: poQtyCtrl, decoration: const InputDecoration(labelText: 'PO Book Quantity (Số lượng theo đơn PO)', border: OutlineInputBorder())),
+              const SizedBox(height: 12),
+              TextField(controller: actualQtyCtrl, decoration: const InputDecoration(labelText: 'Actual Received Quantity (Số lượng nhận thực tế)', border: OutlineInputBorder())),
+              const SizedBox(height: 12),
+              TextField(controller: reasonCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Discrepancy Reason & Note', border: OutlineInputBorder())),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showToast('📋 Recorded Shortage discrepancy (-30 boxes). Claim sent to vendor!');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+            child: const Text('Submit Discrepancy Report'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPickingPackingSimulator() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('📦 WMS Picking, Packing & Sealing Verification', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const SizedBox(
+          width: 450,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Step 1: Picking verification at Zone A - Rack 04 [VERIFIED]', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('Step 2: FEFO Batch Lot check against Dispatch Order [MATCHED]', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('Step 3: Security Sealing & Temper-evident tape check [CONFIRMED]', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+              SizedBox(height: 16),
+              Text('Digital e-Signature verified by Pharmacist on duty.', style: TextStyle(color: Color(0xFF64748B), fontStyle: FontStyle.italic)),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showToast('🚀 Dispatch order sealed & moved to In-Transit stage!');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6), foregroundColor: Colors.white),
+            child: const Text('Approve & Dispatch Shipment'),
+          ),
         ],
       ),
     );
