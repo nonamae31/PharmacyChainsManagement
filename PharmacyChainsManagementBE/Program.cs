@@ -167,6 +167,11 @@ try
     builder.Services.AddSingleton<IEmailAlertQueue, EmailAlertQueue>();
     builder.Services.AddHostedService<SuspiciousLoginAlertBackgroundService>();
 
+    // Inventory Services
+    builder.Services.AddScoped<IInventoryService, InventoryService>();
+    builder.Services.AddHostedService<ExpiredStockBackgroundService>();
+
+    // Business Admin & Finance Services
     builder.Services.AddScoped<IBusinessAdminService, BusinessAdminService>();
     builder.Services.AddScoped<IStaffSalesService, StaffSalesService>();
     builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
@@ -185,6 +190,20 @@ try
     });
 
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        try
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<PharmacyDbContext>();
+            dbContext.Database.Migrate();
+            Log.Information("Supabase PostgreSQL migrations & seed data applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while migrating/seeding the Supabase PostgreSQL database.");
+        }
+    }
 
     app.UseMiddleware<GlobalExceptionMiddleware>();
     app.UseMiddleware<CorrelationIdMiddleware>();

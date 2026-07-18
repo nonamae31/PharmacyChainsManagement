@@ -3,12 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'firebase_options.dart';
 
-import 'core/routes/app_router.dart';
+import 'package:dio/dio.dart';
 import 'features/auth/control/auth_bloc.dart';
 import 'features/auth/network/auth_api_client.dart';
-
+import 'features/inventory/control/inventory_dashboard_bloc.dart';
+import 'features/inventory/control/stocktake_bloc.dart';
+import 'features/inventory/control/receive_goods_bloc.dart';
+import 'features/inventory/control/issue_stock_bloc.dart';
+import 'features/inventory/network/inventory_api_client.dart';
+import 'core/routes/app_router.dart';
 import 'injection_container.dart' as di;
 
 void main() async {
@@ -22,7 +28,7 @@ void main() async {
   }
   
   try {
-    if (Firebase.apps.isEmpty) {
+    if (!kIsWeb && Firebase.apps.isEmpty) { // Bypass Firebase on web for now due to dummy config
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
@@ -68,6 +74,26 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider<AuthBloc>.value(
           value: authBloc,
+        ),
+        BlocProvider<InventoryDashboardBloc>(
+          create: (context) => InventoryDashboardBloc(
+            InventoryApiClient(Dio()),
+          ),
+        ),
+        BlocProvider<StocktakeBloc>(
+          create: (context) => StocktakeBloc(
+            InventoryApiClient(Dio()),
+          ),
+        ),
+        BlocProvider<ReceiveGoodsBloc>(
+          create: (context) => ReceiveGoodsBloc(
+            InventoryApiClient(Dio()),
+          ),
+        ),
+        BlocProvider<IssueStockBloc>(
+          create: (context) => IssueStockBloc(
+            InventoryApiClient(Dio()),
+          ),
         ),
       ],
       child: MaterialApp.router(

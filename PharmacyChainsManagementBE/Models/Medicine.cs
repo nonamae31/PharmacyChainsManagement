@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -58,4 +58,16 @@ public partial class Medicine
 
     [InverseProperty("Medicine")]
     public virtual ICollection<StockTransferDetail> StockTransferDetails { get; set; } = new List<StockTransferDetail>();
+
+    [InverseProperty("Medicine")]
+    public virtual ICollection<InventoryReceiptDetail> InventoryReceiptDetails { get; set; } = new List<InventoryReceiptDetail>();
+
+    [InverseProperty("Medicine")]
+    public virtual ICollection<StockIssueDetail> StockIssueDetails { get; set; } = new List<StockIssueDetail>();
+
+    [InverseProperty("Medicine")]
+    public virtual ICollection<StocktakeDetail> StocktakeDetails { get; set; } = new List<StocktakeDetail>();
+
+    [InverseProperty("Medicine")]
+    public virtual ICollection<DamageReport> DamageReports { get; set; } = new List<DamageReport>();
 }

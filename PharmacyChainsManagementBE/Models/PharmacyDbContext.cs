@@ -16,8 +16,15 @@ public partial class PharmacyDbContext : DbContext
     }
 
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
-
     public virtual DbSet<Branch> Branches { get; set; }
+    public virtual DbSet<InventoryReceipt> InventoryReceipts { get; set; }
+    public virtual DbSet<InventoryReceiptDetail> InventoryReceiptDetails { get; set; }
+    public virtual DbSet<StockIssue> StockIssues { get; set; }
+    public virtual DbSet<StockIssueDetail> StockIssueDetails { get; set; }
+    public virtual DbSet<Stocktake> Stocktakes { get; set; }
+    public virtual DbSet<StocktakeDetail> StocktakeDetails { get; set; }
+    public virtual DbSet<InventoryAdjustment> InventoryAdjustments { get; set; }
+    public virtual DbSet<DamageReport> DamageReports { get; set; }
 
     public virtual DbSet<Inventory> Inventories { get; set; }
 

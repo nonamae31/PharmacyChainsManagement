@@ -7,11 +7,11 @@ import '../../features/founder_admin/presentation/screens/founder_layout_screen.
 import '../../features/home/boundary/business_admin_home_screen.dart';
 import '../../features/home/boundary/branch_manager_home_screen.dart';
 import '../../features/home/boundary/staff_home_screen.dart';
-import '../../features/home/boundary/inventory_home_screen.dart';
 import '../../features/staff_sales/boundary/staff_sales_screens.dart';
 import '../../features/staff_sales/entity/staff_sales_dto.dart';
 import '../../features/prescription/boundary/prescription_list_screen.dart';
 import '../../features/prescription/boundary/prescription_detail_screen.dart';
+import '../../features/inventory/boundary/inventory_dashboard_screen.dart';
 import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
 import 'dart:async';
 
@@ -81,7 +81,7 @@ class AppRouter {
       GoRoute(path: '/staff/payments/process', builder: (_, state) => PaymentProcessingScreen(invoice: state.extra as InvoiceSummaryDto)),
       GoRoute(
         path: '/inventory_home',
-        pageBuilder: (context, state) => _buildTransition(context, state, const InventoryHomeScreen()),
+        pageBuilder: (context, state) => _buildTransition(context, state, const InventoryDashboardScreen(branchId: 'BR-001')),
       ),
       GoRoute(
         path: '/cash_flow',
