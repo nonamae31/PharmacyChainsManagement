@@ -9,8 +9,8 @@ class RevenueReportRequestModel extends RevenueReportRequest {
 
   Map<String, dynamic> toJson() {
     return {
-      'fromDate': fromDate.toIso8601String(),
-      'toDate': toDate.toIso8601String(),
+      'fromDate': "${fromDate.year.toString().padLeft(4, '0')}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
+      'toDate': "${toDate.year.toString().padLeft(4, '0')}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
       'branchId': branchId,
     };
   }

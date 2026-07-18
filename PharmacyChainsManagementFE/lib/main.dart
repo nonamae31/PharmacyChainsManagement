@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 
 import 'package:dio/dio.dart';
 import 'features/auth/control/auth_bloc.dart';
+import 'features/auth/control/auth_event.dart';
 import 'features/auth/network/auth_api_client.dart';
 import 'features/inventory/control/inventory_dashboard_bloc.dart';
 import 'features/inventory/control/stocktake_bloc.dart';
@@ -16,7 +17,6 @@ import 'features/inventory/control/issue_stock_bloc.dart';
 import 'features/inventory/network/inventory_api_client.dart';
 import 'core/routes/app_router.dart';
 import 'injection_container.dart' as di;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.init();
@@ -43,7 +43,8 @@ void main() async {
   final authBloc = AuthBloc(
     authApiClient: authApiClient,
     localAuth: localAuth,
-  );
+  )..add(AuthCheckRequested());
+  
   final appRouter = AppRouter(authBloc);
 
   runApp(MyApp(

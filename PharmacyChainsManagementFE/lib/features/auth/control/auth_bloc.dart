@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
@@ -13,11 +14,37 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final LocalAuthentication localAuth;
 
   AuthBloc({required this.authApiClient, required this.localAuth}) : super(AuthInitial()) {
+    on<AuthCheckRequested>(_onAuthCheckRequested);
     on<LoginRequested>(_onLoginRequested);
     on<RegisterRequested>(_onRegisterRequested);
     on<GoogleLoginRequested>(_onGoogleLoginRequested);
     on<BiometricLoginRequested>(_onBiometricLoginRequested);
     on<LogoutRequested>(_onLogoutRequested);
+  }
+
+  Future<void> _onAuthCheckRequested(AuthCheckRequested event, Emitter<AuthState> emit) async {
+    try {
+      final token = await SecureStorageService.readToken();
+      if (token != null && token.isNotEmpty) {
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          final payload = parts[1];
+          final normalized = base64Url.normalize(payload);
+          final resp = utf8.decode(base64Url.decode(normalized));
+          final payloadMap = json.decode(resp);
+          
+          final role = payloadMap['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? payloadMap['role'];
+          if (role != null) {
+            AppLogger.info('Session restored for role: $role');
+            emit(AuthAuthenticated(role));
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      AppLogger.error('Auth check error', e);
+    }
+    emit(AuthInitial());
   }
 
   Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {

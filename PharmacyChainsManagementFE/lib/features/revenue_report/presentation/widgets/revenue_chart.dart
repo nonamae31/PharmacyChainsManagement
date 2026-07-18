@@ -15,54 +15,151 @@ class RevenueChart extends StatelessWidget {
 
     final maxY = dailyData.fold<double>(
       0,
-      (prev, element) => element.amount > prev ? element.amount : prev,
+      (prev, element) {
+        final currentMax = element.amount > (element.previousAmount ?? 0) ? element.amount : (element.previousAmount ?? 0);
+        return currentMax > prev ? currentMax : prev;
+      },
     );
 
-    return Semantics(
-      label: 'Revenue line chart',
-      hint: 'Displays revenue trends over selected dates',
-      child: Container(
-        height: 300,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-          ],
-        ),
-        child: LineChart(
-          LineChartData(
-            gridData: const FlGridData(show: false),
-            titlesData: const FlTitlesData(
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
-              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            ),
-            borderData: FlBorderData(show: false),
-            minX: 0,
-            maxX: (dailyData.isNotEmpty ? dailyData.length - 1 : 0).toDouble(),
-            minY: 0,
-            maxY: maxY * 1.2,
-            lineBarsData: [
-              LineChartBarData(
-                spots: dailyData.asMap().entries.map((e) {
-                  return FlSpot(e.key.toDouble(), e.value.amount);
-                }).toList(),
-                isCurved: true,
-                color: Theme.of(context).primaryColor,
-                barWidth: 3,
-                dotData: const FlDotData(show: false),
-                belowBarData: BarAreaData(
-                  show: true,
-                  color: Theme.of(context).primaryColor.withAlpha(51),
-                ),
+    return Container(
+      height: 350,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'System Revenue Trend',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Daily performance across all units',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  _buildLegendItem('Current', const Color(0xFF1E3A8A)), // Dark blue
+                  const SizedBox(width: 16),
+                  _buildLegendItem('Previous', const Color(0xFF94A3B8)), // Slate grey
+                ],
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 32),
+          Expanded(
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: maxY * 1.2,
+                barTouchData: BarTouchData(enabled: false),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0) return const SizedBox.shrink();
+                        return Text(
+                          (value / 1000).toStringAsFixed(0) + 'k',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  checkToShowHorizontalLine: (value) => value % (maxY / 4) == 0,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: Colors.grey[200],
+                    strokeWidth: 1,
+                  ),
+                  drawVerticalLine: false,
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: dailyData.asMap().entries.map((e) {
+                  return BarChartGroupData(
+                    x: e.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: e.value.previousAmount ?? 0,
+                        color: const Color(0xFF94A3B8), // Previous
+                        width: 12,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(2),
+                          topRight: Radius.circular(2),
+                        ),
+                      ),
+                      BarChartRodData(
+                        toY: e.value.amount,
+                        color: const Color(0xFF1E3A8A), // Current
+                        width: 12,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(2),
+                          topRight: Radius.circular(2),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
     );
   }
 }

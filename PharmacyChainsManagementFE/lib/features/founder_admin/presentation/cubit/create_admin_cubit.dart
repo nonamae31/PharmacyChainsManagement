@@ -27,7 +27,7 @@ class CreateAdminCubit extends Cubit<CreateAdminState> {
       emit(const CreateAdminSuccess(message: 'Tạo tài khoản Business Admin thành công.'));
     } catch (e) {
       // E6: Offline-first Graceful Degradation
-      emit(CreateAdminFailure(error: e.toString()));
+      emit(CreateAdminFailure(error: e.toString().replaceAll('Exception: ', '')));
     }
   }
 }

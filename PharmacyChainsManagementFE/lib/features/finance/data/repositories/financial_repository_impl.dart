@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
@@ -32,9 +33,27 @@ class FinancialRepositoryImpl implements FinancialRepository {
       if (e.response?.statusCode == 404) {
         return const Left(ServerFailure('No Data Found'));
       }
-      return const Left(ServerFailure('Generation Failed'));
+      String errorMessage = 'Generation Failed';
+      if (e.response?.data != null) {
+        if (e.response!.data is List<int>) {
+          try {
+            errorMessage = utf8.decode(e.response!.data as List<int>);
+          } catch (_) {
+            errorMessage = e.response!.data.toString();
+          }
+        } else {
+          errorMessage = e.response!.data.toString();
+        }
+      } else if (e.message != null) {
+        errorMessage = e.message!;
+      }
+      
+      // Sanitize the error message to prevent fluttertoast web crash
+      errorMessage = errorMessage.replaceAll('\r', ' ').replaceAll('\n', ' ').replaceAll("'", "`").replaceAll('"', '`');
+      
+      return Left(ServerFailure(errorMessage));
     } catch (e) {
-      return const Left(ServerFailure('Generation Failed'));
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

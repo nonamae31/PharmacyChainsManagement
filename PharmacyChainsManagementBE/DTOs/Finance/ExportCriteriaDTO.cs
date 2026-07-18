@@ -2,8 +2,11 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using FluentValidation;
 
+using System.Text.Json.Serialization;
+
 namespace PharmacyChainsManagementBE.DTOs.Finance;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ExportFormat
 {
     PDF,
@@ -24,7 +27,7 @@ public class ExportCriteriaDTOValidator : AbstractValidator<ExportCriteriaDTO>
     public ExportCriteriaDTOValidator()
     {
         RuleFor(x => x.BranchId)
-            .NotEmpty().WithMessage("BranchId is required.");
+            .NotNull().WithMessage("BranchId cannot be null.");
 
         RuleFor(x => x.StartDate)
             .NotEmpty().WithMessage("StartDate is required.");

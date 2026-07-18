@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import '../models/cash_flow_model.dart';
+import '../models/branch_model.dart';
 
 abstract class CashFlowRemoteDataSource {
   Future<CashFlowModel> getCashFlow(String startDate, String endDate, {String? branchId});
+  Future<List<BranchModel>> getBranches();
 }
 
 class CashFlowRemoteDataSourceImpl implements CashFlowRemoteDataSource {
@@ -26,6 +28,16 @@ class CashFlowRemoteDataSourceImpl implements CashFlowRemoteDataSource {
       return CashFlowModel.fromJson(response.data);
     } else {
       throw Exception('Failed to load cash flow statistics');
+    }
+  }
+
+  @override
+  Future<List<BranchModel>> getBranches() async {
+    final response = await dio.get('/api/branches');
+    if (response.statusCode == 200) {
+      return (response.data as List).map((b) => BranchModel.fromJson(b)).toList();
+    } else {
+      throw Exception('Failed to load branches');
     }
   }
 }

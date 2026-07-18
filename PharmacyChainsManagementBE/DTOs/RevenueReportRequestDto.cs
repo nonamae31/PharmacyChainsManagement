@@ -6,7 +6,6 @@ namespace PharmacyChainsManagementBE.DTOs;
 
 public class RevenueReportRequestDto
 {
-    [Required]
     public Guid BranchId { get; set; }
 
     [Required]

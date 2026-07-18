@@ -2,11 +2,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'cash_flow_event.dart';
 import 'cash_flow_state.dart';
 import '../../domain/usecases/get_cash_flow_usecase.dart';
+import '../../domain/usecases/get_branches.dart';
 
 class CashFlowBloc extends Bloc<CashFlowEvent, CashFlowState> {
   final GetCashFlowUseCase getCashFlowUseCase;
+  final GetBranches getBranches;
 
-  CashFlowBloc({required this.getCashFlowUseCase}) : super(CashFlowInitial()) {
+  CashFlowBloc({required this.getCashFlowUseCase, required this.getBranches}) : super(CashFlowInitial()) {
     on<FetchCashFlowEvent>(_onFetchCashFlowEvent);
   }
 
@@ -27,7 +29,8 @@ class CashFlowBloc extends Bloc<CashFlowEvent, CashFlowState> {
         event.endDate,
         branchId: event.branchId,
       );
-      emit(CashFlowLoaded(cashFlow: cashFlow));
+      final branches = await getBranches.execute();
+      emit(CashFlowLoaded(cashFlow: cashFlow, branches: branches));
     } catch (e) {
       emit(CashFlowError(message: e.toString()));
     }

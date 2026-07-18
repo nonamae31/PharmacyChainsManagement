@@ -51,7 +51,11 @@ public class BusinessAdminService : IBusinessAdminService
             Email = user.Email,
             Phone = user.Phone,
             Status = user.Status,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            ProfilePhotoUri = user.ProfilePhotoUri,
+            Address = user.Address,
+            DateOfBirth = user.DateOfBirth,
+            Gender = user.Gender
         };
 
         return ApiResponse<BusinessAdminDetailResponse>.Ok(response);
@@ -67,7 +71,11 @@ public class BusinessAdminService : IBusinessAdminService
             Email = user.Email,
             Phone = user.Phone,
             Status = user.Status,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            ProfilePhotoUri = user.ProfilePhotoUri,
+            Address = user.Address,
+            DateOfBirth = user.DateOfBirth,
+            Gender = user.Gender
         }).ToList();
 
         return ApiResponse<System.Collections.Generic.List<BusinessAdminDetailResponse>>.Ok(response);
@@ -79,6 +87,12 @@ public class BusinessAdminService : IBusinessAdminService
         if (existingUser != null)
         {
             return ApiResponse<BusinessAdminDetailResponse>.ErrorResponse("Email đã tồn tại trong hệ thống.", 409);
+        }
+
+        var existingPhoneUser = await _userRepository.FindByPhoneAsync(request.Phone, cancellationToken);
+        if (existingPhoneUser != null)
+        {
+            return ApiResponse<BusinessAdminDetailResponse>.ErrorResponse("Số điện thoại đã tồn tại trong hệ thống.", 409);
         }
 
         var adminRole = await _userRepository.GetRoleByCodeAsync("BUSINESS_ADMIN", cancellationToken);
@@ -122,7 +136,11 @@ public class BusinessAdminService : IBusinessAdminService
             Email = newUser.Email,
             Phone = newUser.Phone,
             Status = newUser.Status,
-            CreatedAt = newUser.CreatedAt
+            CreatedAt = newUser.CreatedAt,
+            ProfilePhotoUri = newUser.ProfilePhotoUri,
+            Address = newUser.Address,
+            DateOfBirth = newUser.DateOfBirth,
+            Gender = newUser.Gender
         };
 
         return ApiResponse<BusinessAdminDetailResponse>.Ok(response);
@@ -190,6 +208,15 @@ public class BusinessAdminService : IBusinessAdminService
             }
         }
 
+        if (oldPhone != request.Phone)
+        {
+            var existingPhoneUser = await _userRepository.FindByPhoneAsync(request.Phone, cancellationToken);
+            if (existingPhoneUser != null && existingPhoneUser.UserId != accountId)
+            {
+                return ApiResponse<BusinessAdminDetailResponse>.ErrorResponse("Số điện thoại đã tồn tại trong hệ thống.", 409);
+            }
+        }
+
         user.FullName = request.FullName;
         user.Email = request.Email;
         user.Phone = request.Phone;
@@ -204,7 +231,7 @@ public class BusinessAdminService : IBusinessAdminService
         {
             if (ex.InnerException != null && (ex.InnerException.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) || ex.InnerException.Message.Contains("unique", StringComparison.OrdinalIgnoreCase)))
             {
-                return ApiResponse<BusinessAdminDetailResponse>.ErrorResponse("Email đã tồn tại trong hệ thống.", 409);
+                return ApiResponse<BusinessAdminDetailResponse>.ErrorResponse("Email hoặc Số điện thoại đã tồn tại trong hệ thống.", 409);
             }
             throw;
         }
@@ -221,7 +248,11 @@ public class BusinessAdminService : IBusinessAdminService
             Email = user.Email,
             Phone = user.Phone,
             Status = user.Status,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            ProfilePhotoUri = user.ProfilePhotoUri,
+            Address = user.Address,
+            DateOfBirth = user.DateOfBirth,
+            Gender = user.Gender
         };
 
         return ApiResponse<BusinessAdminDetailResponse>.Ok(response);

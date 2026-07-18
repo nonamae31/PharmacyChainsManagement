@@ -60,7 +60,7 @@ class FounderBottomNav extends StatelessWidget {
     return NavigationBar(
       selectedIndex: selectedIndex,
       onDestinationSelected: (index) {
-        if (index == 2) {
+        if (index == 4) {
           _handleLogout(context);
         } else {
           onDestinationSelected(index);
@@ -68,14 +68,25 @@ class FounderBottomNav extends StatelessWidget {
       },
       destinations: [
         const NavigationDestination(
-          icon: Icon(Icons.dashboard_outlined),
-          selectedIcon: Icon(Icons.dashboard),
-          label: 'Dashboard',
-        ),
-        const NavigationDestination(
           icon: Icon(Icons.people_outline),
           selectedIcon: Icon(Icons.people),
           label: 'Admins',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.bar_chart_outlined),
+          selectedIcon: Icon(Icons.bar_chart),
+          label: 'Revenue',
+        ),
+
+        const NavigationDestination(
+          icon: Icon(Icons.attach_money_outlined),
+          selectedIcon: Icon(Icons.attach_money),
+          label: 'Cash Flow',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
         ),
         NavigationDestination(
           icon: Icon(Icons.logout, color: Colors.red.shade400),

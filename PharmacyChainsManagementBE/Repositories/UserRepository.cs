@@ -25,8 +25,16 @@ public class UserRepository : IUserRepository
     public async Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
+            .IgnoreQueryFilters()
             .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+    }
+
+    public async Task<User?> FindByPhoneAsync(string phone, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Phone == phone, cancellationToken);
     }
 
     public async Task<User?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -73,5 +81,23 @@ public class UserRepository : IUserRepository
     public void Remove(User user)
     {
         _context.Users.Remove(user);
+    }
+
+    public async Task<int> UpdateProfilePartialAsync(Guid userId, string? fullName, string? profilePhotoUri, string? address, DateTime? dateOfBirth, string? gender, string? phoneNumber, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
+        if (user == null) return 0;
+        
+        if (fullName != null) user.FullName = fullName;
+        if (profilePhotoUri != null) user.ProfilePhotoUri = profilePhotoUri;
+        if (address != null) user.Address = address;
+        if (dateOfBirth != null) user.DateOfBirth = dateOfBirth.Value.ToUniversalTime();
+        if (gender != null) user.Gender = gender;
+        if (phoneNumber != null) user.Phone = phoneNumber;
+        
+        user.UpdatedAt = DateTime.UtcNow;
+        
+        _context.Users.Update(user);
+        return await _context.SaveChangesAsync(cancellationToken);
     }
 }

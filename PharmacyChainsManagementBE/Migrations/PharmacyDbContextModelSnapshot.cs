@@ -119,6 +119,36 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.ToTable("BRANCH");
                 });
 
+            modelBuilder.Entity("PharmacyChainsManagementBE.Models.BudgetAllocation", b =>
+                {
+                    b.Property<Guid>("AllocationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("allocation_id");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("category_name");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("Percentage")
+                        .HasColumnType("decimal(5, 2)")
+                        .HasColumnName("percentage");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("AllocationId");
+
+                    b.ToTable("BUDGET_ALLOCATION");
+                });
+
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Inventory", b =>
                 {
                     b.Property<Guid>("InventoryId")
@@ -279,6 +309,38 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.HasIndex("MedicineId");
 
                     b.ToTable("INVOICE_DETAIL");
+                });
+
+            modelBuilder.Entity("PharmacyChainsManagementBE.Models.LiquidityForecast", b =>
+                {
+                    b.Property<Guid>("ForecastId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("forecast_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("ForecastDate")
+                        .HasColumnType("date")
+                        .HasColumnName("forecast_date");
+
+                    b.Property<decimal>("ProjectedInflow")
+                        .HasColumnType("decimal(12, 2)")
+                        .HasColumnName("projected_inflow");
+
+                    b.Property<decimal>("ProjectedOutflow")
+                        .HasColumnType("decimal(12, 2)")
+                        .HasColumnName("projected_outflow");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("ForecastId");
+
+                    b.ToTable("LIQUIDITY_FORECAST");
                 });
 
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.Medicine", b =>
@@ -947,6 +1009,11 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("address");
+
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid")
                         .HasColumnName("branch_id");
@@ -954,6 +1021,10 @@ namespace PharmacyChainsManagementBE.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("date_of_birth");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -966,6 +1037,11 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
                         .HasColumnName("full_name");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("gender");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
@@ -1035,7 +1111,7 @@ namespace PharmacyChainsManagementBE.Migrations
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111111"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8388),
+                            CreatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7942),
                             Email = "businessadmin@pharmacy.com",
                             FullName = "Admin User",
                             IsDeleted = false,
@@ -1043,13 +1119,13 @@ namespace PharmacyChainsManagementBE.Migrations
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8394)
+                            UpdatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7945)
                         },
                         new
                         {
                             UserId = new Guid("22222222-2222-2222-2222-222222222222"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8399),
+                            CreatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7950),
                             Email = "manager@pharmacy.com",
                             FullName = "Manager User",
                             IsDeleted = false,
@@ -1057,13 +1133,13 @@ namespace PharmacyChainsManagementBE.Migrations
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)2,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8399)
+                            UpdatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7951)
                         },
                         new
                         {
                             UserId = new Guid("33333333-3333-3333-3333-333333333333"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8438),
+                            CreatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7956),
                             Email = "staff@pharmacy.com",
                             FullName = "Staff User",
                             IsDeleted = false,
@@ -1071,13 +1147,13 @@ namespace PharmacyChainsManagementBE.Migrations
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)3,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8439)
+                            UpdatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7956)
                         },
                         new
                         {
                             UserId = new Guid("44444444-4444-4444-4444-444444444444"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8443),
+                            CreatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7960),
                             Email = "inventory@pharmacy.com",
                             FullName = "Inventory Manager",
                             IsDeleted = false,
@@ -1085,13 +1161,13 @@ namespace PharmacyChainsManagementBE.Migrations
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)4,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8443)
+                            UpdatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7960)
                         },
                         new
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111112"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8446),
+                            CreatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7963),
                             Email = "businessadmin2@pharmacy.com",
                             FullName = "Admin User 2",
                             IsDeleted = false,
@@ -1099,13 +1175,13 @@ namespace PharmacyChainsManagementBE.Migrations
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8447)
+                            UpdatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7965)
                         },
                         new
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111113"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8450),
+                            CreatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7968),
                             Email = "businessadmin3@pharmacy.com",
                             FullName = "Admin User 3",
                             IsDeleted = false,
@@ -1113,13 +1189,13 @@ namespace PharmacyChainsManagementBE.Migrations
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8450)
+                            UpdatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7968)
                         },
                         new
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111114"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8458),
+                            CreatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7971),
                             Email = "businessadmin4@pharmacy.com",
                             FullName = "Admin User 4",
                             IsDeleted = false,
@@ -1127,13 +1203,13 @@ namespace PharmacyChainsManagementBE.Migrations
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8459)
+                            UpdatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7972)
                         },
                         new
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111115"),
                             AccessFailedCount = 0,
-                            CreatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8462),
+                            CreatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7976),
                             Email = "businessadmin5@pharmacy.com",
                             FullName = "Admin User 5",
                             IsDeleted = false,
@@ -1141,7 +1217,7 @@ namespace PharmacyChainsManagementBE.Migrations
                             PasswordHash = "$2a$11$IYQJvf0r3oqJXCtfmuNC.ut.sFypUr1LtCajqdfXki2WAbbAu3p4a",
                             RoleId = (short)1,
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 7, 17, 16, 55, 35, 866, DateTimeKind.Utc).AddTicks(8463)
+                            UpdatedAt = new DateTime(2026, 7, 18, 14, 42, 16, 246, DateTimeKind.Utc).AddTicks(7976)
                         });
                 });
 

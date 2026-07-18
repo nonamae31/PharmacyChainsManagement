@@ -41,12 +41,13 @@ public class FinancialReportService : IFinancialReportService
                 criteriaDto.EndDate,
                 cancellationToken);
 
-            if (transactions == null || transactions.Count == 0)
-            {
-                _logger.LogWarning("No transactions found for Branch {BranchId} from {StartDate} to {EndDate}", 
-                    criteriaDto.BranchId, criteriaDto.StartDate, criteriaDto.EndDate);
-                throw new DataNotFoundException("Data not found");
-            }
+            // Allow empty transactions because the report can still contain total revenue data.
+            // if (transactions == null || transactions.Count == 0)
+            // {
+            //     _logger.LogWarning("No transactions found for Branch {BranchId} from {StartDate} to {EndDate}", 
+            //         criteriaDto.BranchId, criteriaDto.StartDate, criteriaDto.EndDate);
+            //     throw new DataNotFoundException("Data not found");
+            // }
 
             var payload = new ReportPayloadDTO
             {
@@ -97,9 +98,9 @@ public class FinancialReportService : IFinancialReportService
     {
         return format switch
         {
-            ExportFormat.PDF => _strategies.OfType<PdfExportStrategy>().FirstOrDefault() ?? throw new InvalidOperationException("PDF strategy not registered"),
-            ExportFormat.EXCEL => _strategies.OfType<ExcelExportStrategy>().FirstOrDefault() ?? throw new InvalidOperationException("Excel strategy not registered"),
-            ExportFormat.CSV => _strategies.OfType<CsvExportStrategy>().FirstOrDefault() ?? throw new InvalidOperationException("CSV strategy not registered"),
+            ExportFormat.PDF => _strategies.FirstOrDefault(s => s.ContentType == "application/pdf") ?? throw new InvalidOperationException("PDF strategy not registered"),
+            ExportFormat.EXCEL => _strategies.FirstOrDefault(s => s.ContentType.Contains("spreadsheetml")) ?? throw new InvalidOperationException("Excel strategy not registered"),
+            ExportFormat.CSV => _strategies.FirstOrDefault(s => s.ContentType == "text/csv") ?? throw new InvalidOperationException("CSV strategy not registered"),
             _ => throw new NotSupportedException($"Format {format} is not supported")
         };
     }

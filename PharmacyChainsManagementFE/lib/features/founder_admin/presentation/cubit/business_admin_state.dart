@@ -26,9 +26,9 @@ class BusinessAdminLoaded extends BusinessAdminState {
   List<BusinessAdminEntity> get admins {
     switch (filter) {
       case AdminFilter.active:
-        return allAdmins.where((a) => a.status == 'Active').toList();
+        return allAdmins.where((a) => a.status.toLowerCase() == 'active').toList();
       case AdminFilter.deactivated:
-        return allAdmins.where((a) => a.status != 'Active').toList();
+        return allAdmins.where((a) => a.status.toLowerCase() != 'active').toList();
       case AdminFilter.all:
         return allAdmins;
     }

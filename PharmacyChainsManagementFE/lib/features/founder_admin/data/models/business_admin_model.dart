@@ -7,6 +7,11 @@ class BusinessAdminModel extends BusinessAdminEntity {
     required super.email,
     required super.status,
     required super.phone,
+    super.profilePhotoUri,
+    super.address,
+    super.dateOfBirth,
+    super.gender,
+    super.createdAt,
   });
 
   factory BusinessAdminModel.fromJson(Map<String, dynamic> json) {
@@ -16,6 +21,11 @@ class BusinessAdminModel extends BusinessAdminEntity {
       email: json['email']?.toString() ?? '',
       status: json['status']?.toString() ?? 'Inactive',
       phone: json['phone']?.toString() ?? '',
+      profilePhotoUri: json['profilePhotoUri']?.toString(),
+      address: json['address']?.toString(),
+      dateOfBirth: json['dateOfBirth'] != null ? DateTime.tryParse(json['dateOfBirth'].toString()) : null,
+      gender: json['gender']?.toString(),
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
     );
   }
 
@@ -26,6 +36,11 @@ class BusinessAdminModel extends BusinessAdminEntity {
       'email': email,
       'status': status,
       'phone': phone,
+      'profilePhotoUri': profilePhotoUri,
+      'address': address,
+      'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'gender': gender,
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 }

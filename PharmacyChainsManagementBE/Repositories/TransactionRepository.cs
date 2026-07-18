@@ -19,13 +19,18 @@ public class TransactionRepository : ITransactionRepository
 
     public async Task<List<PaymentTransaction>> GetCompletedTransactionsAsync(Guid branchId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
-        return await _context.PaymentTransactions
+        var query = _context.PaymentTransactions
             .AsNoTracking() // Enhancement E1: Use .AsNoTracking() for performance
             .Include(t => t.Invoice)
-            .Where(t => t.Invoice.BranchId == branchId 
-                        && t.PaymentStatus == "Completed" 
+            .Where(t => (t.PaymentStatus.ToUpper() == "SUCCESS" || t.PaymentStatus == "Completed" || t.PaymentStatus.ToUpper() == "PAID") 
                         && t.PaymentDate >= startDate 
-                        && t.PaymentDate <= endDate)
-            .ToListAsync(cancellationToken);
+                        && t.PaymentDate <= endDate);
+
+        if (branchId != Guid.Empty)
+        {
+            query = query.Where(t => t.Invoice.BranchId == branchId);
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 }

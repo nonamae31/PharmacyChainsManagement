@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../domain/entities/cash_flow_statistics_entity.dart';
+import '../../domain/entities/branch_entity.dart';
 import '../../domain/repositories/cash_flow_repository.dart';
 import '../datasources/cash_flow_remote_datasource.dart';
 import '../models/cash_flow_model.dart';
@@ -37,5 +38,11 @@ class CashFlowRepositoryImpl implements CashFlowRepository {
       }
       rethrow;
     }
+  }
+
+  @override
+  Future<List<BranchEntity>> getBranches() async {
+    final branchModels = await remoteDataSource.getBranches();
+    return branchModels.map((e) => BranchEntity(id: e.id, name: e.name)).toList();
   }
 }

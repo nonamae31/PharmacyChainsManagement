@@ -60,11 +60,15 @@ public partial class PharmacyDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<BudgetAllocation> BudgetAllocations { get; set; }
+
+    public virtual DbSet<LiquidityForecast> LiquidityForecasts { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseNpgsql("Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.mohzctrdjgwajlxiylkn;Password=29032004h@H310824miku@M");
+            optionsBuilder.UseNpgsql("Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.mohzctrdjgwajlxiylkn;Password=29032004h@H310824miku@M", b => b.CommandTimeout(120));
         }
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)

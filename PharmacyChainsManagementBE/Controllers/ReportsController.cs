@@ -23,8 +23,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpPost("revenue")]
-    [Authorize(Roles = "SuperAdmin,BusinessAdmin,BranchManager")] // Bảo mật phân quyền
-    [EnableRateLimiting("ReportPolicy")] // Chống spam/DDoS bằng Rate Limiter
+    [Authorize(Roles = "Founder,SuperAdmin,BusinessAdmin,BranchManager")] // Bảo mật phân quyền
     public async Task<IActionResult> GenerateRevenueReport([FromBody] RevenueReportRequestDto request)
     {
         // FluentValidation sẽ tự động validate ModelState, nhưng thêm check cẩn thận

@@ -34,9 +34,9 @@ public class ReactivateBusinessAdminCommandHandler : IRequestHandler<ReactivateB
             return ApiResponse<object>.ErrorResponse("Business Admin không tồn tại.", 404);
         }
 
-        if (!user.IsDeleted)
+        if (!user.IsDeleted && user.Status != "DEACTIVATED")
         {
-            return ApiResponse<object>.ErrorResponse("Business Admin đang không bị xóa.", 400);
+            return ApiResponse<object>.ErrorResponse("Business Admin đang không bị xóa hoặc vô hiệu hóa.", 400);
         }
 
         user.IsDeleted = false;
