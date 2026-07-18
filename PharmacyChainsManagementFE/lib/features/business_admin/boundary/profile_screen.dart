@@ -28,6 +28,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _addressController = TextEditingController();
   final _dateOfBirthController = TextEditingController();
   final _genderController = TextEditingController();
+  final _imagePicker = ImagePicker();
+  Uint8List? _avatarBytes;
 
   @override
   void initState() {
@@ -53,6 +55,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             addressController: _addressController,
             dateOfBirthController: _dateOfBirthController,
             genderController: _genderController,
+            avatarBytes: _avatarBytes,
+            onChangePhoto: _pickAvatar,
           );
         }
         return AppEmptyState(
@@ -73,6 +77,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _genderController.dispose();
     super.dispose();
   }
+
+  Future<void> _pickAvatar() async {
+    final pickedImage = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: _ProfileDimensions.avatarPickerMaxSize,
+      maxHeight: _ProfileDimensions.avatarPickerMaxSize,
+      imageQuality: _ProfileDimensions.avatarPickerQuality,
+    );
+    if (pickedImage == null) return;
+
+    final bytes = await pickedImage.readAsBytes();
+    if (!mounted) return;
+
+    setState(() => _avatarBytes = bytes);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text(_ProfileCopy.photoUpdated)));
+  }
 }
 
 class _ProfileView extends StatefulWidget {
@@ -82,6 +104,8 @@ class _ProfileView extends StatefulWidget {
   final TextEditingController addressController;
   final TextEditingController dateOfBirthController;
   final TextEditingController genderController;
+  final Uint8List? avatarBytes;
+  final VoidCallback onChangePhoto;
 
   const _ProfileView({
     required this.profile,
@@ -90,6 +114,8 @@ class _ProfileView extends StatefulWidget {
     required this.addressController,
     required this.dateOfBirthController,
     required this.genderController,
+    required this.avatarBytes,
+    required this.onChangePhoto,
   });
 
   @override
@@ -97,9 +123,6 @@ class _ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<_ProfileView> {
-  final _imagePicker = ImagePicker();
-  Uint8List? _avatarBytes;
-
   @override
   void initState() {
     super.initState();
@@ -122,16 +145,16 @@ class _ProfileViewState extends State<_ProfileView> {
           final content = isWide
               ? _DesktopProfileLayout(
                   profile: widget.profile,
-                  extraDetails: _extraDetails,
-                  avatarBytes: _avatarBytes,
-                  onChangePhoto: _pickAvatar,
+                  editableDetails: _editableDetails,
+                  avatarBytes: widget.avatarBytes,
+                  onChangePhoto: widget.onChangePhoto,
                   onEdit: () => _showEditDialog(context),
                 )
               : _MobileProfileLayout(
                   profile: widget.profile,
-                  extraDetails: _extraDetails,
-                  avatarBytes: _avatarBytes,
-                  onChangePhoto: _pickAvatar,
+                  editableDetails: _editableDetails,
+                  avatarBytes: widget.avatarBytes,
+                  onChangePhoto: widget.onChangePhoto,
                   onEdit: () => _showEditDialog(context),
                 );
 
@@ -145,8 +168,8 @@ class _ProfileViewState extends State<_ProfileView> {
   }
 
   void _showEditDialog(BuildContext context) {
-    widget.fullNameController.text = widget.profile.fullName;
-    widget.phoneController.text = widget.profile.phone ?? '';
+    widget.fullNameController.text = _editableDetails.fullName;
+    widget.phoneController.text = _editableDetails.phone;
 
     showDialog<void>(
       context: context,
@@ -231,25 +254,12 @@ class _ProfileViewState extends State<_ProfileView> {
     );
   }
 
-  Future<void> _pickAvatar() async {
-    final pickedImage = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: _ProfileDimensions.avatarPickerMaxSize,
-      maxHeight: _ProfileDimensions.avatarPickerMaxSize,
-      imageQuality: _ProfileDimensions.avatarPickerQuality,
-    );
-    if (pickedImage == null) return;
-
-    final bytes = await pickedImage.readAsBytes();
-    if (!mounted) return;
-
-    setState(() => _avatarBytes = bytes);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text(_ProfileCopy.photoUpdated)));
-  }
-
-  _ProfileExtraDetails get _extraDetails => _ProfileExtraDetails(
+  _ProfileEditableDetails get _editableDetails => _ProfileEditableDetails(
+    fullName: _fieldValue(
+      widget.fullNameController.text,
+      widget.profile.fullName,
+    ),
+    phone: _fieldValue(widget.phoneController.text, widget.profile.phone),
     address: _displayValue(widget.addressController.text),
     dateOfBirth: _displayValue(widget.dateOfBirthController.text),
     gender: _displayValue(widget.genderController.text),
@@ -270,14 +280,14 @@ class _ProfileViewState extends State<_ProfileView> {
 
 class _DesktopProfileLayout extends StatelessWidget {
   final ProfileDto profile;
-  final _ProfileExtraDetails extraDetails;
+  final _ProfileEditableDetails editableDetails;
   final Uint8List? avatarBytes;
   final VoidCallback onChangePhoto;
   final VoidCallback onEdit;
 
   const _DesktopProfileLayout({
     required this.profile,
-    required this.extraDetails,
+    required this.editableDetails,
     required this.avatarBytes,
     required this.onChangePhoto,
     required this.onEdit,
@@ -297,6 +307,7 @@ class _DesktopProfileLayout extends StatelessWidget {
               flex: 4,
               child: _IdentityCard(
                 profile: profile,
+                editableDetails: editableDetails,
                 avatarBytes: avatarBytes,
                 onChangePhoto: onChangePhoto,
               ),
@@ -306,7 +317,7 @@ class _DesktopProfileLayout extends StatelessWidget {
               flex: 8,
               child: _PersonalInformationCard(
                 profile: profile,
-                extraDetails: extraDetails,
+                editableDetails: editableDetails,
                 onEdit: onEdit,
               ),
             ),
@@ -319,14 +330,14 @@ class _DesktopProfileLayout extends StatelessWidget {
 
 class _MobileProfileLayout extends StatelessWidget {
   final ProfileDto profile;
-  final _ProfileExtraDetails extraDetails;
+  final _ProfileEditableDetails editableDetails;
   final Uint8List? avatarBytes;
   final VoidCallback onChangePhoto;
   final VoidCallback onEdit;
 
   const _MobileProfileLayout({
     required this.profile,
-    required this.extraDetails,
+    required this.editableDetails,
     required this.avatarBytes,
     required this.onChangePhoto,
     required this.onEdit,
@@ -347,7 +358,7 @@ class _MobileProfileLayout extends StatelessWidget {
           _MobileProfileTile(
             icon: Icons.badge_outlined,
             label: _ProfileCopy.fullName,
-            value: profile.fullName,
+            value: editableDetails.fullName,
             supportingText: profile.role,
           ),
           _MobileProfileTile(
@@ -358,22 +369,22 @@ class _MobileProfileLayout extends StatelessWidget {
           _MobileProfileTile(
             icon: Icons.phone_outlined,
             label: _ProfileCopy.phoneNumber,
-            value: _displayValue(profile.phone),
+            value: editableDetails.phone,
           ),
           _MobileProfileTile(
             icon: Icons.location_on_outlined,
             label: _ProfileCopy.address,
-            value: extraDetails.address,
+            value: editableDetails.address,
           ),
           _MobileProfileTile(
             icon: Icons.cake_outlined,
             label: _ProfileCopy.dateOfBirth,
-            value: extraDetails.dateOfBirth,
+            value: editableDetails.dateOfBirth,
           ),
           _MobileProfileTile(
             icon: Icons.person_outline,
             label: _ProfileCopy.gender,
-            value: extraDetails.gender,
+            value: editableDetails.gender,
             showDivider: false,
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -389,11 +400,13 @@ class _MobileProfileLayout extends StatelessWidget {
 
 class _IdentityCard extends StatelessWidget {
   final ProfileDto profile;
+  final _ProfileEditableDetails editableDetails;
   final Uint8List? avatarBytes;
   final VoidCallback onChangePhoto;
 
   const _IdentityCard({
     required this.profile,
+    required this.editableDetails,
     required this.avatarBytes,
     required this.onChangePhoto,
   });
@@ -414,7 +427,7 @@ class _IdentityCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            profile.fullName,
+            editableDetails.fullName,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: _ProfilePalette.title,
@@ -439,12 +452,12 @@ class _IdentityCard extends StatelessWidget {
 
 class _PersonalInformationCard extends StatelessWidget {
   final ProfileDto profile;
-  final _ProfileExtraDetails extraDetails;
+  final _ProfileEditableDetails editableDetails;
   final VoidCallback onEdit;
 
   const _PersonalInformationCard({
     required this.profile,
-    required this.extraDetails,
+    required this.editableDetails,
     required this.onEdit,
   });
 
@@ -476,7 +489,7 @@ class _PersonalInformationCard extends StatelessWidget {
               _DesktopInfoItem(
                 icon: Icons.badge_outlined,
                 label: _ProfileCopy.fullName,
-                value: profile.fullName,
+                value: editableDetails.fullName,
               ),
               _DesktopInfoItem(
                 icon: Icons.mail_outline,
@@ -486,22 +499,22 @@ class _PersonalInformationCard extends StatelessWidget {
               _DesktopInfoItem(
                 icon: Icons.phone_outlined,
                 label: _ProfileCopy.phoneNumber,
-                value: _displayValue(profile.phone),
+                value: editableDetails.phone,
               ),
               _DesktopInfoItem(
                 icon: Icons.location_on_outlined,
                 label: _ProfileCopy.address,
-                value: extraDetails.address,
+                value: editableDetails.address,
               ),
               _DesktopInfoItem(
                 icon: Icons.cake_outlined,
                 label: _ProfileCopy.dateOfBirth,
-                value: extraDetails.dateOfBirth,
+                value: editableDetails.dateOfBirth,
               ),
               _DesktopInfoItem(
                 icon: Icons.person_outline,
                 label: _ProfileCopy.gender,
-                value: extraDetails.gender,
+                value: editableDetails.gender,
               ),
             ],
           ),
@@ -770,12 +783,16 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-class _ProfileExtraDetails {
+class _ProfileEditableDetails {
+  final String fullName;
+  final String phone;
   final String address;
   final String dateOfBirth;
   final String gender;
 
-  const _ProfileExtraDetails({
+  const _ProfileEditableDetails({
+    required this.fullName,
+    required this.phone,
     required this.address,
     required this.dateOfBirth,
     required this.gender,
@@ -849,6 +866,12 @@ String _displayValue(String? value) {
   final normalized = value?.trim();
   if (normalized == null || normalized.isEmpty) return AppStrings.notAvailable;
   return normalized;
+}
+
+String _fieldValue(String? value, String? fallback) {
+  final normalized = value?.trim();
+  if (normalized != null && normalized.isNotEmpty) return normalized;
+  return _displayValue(fallback);
 }
 
 class _ProfileCopy {
