@@ -12,6 +12,7 @@ public interface IAuthService
     Task<Result> LogoutAsync(LogoutRequest request, string? accessToken, CancellationToken cancellationToken);
     Task<Result<AuthResultResponse>> RefreshAsync(RefreshTokenRequest request, string? ipAddress, string? userAgent, string? deviceId, CancellationToken cancellationToken);
     Task<Result> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken cancellationToken);
+    Task<Result> VerifyCodeAsync(VerifyCodeRequest request, CancellationToken cancellationToken);
     Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken);
     Task<Result<AuthResultResponse>> GoogleLoginAsync(GoogleLoginRequest request, string? ipAddress, string? userAgent, string? deviceId, CancellationToken cancellationToken);
 }

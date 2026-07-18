@@ -129,6 +129,66 @@ class AuthApiClient {
     }
   }
 
+  Future<String> requestPasswordReset(String email) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/auth/forgot-password',
+        data: {'email': email},
+      );
+      final data = response.data;
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+      return 'Verification code has been sent successfully.';
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) {
+        throw ServerException(data['message'].toString());
+      }
+      throw const ServerException('Unable to send the verification code.');
+    }
+  }
+
+  Future<String> verifyCode(String email, String code) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/auth/verify-code',
+        data: {'email': email, 'code': code},
+      );
+      final data = response.data;
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+      return 'Verification code is valid.';
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) {
+        throw ServerException(data['message'].toString());
+      }
+      throw const ServerException('Invalid verification code.');
+    }
+  }
+
+  Future<String> resetPassword(String email, String code, String newPassword) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/auth/reset-password',
+        data: {'email': email, 'token': code, 'newPassword': newPassword},
+      );
+      final data = response.data;
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+      return 'Your password has been successfully reset.';
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) {
+        throw ServerException(data['message'].toString());
+      }
+      throw const ServerException('Failed to reset your password.');
+    }
+  }
+
   Future<bool> _refreshToken() async {
     try {
       final refreshToken = await SecureStorageService.readRefreshToken();
