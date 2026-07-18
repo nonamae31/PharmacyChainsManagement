@@ -6,6 +6,7 @@ public record LoginRequest(string Email, string Password);
 public record LogoutRequest(string RefreshToken);
 public record RefreshTokenRequest(string AccessToken, string RefreshToken);
 public record ForgotPasswordRequest(string Email);
+public record VerifyCodeRequest(string Email, string Code);
 public record ResetPasswordRequest(string Email, string Token, string NewPassword);
 public record GoogleLoginRequest(string IdToken);
 

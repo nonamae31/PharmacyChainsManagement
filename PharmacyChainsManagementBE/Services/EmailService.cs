@@ -20,11 +20,13 @@ public class EmailService : IEmailService
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Mock email sending by writing to logger and console
-        _logger.LogInformation("Sending password reset email to {Email} with plain token: {Token}", email, token);
-        Console.WriteLine($"[EMAIL SERVICE MOCK] Send to: {email} | Reset Token: {token}");
-        
-        return Task.CompletedTask;
+        // Never write password-reset credentials to logs or stdout.
+        _logger.LogInformation("Password reset code email queued for {Email}", email);
+        return SendEmailAsync(
+            email,
+            "Reset your PharmaChain password",
+            $"Your verification code is: {token}. This code will expire in 10 minutes. Please do not share this code.",
+            cancellationToken);
     }
 
     public async Task SendEmailAsync(string toEmail, string subject, string body, CancellationToken cancellationToken)

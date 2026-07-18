@@ -260,11 +260,113 @@ public class AuthService : IAuthService
 
     public async Task<Result> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
+        // Enforce BR-02: Founder Restriction
+        if (!string.IsNullOrEmpty(_founderSettings.Email) && request.Email.Equals(_founderSettings.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            return Result.Failure(Error.Validation(
+                "Auth.FounderRestriction", 
+                "Founder accounts cannot use the Forgot Password feature and must undergo manual administrative recovery."));
+        }
+
+        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
+        if (user is null)
+        {
+            return Result.Failure(Error.Validation(
+                "Auth.EmailNotFound", 
+                "The email address does not exist in our system."));
+        }
+
+        // Enforce BR-01: Role Authorization
+        var allowedRoles = new[] { "BUSINESS_ADMIN", "BRANCH_MANAGER", "STAFF", "INVENTORY_MANAGER" };
+        var roleCode = user.Role?.RoleCode?.ToUpperInvariant();
+        if (roleCode == null || !allowedRoles.Contains(roleCode))
+        {
+            return Result.Failure(Error.Validation(
+                "Auth.RoleNotAuthorized", 
+                "Only Business Admin, Branch Manager, Inventory Manager, and Staff may access the Forgot Password feature."));
+        }
+
+        // Generate a 6-digit numeric verification code
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString("D6");
+        user.PasswordResetToken = code;
+        user.ResetTokenExpiry = DateTimeOffset.UtcNow.AddMinutes(10); // Enforce BR-03: 10 minutes expiry
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userRepository.UpdateAsync(user, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _emailService.SendPasswordResetEmailAsync(user.Email, code, cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> VerifyCodeAsync(VerifyCodeRequest request, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
+        if (user is null)
+        {
+            return Result.Failure(Error.Validation("Auth.EmailNotFound", "The email address does not exist in our system."));
+        }
+
+        if (string.IsNullOrWhiteSpace(user.PasswordResetToken) ||
+            user.ResetTokenExpiry is null ||
+            user.ResetTokenExpiry <= DateTimeOffset.UtcNow)
+        {
+            return Result.Failure(Error.Validation("Auth.CodeExpired", "The verification code has expired."));
+        }
+
+        if (!CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(user.PasswordResetToken),
+                Encoding.UTF8.GetBytes(request.Code)))
+        {
+            return Result.Failure(Error.Validation("Auth.InvalidCode", "Incorrect verification code."));
+        }
+
         return Result.Success();
     }
 
     public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken)
     {
+        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
+        if (user is null)
+        {
+            return Result.Failure(Error.Validation("Auth.EmailNotFound", "The email address does not exist in our system."));
+        }
+
+        if (string.IsNullOrWhiteSpace(user.PasswordResetToken) ||
+            user.ResetTokenExpiry is null ||
+            user.ResetTokenExpiry <= DateTimeOffset.UtcNow ||
+            !CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(user.PasswordResetToken),
+                Encoding.UTF8.GetBytes(request.Token)))
+        {
+            return Result.Failure(Error.Validation("Auth.InvalidResetToken", "The verification code is invalid or has expired."));
+        }
+
+        // Enforce BR-07: Password History (must be structurally different from the current password)
+        if (_passwordHashingStrategy.VerifyPassword(request.NewPassword, user.PasswordHash))
+        {
+            return Result.Failure(Error.Validation("Auth.PasswordHistory", "The new password must be structurally different from the current password."));
+        }
+
+        user.PasswordHash = _passwordHashingStrategy.HashPassword(request.NewPassword);
+        // Enforce BR-04: Code Singularity (A verification code can only be used once)
+        user.PasswordResetToken = null;
+        user.ResetTokenExpiry = null;
+        user.AccessFailedCount = 0;
+        user.LockoutEnd = null;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userRepository.UpdateAsync(user, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Enforce BR-08: Audit Trail
+        await _auditLogService.LogAsync(
+            "ResetPassword", 
+            $"Password reset successfully for user: {user.Email}", 
+            user.UserId.ToString(), 
+            null, 
+            cancellationToken);
+
         return Result.Success();
     }
 }
