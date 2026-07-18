@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/boundary/forgot_password_screen.dart';
 import '../../features/auth/boundary/login_screen.dart';
 import '../../features/auth/control/auth_bloc.dart';
 import '../../features/auth/control/auth_state.dart';
@@ -27,10 +28,11 @@ class AppRouter {
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (BuildContext context, GoRouterState state) {
       final authState = authBloc.state;
-      final isLoggingIn = state.matchedLocation == '/login';
+      final isPublicAuthRoute = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/forgot-password';
 
       if (authState is! AuthAuthenticated) {
-        return isLoggingIn ? null : '/login';
+        return isPublicAuthRoute ? null : '/login';
       }
 
       final role = authState.role.toUpperCase();
@@ -54,7 +56,10 @@ class AppRouter {
           break;
       }
 
-      if (isLoggingIn || state.matchedLocation != targetPath) {
+      final isStaffWorkspaceRoute =
+          role == 'STAFF' && state.matchedLocation.startsWith('/staff/');
+      if (isPublicAuthRoute ||
+          (state.matchedLocation != targetPath && !isStaffWorkspaceRoute)) {
         return targetPath;
       }
       return null;
@@ -64,6 +69,11 @@ class AppRouter {
         path: '/login',
         builder: (BuildContext context, GoRouterState state) =>
             const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (BuildContext context, GoRouterState state) =>
+            const ForgotPasswordScreen(),
       ),
       GoRoute(
         path: '/founder_home',

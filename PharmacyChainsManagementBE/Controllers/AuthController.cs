@@ -179,8 +179,25 @@ public class AuthController : BaseApiController
 
         var result = await _authService.RequestPasswordResetAsync(request, cancellationToken);
         
-        return result.IsSuccess 
-            ? Ok(ApiResponse<object>.Ok(null, "If the email exists in our system, a password reset link has been sent.")) 
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(null, "Verification code has been sent successfully."))
+            : BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
+    }
+
+    [HttpPost("verify-code")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyCode([FromBody] VerifyCodeRequest request, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("Validation failed", ModelState));
+        }
+
+        var result = await _authService.VerifyCodeAsync(request, cancellationToken);
+        
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(null, "Verification code is valid."))
             : BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
     }
 
