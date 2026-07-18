@@ -21,11 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _showAuthBottomSheet(context, true);
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            context.read<AuthBloc>().add(LoginRequested('founder@pharmacy.com', 'Founder@123'));
-          }
-        });
       }
     });
   }
@@ -51,13 +46,27 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            Fluttertoast.showToast(
-              msg: state.message,
-              toastLength: Toast.LENGTH_LONG,
-              gravity: ToastGravity.BOTTOM,
-              backgroundColor: Colors.red,
-              textColor: Colors.white,
-              fontSize: 16.0,
+            String displayMsg = state.message;
+            if (displayMsg.contains('refused') || displayMsg.contains('Connection errored') || displayMsg.contains('SocketException')) {
+              displayMsg = 'Lỗi kết nối: Backend chưa bật (máy chủ từ chối kết nối cổng 7000). Vui lòng chạy dotnet run trong thư mục BE!';
+            }
+            try {
+              Fluttertoast.showToast(
+                msg: displayMsg,
+                toastLength: Toast.LENGTH_LONG,
+                gravity: ToastGravity.BOTTOM,
+                backgroundColor: Colors.red,
+                textColor: Colors.white,
+                fontSize: 16.0,
+              );
+            } catch (_) {}
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(displayMsg, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 5),
+              ),
             );
           } else if (state is AuthAuthenticated) {
             if (Navigator.of(context).canPop()) {
@@ -152,8 +161,8 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
   void initState() {
     super.initState();
     isLogin = widget.isLogin;
-    _emailController.text = 'founder@pharmacy.com';
-    _passwordController.text = 'Founder@123';
+    _emailController.text = '';
+    _passwordController.text = '';
   }
 
   void _submit() {

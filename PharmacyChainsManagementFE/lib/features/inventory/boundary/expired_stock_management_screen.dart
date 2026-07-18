@@ -123,44 +123,51 @@ class _ExpiredStockManagementScreenState extends State<ExpiredStockManagementScr
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: status.contains('Expired') ? AppColors.error.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(status, style: TextStyle(color: status.contains('Expired') ? AppColors.error : AppColors.warning, fontWeight: FontWeight.bold, fontSize: 13)),
-                              ),
-                              const SizedBox(width: 12),
-                              Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
-                            ],
-                          ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-                            child: Text('Action Status (Tình trạng xử lý): $actionStatus', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.primaryDark)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: status.contains('Expired') ? AppColors.error.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(status, style: TextStyle(color: status.contains('Expired') ? AppColors.error : AppColors.warning, fontWeight: FontWeight.bold, fontSize: 13)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis, maxLines: 2),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                                  child: Text('Action Status (Tình trạng xử lý): $actionStatus', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.primaryDark), overflow: TextOverflow.ellipsis, maxLines: 2),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Row(
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 4,
                         children: [
                           Text('Lot No (Số Lô): ${item['lotNo']} | Expiry Date (Hạn sử dụng): ${item['expiryDate']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-                          const SizedBox(width: 16),
                           Text(item['daysRemaining'] < 0 ? 'Expired ${-item['daysRemaining']} days ago! (Đã hết hạn ${-item['daysRemaining']} ngày)' : '${item['daysRemaining']} days remaining (Còn ${item['daysRemaining']} ngày)',
                               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: item['daysRemaining'] < 0 ? AppColors.error : const Color(0xFFD97706))),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text('Quarantine Qty (Số lượng cách ly): ${item['qty']} ${item['unit']}  •  Estimated Loss Value (Thiệt hại dự kiến): ${(item['cost'] as int).toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} VNĐ',
-                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis, maxLines: 2),
                       const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 12,
+                        runSpacing: 8,
                         children: [
                           OutlinedButton.icon(
                             onPressed: () => _handleDisposal(idx, 'Returned to Supplier (Hoàn trả nhà cung cấp)'),
@@ -168,7 +175,6 @@ class _ExpiredStockManagementScreenState extends State<ExpiredStockManagementScr
                             label: const Text('Return to Supplier (Hoàn trả nhà cung cấp)'),
                             style: OutlinedButton.styleFrom(foregroundColor: AppColors.info),
                           ),
-                          const SizedBox(width: 12),
                           ElevatedButton.icon(
                             onPressed: () => _handleDisposal(idx, 'Disposal Report Created (Đã lập biên bản tiêu hủy GSP)'),
                             icon: const Icon(Icons.delete_forever, size: 18),

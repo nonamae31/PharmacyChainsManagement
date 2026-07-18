@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/theme/app_spacing.dart';
 import '../../../shared/shared_components/app_error_dialog.dart';
 import '../../../shared/shared_components/app_loading_indicator.dart';
 import '../control/inventory_dashboard_bloc.dart';
@@ -327,12 +325,16 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                 color: isSelected ? const Color(0xFF2563EB) : (isAlert ? const Color(0xFF0284C7) : const Color(0xFF64748B)),
               ),
               const SizedBox(width: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? const Color(0xFF2563EB) : (isAlert ? const Color(0xFF0284C7) : const Color(0xFF475569)),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected ? const Color(0xFF2563EB) : (isAlert ? const Color(0xFF0284C7) : const Color(0xFF475569)),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -352,7 +354,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           children: [
             Icon(icon, size: 20, color: const Color(0xFF64748B)),
             const SizedBox(width: 12),
-            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF475569))),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF475569)), overflow: TextOverflow.ellipsis, maxLines: 1)),
           ],
         ),
       ),
@@ -419,9 +421,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             ),
           ),
 
-          const Text(
-            'Inventory Management',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          Flexible(
+            child: const Text(
+              'Inventory Management',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
 
           // Right Controls & User Info
@@ -617,10 +622,14 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
           ),
-          child: Column(
-            children: [
-              // Table Header
-              Container(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 1050),
+              child: Column(
+                children: [
+                  // Table Header
+                  Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: const BoxDecoration(
                   color: Color(0xFFF8FAFC),
@@ -630,7 +639,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 32,
+                      width: 36,
                       child: Checkbox(
                         value: items.isNotEmpty && items.every((e) => e['selected'] == true),
                         onChanged: (val) {
@@ -640,10 +649,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         },
                       ),
                     ),
-                    Expanded(flex: 3, child: _buildTableHeaderText('PRODUCT / SKU')),
-                    Expanded(flex: 2, child: _buildTableHeaderText('CURRENT STOCK')),
-                    Expanded(
-                      flex: 2,
+                    SizedBox(width: 230, child: _buildTableHeaderText('PRODUCT / SKU')),
+                    SizedBox(width: 130, child: _buildTableHeaderText('CURRENT STOCK')),
+                    SizedBox(
+                      width: 130,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(color: const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(4)),
@@ -653,10 +662,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         ),
                       ),
                     ),
-                    Expanded(flex: 2, child: _buildTableHeaderText('REORDER PT.')),
-                    Expanded(flex: 2, child: _buildTableHeaderText('SUGGESTED')),
-                    Expanded(flex: 2, child: _buildTableHeaderText('STATUS')),
-                    Expanded(flex: 2, child: _buildTableHeaderText('ACTIONS', alignRight: true)),
+                    SizedBox(width: 120, child: _buildTableHeaderText('REORDER PT.')),
+                    SizedBox(width: 130, child: _buildTableHeaderText('SUGGESTED')),
+                    SizedBox(width: 140, child: _buildTableHeaderText('STATUS')),
+                    SizedBox(width: 170, child: _buildTableHeaderText('ACTIONS', alignRight: true)),
                   ],
                 ),
               ),
@@ -679,9 +688,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             ],
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ),
+  ],
+);
+}
 
   Widget _buildTableHeaderText(String text, {bool alignRight = false}) {
     return Text(
@@ -698,7 +709,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       child: Row(
         children: [
           SizedBox(
-            width: 32,
+            width: 36,
             child: Checkbox(
               value: item['selected'] == true,
               onChanged: (val) {
@@ -708,8 +719,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               },
             ),
           ),
-          Expanded(
-            flex: 3,
+          SizedBox(
+            width: 230,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -719,20 +730,20 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               ],
             ),
           ),
-          Expanded(
-            flex: 2,
+          SizedBox(
+            width: 130,
             child: Text('${item['currentStock']} ${item['unit']}', style: const TextStyle(color: Color(0xFF334155), fontSize: 13, fontWeight: FontWeight.w500)),
           ),
-          Expanded(
-            flex: 2,
+          SizedBox(
+            width: 130,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text('${item['safetyStock']} ${item['unit']}', style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 13, fontWeight: FontWeight.w600)),
             ),
           ),
-          Expanded(flex: 2, child: Text('${item['reorderPt']} ${item['unit']}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13))),
-          Expanded(
-            flex: 2,
+          SizedBox(width: 120, child: Text('${item['reorderPt']} ${item['unit']}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13))),
+          SizedBox(
+            width: 130,
             child: Text(
               item['suggested'],
               style: TextStyle(
@@ -742,8 +753,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               ),
             ),
           ),
-          Expanded(
-            flex: 2,
+          SizedBox(
+            width: 140,
             child: Row(
               children: [
                 Container(
@@ -757,8 +768,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               ],
             ),
           ),
-          Expanded(
-            flex: 2,
+          SizedBox(
+            width: 170,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

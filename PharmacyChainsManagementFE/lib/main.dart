@@ -7,11 +7,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'firebase_options.dart';
 
 import 'package:dio/dio.dart';
-import 'features/auth/boundary/login_screen.dart';
 import 'features/auth/control/auth_bloc.dart';
 import 'features/auth/network/auth_api_client.dart';
-import 'features/home/boundary/home_screen.dart';
-import 'features/inventory/boundary/inventory_dashboard_screen.dart';
 import 'features/inventory/control/inventory_dashboard_bloc.dart';
 import 'features/inventory/control/stocktake_bloc.dart';
 import 'features/inventory/control/receive_goods_bloc.dart';

@@ -144,42 +144,48 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(20)),
-                                child: Text(item['lotNo'], style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 14)),
-                              ),
-                              const SizedBox(width: 12),
-                              Text('${item['medicineName']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
-                            ],
-                          ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(color: isNearExp ? AppColors.error.withOpacity(0.1) : AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                            child: Text(item['recallStatus'], style: TextStyle(color: isNearExp ? AppColors.error : AppColors.success, fontWeight: FontWeight.bold, fontSize: 12)),
+                            decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(20)),
+                            child: Text(item['lotNo'], style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 14)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${item['medicineName']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis, maxLines: 2),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(color: isNearExp ? AppColors.error.withOpacity(0.1) : AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                                  child: Text(item['recallStatus'], style: TextStyle(color: isNearExp ? AppColors.error : AppColors.success, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 2),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Row(
+                      Wrap(
+                        spacing: 24,
+                        runSpacing: 4,
                         children: [
                           Text('MFG Date (Ngày SX): ${item['mfgDate']}', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-                          const SizedBox(width: 24),
                           Text('EXP Date (Hạn SD): ${item['expDate']}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isNearExp ? AppColors.error : AppColors.textPrimary)),
-                          const SizedBox(width: 24),
                           Text('Current Stock (Tồn hiện tại): ${item['currentQty']} ${item['unit']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        runSpacing: 4,
                         children: [
                           const Icon(Icons.location_on, size: 16, color: AppColors.info),
-                          const SizedBox(width: 4),
-                          Text('Warehouse Location (Vị trí kho): ${item['warehouseZone']}  |  COA: ${item['coaStatus']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                          Text('Warehouse Location (Vị trí kho): ${item['warehouseZone']}  |  COA: ${item['coaStatus']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis, maxLines: 2),
                         ],
                       ),
                     ],

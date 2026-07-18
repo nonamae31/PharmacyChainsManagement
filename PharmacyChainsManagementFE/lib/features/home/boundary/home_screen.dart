@@ -85,7 +85,7 @@ class HomeScreen extends StatelessWidget {
                     color: Colors.blue,
                     onTap: () {
                       final dio = Dio(BaseOptions(
-                        baseUrl: dotenv.env['BASE_URL'] ?? 'http://localhost:5064',
+                        baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000',
                         connectTimeout: const Duration(seconds: 15),
                         receiveTimeout: const Duration(seconds: 15),
                         headers: {'Content-Type': 'application/json'},

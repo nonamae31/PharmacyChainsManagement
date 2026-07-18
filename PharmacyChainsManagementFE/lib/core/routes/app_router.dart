@@ -7,7 +7,7 @@ import '../../features/founder_admin/presentation/screens/founder_layout_screen.
 import '../../features/home/boundary/business_admin_home_screen.dart';
 import '../../features/home/boundary/branch_manager_home_screen.dart';
 import '../../features/home/boundary/staff_home_screen.dart';
-import '../../features/home/boundary/inventory_home_screen.dart';
+import '../../features/inventory/boundary/inventory_dashboard_screen.dart';
 import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
 import 'dart:async';
 
@@ -70,7 +70,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/inventory_home',
-        pageBuilder: (context, state) => _buildTransition(context, state, const InventoryHomeScreen()),
+        pageBuilder: (context, state) => _buildTransition(context, state, const InventoryDashboardScreen(branchId: 'BR-001')),
       ),
       GoRoute(
         path: '/cash_flow',

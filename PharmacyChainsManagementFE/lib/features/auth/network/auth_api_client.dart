@@ -131,7 +131,7 @@ class AuthApiClient {
       final refreshToken = await SecureStorageService.readRefreshToken();
       if (refreshToken == null) return false;
       
-      final dio = Dio(BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? 'https://fallback.api.com'));
+      final dio = Dio(BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000'));
       final response = await dio.post(
         '/api/v1/auth/refresh',
         data: {'refresh_token': refreshToken},
