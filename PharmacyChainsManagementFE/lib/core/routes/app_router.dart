@@ -5,9 +5,10 @@ import '../../features/auth/control/auth_state.dart';
 import '../../features/auth/boundary/login_screen.dart';
 import '../../features/home/boundary/founder_home_screen.dart';
 import '../../features/business_admin/boundary/business_admin_shell_screen.dart';
-import '../../features/home/boundary/branch_manager_home_screen.dart';
+import '../../features/branch_portal/boundary/branch_manager_portal_screen.dart';
 import '../../features/home/boundary/staff_home_screen.dart';
 import '../../features/home/boundary/inventory_home_screen.dart';
+import '../theme/branch_manager_app_theme.dart';
 import 'dart:async';
 
 class AppRouter {
@@ -70,8 +71,14 @@ class AppRouter {
       ),
       GoRoute(
         path: '/branch_manager_home',
-        pageBuilder: (context, state) =>
-            _buildTransition(context, state, const BranchManagerHomeScreen()),
+        pageBuilder: (context, state) => _buildTransition(
+          context,
+          state,
+          Theme(
+            data: BranchManagerAppTheme.light,
+            child: const BranchManagerPortalScreen(),
+          ),
+        ),
       ),
       GoRoute(
         path: '/staff_home',
