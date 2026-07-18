@@ -49,22 +49,32 @@ Future<void> init() async {
     sl.registerLazySingleton<Dio>(() => ApiClient.createDio());
   }
   if (!sl.isRegistered<FlutterSecureStorage>()) {
-    sl.registerLazySingleton<FlutterSecureStorage>(() => const FlutterSecureStorage());
+    sl.registerLazySingleton<FlutterSecureStorage>(
+      () => const FlutterSecureStorage(),
+    );
   }
 
   // Cubit
   sl.registerFactory(() => BusinessAdminCubit(repository: sl()));
   sl.registerFactory(() => CreateAdminCubit(repository: sl()));
-  sl.registerFactory(() => BusinessAdminEditCubit(updateBusinessAdminUseCase: sl()));
+  sl.registerFactory(
+    () => BusinessAdminEditCubit(updateBusinessAdminUseCase: sl()),
+  );
   sl.registerFactory(() => DeactivateAdminCubit(useCase: sl()));
-  sl.registerFactory(() => FinancialExportCubit(exportFinancialReportUseCase: sl()));
+  sl.registerFactory(
+    () => FinancialExportCubit(exportFinancialReportUseCase: sl()),
+  );
   sl.registerFactory(() => StaffSalesBloc(apiClient: sl()));
   sl.registerFactory(() => PrescriptionBloc(apiClient: sl()));
   sl.registerFactory(() => FounderProfileCubit(repository: sl()));
 
   // Bloc
-  sl.registerFactory(() => CashFlowBloc(getCashFlowUseCase: sl(), getBranches: sl()));
-  sl.registerFactory(() => RevenueReportBloc(generateRevenueReportUseCase: sl()));
+  sl.registerFactory(
+    () => CashFlowBloc(getCashFlowUseCase: sl(), getBranches: sl()),
+  );
+  sl.registerFactory(
+    () => RevenueReportBloc(generateRevenueReportUseCase: sl()),
+  );
 
   // Use cases
   sl.registerLazySingleton(() => DeactivateBusinessAdminUseCase(sl()));
@@ -87,8 +97,12 @@ Future<void> init() async {
   sl.registerLazySingleton<FinancialRepository>(
     () => FinancialRepositoryImpl(dio: sl()),
   );
-  sl.registerLazySingleton<StaffSalesApiClient>(() => StaffSalesApiClient(sl()));
-  sl.registerLazySingleton<PrescriptionApiClient>(() => PrescriptionApiClient(sl()));
+  sl.registerLazySingleton<StaffSalesApiClient>(
+    () => StaffSalesApiClient(sl()),
+  );
+  sl.registerLazySingleton<PrescriptionApiClient>(
+    () => PrescriptionApiClient(sl()),
+  );
   sl.registerLazySingleton<FounderProfileRepository>(
     () => FounderProfileRepositoryImpl(dio: sl(), secureStorage: sl()),
   );

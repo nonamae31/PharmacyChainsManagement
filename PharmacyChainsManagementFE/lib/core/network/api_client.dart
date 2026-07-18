@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../features/auth/network/secure_storage_service.dart';
+import 'api_base_url.dart';
 
 class ApiClient {
   static Dio createDio() {
     final dio = Dio(BaseOptions(
-      baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000',
+      baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl(),
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       headers: {'Content-Type': 'application/json'},

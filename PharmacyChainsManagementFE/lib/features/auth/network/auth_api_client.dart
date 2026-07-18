@@ -2,20 +2,23 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'secure_storage_service.dart';
 import '../../../core/app_logger.dart';
+import '../../../core/network/api_base_url.dart';
 import '../entity/login_request_dto.dart';
 import '../entity/auth_result_dto.dart';
 import '../../../core/exceptions.dart';
 
 class AuthApiClient {
   late final Dio _dio;
-  
+
   AuthApiClient() {
-    _dio = Dio(BaseOptions(
-      baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000',
-      connectTimeout: const Duration(seconds: 60),
-      receiveTimeout: const Duration(seconds: 60),
-      headers: {'Content-Type': 'application/json'},
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl(),
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
 
     // TODO (SECURITY): Bật SSL Pinning khi có certificate từ server
     _dio.interceptors.add(
@@ -38,10 +41,7 @@ class AuthApiClient {
               try {
                 final cloneReq = await _dio.request(
                   opts.path,
-                  options: Options(
-                    method: opts.method,
-                    headers: opts.headers,
-                  ),
+                  options: Options(method: opts.method, headers: opts.headers),
                   data: opts.data,
                   queryParameters: opts.queryParameters,
                 );
@@ -93,7 +93,9 @@ class AuthApiClient {
       return AuthResultDto.fromJson(response.data);
     } catch (e) {
       AppLogger.error('Register error', e);
-      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+      if (e is DioException &&
+          e.response?.data != null &&
+          e.response?.data is Map) {
         final data = e.response!.data as Map;
         if (data.containsKey('title')) {
           throw ServerException(data['title'].toString());
@@ -114,7 +116,9 @@ class AuthApiClient {
       return AuthResultDto.fromJson(response.data);
     } catch (e) {
       AppLogger.error('Google login error', e);
-      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+      if (e is DioException &&
+          e.response?.data != null &&
+          e.response?.data is Map) {
         final data = e.response!.data as Map;
         if (data.containsKey('message') && data['message'] != null) {
           throw ServerException(data['message'].toString());
@@ -130,13 +134,15 @@ class AuthApiClient {
     try {
       final refreshToken = await SecureStorageService.readRefreshToken();
       if (refreshToken == null) return false;
-      
-      final dio = Dio(BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000'));
+
+      final dio = Dio(
+        BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl()),
+      );
       final response = await dio.post(
         '/api/v1/auth/refresh',
         data: {'refresh_token': refreshToken},
       );
-      
+
       final result = AuthResultDto.fromJson(response.data);
       await SecureStorageService.saveToken(result.accessToken);
       await SecureStorageService.saveRefreshToken(result.refreshToken);
