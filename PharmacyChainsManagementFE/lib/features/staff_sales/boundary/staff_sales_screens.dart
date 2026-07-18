@@ -6,88 +6,241 @@ import '../control/staff_sales_bloc.dart';
 import '../control/staff_sales_event.dart';
 import '../control/staff_sales_state.dart';
 import '../entity/staff_sales_dto.dart';
+import 'widgets/staff_workspace_shell.dart';
 
 class StaffDashboardScreen extends StatelessWidget {
   const StaffDashboardScreen({super.key});
-  @override Widget build(BuildContext context) => BlocProvider(create: (_) => sl<StaffSalesBloc>()..add(StaffDashboardRequested()), child: const _DashboardView());
+  @override
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => sl<StaffSalesBloc>()..add(StaffDashboardRequested()),
+    child: BlocConsumer<StaffSalesBloc, StaffSalesState>(
+      listener: _listen,
+      builder: (context, state) => StaffWorkspaceShell(
+        title: 'Branch dashboard',
+        subtitle: 'Overview of your pharmacy operations today.',
+        section: StaffWorkspaceSection.dashboard,
+        child: state is StaffDashboardLoadSuccess
+            ? _DashboardContent(dashboard: state.dashboard)
+            : const _PageLoading(),
+      ),
+    ),
+  );
 }
 
-class _DashboardView extends StatelessWidget {
-  const _DashboardView();
-  @override Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Staff Dashboard')),
-        body: BlocConsumer<StaffSalesBloc, StaffSalesState>(
-          listener: _listen,
-          builder: (context, state) {
-            if (state is StaffDashboardLoadSuccess) {
-              return ListView(
-                padding: const EdgeInsets.all(16),
+class _DashboardContent extends StatelessWidget {
+  final StaffDashboardDto dashboard;
+  const _DashboardContent({required this.dashboard});
+  @override
+  Widget build(BuildContext context) => ListView(
+    children: [
+      Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          _MetricCard(
+            'Daily revenue',
+            dashboard.todayRevenue.toStringAsFixed(0),
+            Icons.payments_outlined,
+          ),
+          _MetricCard(
+            'Invoices today',
+            dashboard.todayInvoiceCount.toString(),
+            Icons.receipt_long_outlined,
+          ),
+          _MetricCard(
+            'Pending payments',
+            dashboard.pendingInvoiceCount.toString(),
+            Icons.hourglass_top_outlined,
+          ),
+          _MetricCard(
+            'Low stock items',
+            dashboard.lowStockItemCount.toString(),
+            Icons.inventory_2_outlined,
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Quick actions',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: [
-                  _MetricCard('Doanh thu hôm nay', state.dashboard.todayRevenue.toStringAsFixed(0)),
-                  _MetricCard('Hóa đơn hôm nay', state.dashboard.todayInvoiceCount.toString()),
-                  _MetricCard('Chờ thanh toán', state.dashboard.pendingInvoiceCount.toString()),
-                  _MetricCard('Cảnh báo tồn kho', state.dashboard.lowStockItemCount.toString()),
-                  _MetricCard('Ca làm việc', state.dashboard.shiftLabel),
-                  const SizedBox(height: 16),
-                  _NavigationTile('Tìm thuốc', Icons.medication_outlined, () => context.push('/staff/medicines')),
-                  _NavigationTile('Tạo hóa đơn', Icons.receipt_long_outlined, () => context.push('/staff/invoices/new')),
-                  _NavigationTile('Lịch sử hóa đơn', Icons.history_outlined, () => context.push('/staff/invoices')),
-                  _NavigationTile('Lịch sử thanh toán', Icons.payments_outlined, () => context.push('/staff/payments')),
+                  FilledButton.icon(
+                    onPressed: () => context.go('/staff/invoices/new'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('New invoice'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => context.go('/staff/medicines'),
+                    icon: const Icon(Icons.medication_outlined),
+                    label: const Text('Search medicine'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => context.go('/staff/prescriptions'),
+                    icon: const Icon(Icons.description_outlined),
+                    label: const Text('View prescriptions'),
+                  ),
                 ],
-              );
-            }
-            return const Center(child: CircularProgressIndicator());
-          },
+              ),
+            ],
+          ),
         ),
-      );
+      ),
+    ],
+  );
 }
 
 class MedicineSearchScreen extends StatelessWidget {
   const MedicineSearchScreen({super.key});
-  @override Widget build(BuildContext context) => BlocProvider(create: (_) => sl<StaffSalesBloc>()..add(const MedicineSearchRequested(null)), child: const _MedicineSearchView());
+  @override
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) =>
+        sl<StaffSalesBloc>()..add(const MedicineSearchRequested(null)),
+    child: const _MedicineSearchView(),
+  );
 }
 
-class _MedicineSearchView extends StatefulWidget { const _MedicineSearchView(); @override State<_MedicineSearchView> createState() => _MedicineSearchViewState(); }
+class _MedicineSearchView extends StatefulWidget {
+  const _MedicineSearchView();
+  @override
+  State<_MedicineSearchView> createState() => _MedicineSearchViewState();
+}
+
 class _MedicineSearchViewState extends State<_MedicineSearchView> {
   final _searchController = TextEditingController();
-  @override void dispose() { _searchController.dispose(); super.dispose(); }
-  @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('Tìm thuốc')), body: Column(children: [
-    Padding(padding: const EdgeInsets.all(16), child: TextField(controller: _searchController, decoration: InputDecoration(labelText: 'Tên thuốc hoặc mã lô', suffixIcon: IconButton(icon: const Icon(Icons.search), onPressed: () => context.read<StaffSalesBloc>().add(MedicineSearchRequested(_searchController.text)))), onSubmitted: (value) => context.read<StaffSalesBloc>().add(MedicineSearchRequested(value)))),
-    Expanded(
-      child: BlocConsumer<StaffSalesBloc, StaffSalesState>(
-        listener: _listen,
-        builder: (context, state) {
-          if (state is StaffSalesLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state is MedicineSearchLoadSuccess) {
-            return ListView.builder(
-              itemCount: state.medicines.length,
-              itemBuilder: (context, index) => _MedicineTile(medicine: state.medicines[index]),
-            );
-          }
-          return const Center(child: Text('Chưa có dữ liệu thuốc'));
-        },
-      ),
-    )
-  ]));
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => StaffWorkspaceShell(
+    title: 'Medicine search',
+    subtitle: 'Search the formulary and manage local branch inventory.',
+    section: StaffWorkspaceSection.medicines,
+    child: Column(
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onSubmitted: _search,
+                    decoration: const InputDecoration(
+                      labelText: 'Medicine name, SKU or batch',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  onPressed: () => _search(_searchController.text),
+                  child: const Text('Search'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        Expanded(
+          child: BlocConsumer<StaffSalesBloc, StaffSalesState>(
+            listener: _listen,
+            builder: (context, state) {
+              if (state is StaffSalesLoading) return const _PageLoading();
+              if (state is MedicineSearchLoadSuccess)
+                return _MedicineResults(medicines: state.medicines);
+              return const _EmptyState(
+                icon: Icons.medication_outlined,
+                message: 'No medicines found.',
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+  void _search(String value) =>
+      context.read<StaffSalesBloc>().add(MedicineSearchRequested(value));
 }
 
-class _MedicineTile extends StatelessWidget {
-  final MedicineDto medicine; const _MedicineTile({required this.medicine});
-  @override Widget build(BuildContext context) => ListTile(title: Text(medicine.medicineName), subtitle: Text('${medicine.availableQuantity} ${medicine.unit} • ${medicine.stockStatus}'), trailing: FilledButton(onPressed: () => context.push('/staff/invoices/new', extra: medicine), child: const Text('Thêm hóa đơn')));
+class _MedicineResults extends StatelessWidget {
+  final List<MedicineDto> medicines;
+  const _MedicineResults({required this.medicines});
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListView.separated(
+      itemCount: medicines.length,
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final medicine = medicines[index];
+        final low = medicine.stockStatus == 'LOW';
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 8,
+          ),
+          leading: CircleAvatar(
+            backgroundColor: const Color(0xFFEAF2FF),
+            child: Icon(
+              Icons.medication_outlined,
+              color: low ? Colors.red.shade700 : const Color(0xFF0B4D78),
+            ),
+          ),
+          title: Text(
+            medicine.medicineName,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text(
+            '${medicine.category ?? 'General'} • ${medicine.unit}\n${medicine.availableQuantity} ${medicine.unit} in stock',
+          ),
+          isThreeLine: true,
+          trailing: FilledButton(
+            onPressed: () =>
+                context.push('/staff/invoices/new', extra: medicine),
+            child: const Text('Add to invoice'),
+          ),
+        );
+      },
+    ),
+  );
 }
 
 class InvoiceGenerationScreen extends StatelessWidget {
-  final MedicineDto? medicine; const InvoiceGenerationScreen({super.key, this.medicine});
-  @override Widget build(BuildContext context) => BlocProvider(create: (_) => sl<StaffSalesBloc>(), child: _InvoiceGenerationView(medicine: medicine));
+  final MedicineDto? medicine;
+  const InvoiceGenerationScreen({super.key, this.medicine});
+  @override
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => sl<StaffSalesBloc>(),
+    child: _InvoiceGenerationView(medicine: medicine),
+  );
 }
 
-class _InvoiceGenerationView extends StatefulWidget { final MedicineDto? medicine; const _InvoiceGenerationView({this.medicine}); @override State<_InvoiceGenerationView> createState() => _InvoiceGenerationViewState(); }
+class _InvoiceGenerationView extends StatefulWidget {
+  final MedicineDto? medicine;
+  const _InvoiceGenerationView({this.medicine});
+  @override
+  State<_InvoiceGenerationView> createState() => _InvoiceGenerationViewState();
+}
+
 class _InvoiceGenerationViewState extends State<_InvoiceGenerationView> {
   final _medicineIdController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
-
   @override
   void initState() {
     super.initState();
@@ -103,139 +256,373 @@ class _InvoiceGenerationViewState extends State<_InvoiceGenerationView> {
 
   void _submit() {
     final quantity = int.tryParse(_quantityController.text);
-    if (_medicineIdController.text.isEmpty || quantity == null || quantity < 1) {
-      _show(context, 'Nhập thuốc và số lượng hợp lệ.');
+    if (_medicineIdController.text.isEmpty ||
+        quantity == null ||
+        quantity < 1) {
+      _show(context, 'Enter a medicine and valid quantity.');
       return;
     }
-    context.read<StaffSalesBloc>().add(InvoiceSubmitted([
-      InvoiceLineRequestDto(medicineId: _medicineIdController.text, quantity: quantity)
-    ]));
+    context.read<StaffSalesBloc>().add(
+      InvoiceSubmitted([
+        InvoiceLineRequestDto(
+          medicineId: _medicineIdController.text,
+          quantity: quantity,
+        ),
+      ]),
+    );
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Tạo hóa đơn')),
-        body: BlocConsumer<StaffSalesBloc, StaffSalesState>(
-          listener: (context, state) {
-            _listen(context, state);
-            if (state is InvoiceSubmitSuccess) {
-              context.go(
-                '/staff/payments/process',
-                extra: InvoiceSummaryDto(
-                  invoiceId: state.invoice.invoiceId,
-                  invoiceCode: state.invoice.invoiceCode,
-                  invoiceDate: state.invoice.invoiceDate,
-                  totalAmount: state.invoice.totalAmount,
-                  paymentStatus: state.invoice.paymentStatus,
-                  itemCount: state.invoice.items.length,
-                ),
-              );
-            }
-          },
-          builder: (context, state) => Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (widget.medicine != null)
-                  Text(widget.medicine!.medicineName, style: Theme.of(context).textTheme.titleMedium),
-                TextField(
-                  controller: _medicineIdController,
-                  decoration: const InputDecoration(labelText: 'Medicine ID'),
-                  readOnly: widget.medicine != null,
-                ),
-                TextField(
-                  controller: _quantityController,
-                  decoration: const InputDecoration(labelText: 'Số lượng'),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: state is StaffSalesLoading ? null : _submit,
-                  child: const Text('Tạo hóa đơn'),
-                ),
-              ],
+  Widget build(BuildContext context) =>
+      BlocConsumer<StaffSalesBloc, StaffSalesState>(
+        listener: (context, state) {
+          _listen(context, state);
+          if (state is InvoiceSubmitSuccess)
+            context.go(
+              '/staff/payments/process',
+              extra: InvoiceSummaryDto(
+                invoiceId: state.invoice.invoiceId,
+                invoiceCode: state.invoice.invoiceCode,
+                invoiceDate: state.invoice.invoiceDate,
+                totalAmount: state.invoice.totalAmount,
+                paymentStatus: state.invoice.paymentStatus,
+                itemCount: state.invoice.items.length,
+              ),
+            );
+        },
+        builder: (context, state) => StaffWorkspaceShell(
+          title: 'Prescription invoice',
+          subtitle: 'Create an invoice for medicine supplied by this branch.',
+          section: StaffWorkspaceSection.invoices,
+          actions: [
+            OutlinedButton(
+              onPressed: () => context.go('/staff/invoices'),
+              child: const Text('Cancel'),
             ),
+          ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final desktop = constraints.maxWidth >= 800;
+              final form = _InvoiceForm(
+                medicine: widget.medicine,
+                medicineIdController: _medicineIdController,
+                quantityController: _quantityController,
+                loading: state is StaffSalesLoading,
+                onSubmit: _submit,
+              );
+              final summary = _InvoiceSummary(
+                medicine: widget.medicine,
+                quantity: _quantityController.text,
+              );
+              return desktop
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 3, child: form),
+                        const SizedBox(width: 20),
+                        Expanded(flex: 1, child: summary),
+                      ],
+                    )
+                  : ListView(
+                      children: [form, const SizedBox(height: 16), summary],
+                    );
+            },
           ),
         ),
       );
+}
+
+class _InvoiceForm extends StatelessWidget {
+  final MedicineDto? medicine;
+  final TextEditingController medicineIdController;
+  final TextEditingController quantityController;
+  final bool loading;
+  final VoidCallback onSubmit;
+  const _InvoiceForm({
+    required this.medicine,
+    required this.medicineIdController,
+    required this.quantityController,
+    required this.loading,
+    required this.onSubmit,
+  });
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Prescribed medicines',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: medicineIdController,
+            readOnly: medicine != null,
+            decoration: const InputDecoration(labelText: 'Medicine ID'),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: quantityController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Quantity'),
+          ),
+          if (medicine != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                medicine!.medicineName,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: loading ? null : onSubmit,
+            icon: const Icon(Icons.receipt_long_outlined),
+            label: const Text('Generate invoice'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _InvoiceSummary extends StatelessWidget {
+  final MedicineDto? medicine;
+  final String quantity;
+  const _InvoiceSummary({required this.medicine, required this.quantity});
+  @override
+  Widget build(BuildContext context) => Card(
+    color: const Color(0xFF0B4979),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: DefaultTextStyle(
+        style: const TextStyle(color: Colors.white),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Invoice summary',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 28),
+            const Text('Selected medicine'),
+            Text(
+              medicine?.medicineName ?? 'Choose medicine from search',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 16),
+            const Text('Quantity'),
+            Text(
+              quantity,
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class InvoiceHistoryScreen extends StatelessWidget {
   const InvoiceHistoryScreen({super.key});
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (_) => sl<StaffSalesBloc>()..add(InvoiceHistoryRequested()),
-        child: Scaffold(
-          appBar: AppBar(title: const Text('Lịch sử hóa đơn')),
-          body: BlocConsumer<StaffSalesBloc, StaffSalesState>(
-            listener: _listen,
-            builder: (context, state) {
-              if (state is StaffSalesLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state is InvoiceHistoryLoadSuccess) {
-                return ListView.builder(
-                  itemCount: state.invoices.length,
-                  itemBuilder: (context, index) {
-                    final invoice = state.invoices[index];
-                    return ListTile(
-                      title: Text(invoice.invoiceCode),
-                      subtitle: Text('${invoice.totalAmount.toStringAsFixed(0)} • ${invoice.paymentStatus}'),
-                      trailing: invoice.paymentStatus == 'PAID'
-                          ? null
-                          : FilledButton(
-                              onPressed: () => context.push('/staff/payments/process', extra: invoice),
-                              child: const Text('Thanh toán'),
-                            ),
-                    );
-                  },
-                );
-              }
-              return const Center(child: Text('Chưa có hóa đơn'));
-            },
+    create: (_) => sl<StaffSalesBloc>()..add(InvoiceHistoryRequested()),
+    child: BlocConsumer<StaffSalesBloc, StaffSalesState>(
+      listener: _listen,
+      builder: (context, state) => StaffWorkspaceShell(
+        title: 'Invoices',
+        subtitle: 'Review and process financial transactions for this branch.',
+        section: StaffWorkspaceSection.invoices,
+        child: state is StaffSalesLoading
+            ? const _PageLoading()
+            : state is InvoiceHistoryLoadSuccess
+            ? _InvoiceList(invoices: state.invoices)
+            : const _EmptyState(
+                icon: Icons.receipt_long_outlined,
+                message: 'No invoices yet.',
+              ),
+      ),
+    ),
+  );
+}
+
+class _InvoiceList extends StatelessWidget {
+  final List<InvoiceSummaryDto> invoices;
+  const _InvoiceList({required this.invoices});
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListView.separated(
+      itemCount: invoices.length,
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final invoice = invoices[index];
+        final pending = invoice.paymentStatus != 'PAID';
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 8,
           ),
-        ),
-      );
+          title: Text(
+            invoice.invoiceCode,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text('${invoice.invoiceDate} • ${invoice.itemCount} items'),
+          trailing: Wrap(
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                invoice.totalAmount.toStringAsFixed(0),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              Chip(label: Text(invoice.paymentStatus)),
+              if (pending)
+                FilledButton(
+                  onPressed: () =>
+                      context.push('/staff/payments/process', extra: invoice),
+                  child: const Text('Process payment'),
+                ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
 }
 
 class PaymentProcessingScreen extends StatelessWidget {
   final InvoiceSummaryDto invoice;
   const PaymentProcessingScreen({super.key, required this.invoice});
-
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (_) => sl<StaffSalesBloc>(),
-        child: Scaffold(
-          appBar: AppBar(title: const Text('Thanh toán')),
-          body: BlocConsumer<StaffSalesBloc, StaffSalesState>(
-            listener: (context, state) {
-              _listen(context, state);
-              if (state is PaymentSubmitSuccess) {
-                context.go('/staff/payments');
-              }
-            },
-            builder: (context, state) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(invoice.invoiceCode, style: Theme.of(context).textTheme.titleLarge),
-                  Text('Tổng tiền: ${invoice.totalAmount.toStringAsFixed(0)}'),
-                  const SizedBox(height: 24),
-                  for (final method in const ['CASH', 'CARD', 'QR'])
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: FilledButton(
+    create: (_) => sl<StaffSalesBloc>(),
+    child: _PaymentProcessingView(invoice: invoice),
+  );
+}
+
+class _PaymentProcessingView extends StatefulWidget {
+  final InvoiceSummaryDto invoice;
+  const _PaymentProcessingView({required this.invoice});
+  @override
+  State<_PaymentProcessingView> createState() => _PaymentProcessingViewState();
+}
+
+class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
+  String _method = 'CARD';
+  @override
+  Widget build(BuildContext context) =>
+      BlocConsumer<StaffSalesBloc, StaffSalesState>(
+        listener: (context, state) {
+          _listen(context, state);
+          if (state is PaymentSubmitSuccess) context.go('/staff/payments');
+        },
+        builder: (context, state) => StaffWorkspaceShell(
+          title: 'Checkout',
+          subtitle: 'Confirm the payment method for this invoice.',
+          section: StaffWorkspaceSection.payments,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final methods = ['CARD', 'CASH', 'QR'];
+              final selection = Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Payment method',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...methods.map(
+                        (method) => RadioListTile<String>(
+                          value: method,
+                          groupValue: _method,
+                          title: Text(
+                            method == 'CARD'
+                                ? 'Credit / Debit card'
+                                : method == 'CASH'
+                                ? 'Cash payment'
+                                : 'QR payment',
+                          ),
+                          subtitle: Text(
+                            method == 'CARD'
+                                ? 'Visa, Mastercard, Amex'
+                                : method == 'CASH'
+                                ? 'Physical currency at terminal'
+                                : 'Scan QR code',
+                          ),
+                          onChanged: (value) =>
+                              setState(() => _method = value!),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
                         onPressed: state is StaffSalesLoading
                             ? null
-                            : () => context.read<StaffSalesBloc>().add(PaymentSubmitted(invoice.invoiceId, method)),
-                        child: Text(method),
+                            : () => context.read<StaffSalesBloc>().add(
+                                PaymentSubmitted(
+                                  widget.invoice.invoiceId,
+                                  _method,
+                                ),
+                              ),
+                        icon: const Icon(Icons.lock_outline),
+                        label: const Text('Confirm payment'),
                       ),
+                    ],
+                  ),
+                ),
+              );
+              final invoiceCard = Card(
+                color: const Color(0xFF0B4979),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: DefaultTextStyle(
+                    style: const TextStyle(color: Colors.white),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Total payable'),
+                        const SizedBox(height: 12),
+                        Text(
+                          widget.invoice.totalAmount.toStringAsFixed(0),
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text('Invoice ${widget.invoice.invoiceCode}'),
+                        Text('${widget.invoice.itemCount} items'),
+                      ],
                     ),
-                ],
-              ),
-            ),
+                  ),
+                ),
+              );
+              return constraints.maxWidth >= 760
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 3, child: selection),
+                        const SizedBox(width: 20),
+                        Expanded(flex: 2, child: invoiceCard),
+                      ],
+                    )
+                  : ListView(
+                      children: [
+                        invoiceCard,
+                        const SizedBox(height: 16),
+                        selection,
+                      ],
+                    );
+            },
           ),
         ),
       );
@@ -245,40 +632,103 @@ class PaymentTransactionsScreen extends StatelessWidget {
   const PaymentTransactionsScreen({super.key});
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (_) => sl<StaffSalesBloc>()..add(PaymentTransactionsRequested()),
-        child: Scaffold(
-          appBar: AppBar(title: const Text('Lịch sử thanh toán')),
-          body: BlocConsumer<StaffSalesBloc, StaffSalesState>(
-            listener: _listen,
-            builder: (context, state) {
-              if (state is StaffSalesLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state is PaymentTransactionsLoadSuccess) {
-                return ListView.builder(
+    create: (_) => sl<StaffSalesBloc>()..add(PaymentTransactionsRequested()),
+    child: BlocConsumer<StaffSalesBloc, StaffSalesState>(
+      listener: _listen,
+      builder: (context, state) => StaffWorkspaceShell(
+        title: 'Payment history',
+        subtitle: 'View completed transactions for this branch.',
+        section: StaffWorkspaceSection.payments,
+        child: state is StaffSalesLoading
+            ? const _PageLoading()
+            : state is PaymentTransactionsLoadSuccess
+            ? Card(
+                child: ListView.separated(
                   itemCount: state.payments.length,
-                  itemBuilder: (context, index) {
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, index) {
                     final payment = state.payments[index];
                     return ListTile(
                       title: Text(payment.invoiceCode),
-                      subtitle: Text('${payment.paymentMethod} • ${payment.paymentStatus}'),
-                      trailing: Text(payment.amount.toStringAsFixed(0)),
+                      subtitle: Text(
+                        '${payment.paymentMethod} • ${payment.paymentStatus}',
+                      ),
+                      trailing: Text(
+                        payment.amount.toStringAsFixed(0),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     );
                   },
-                );
-              }
-              return const Center(child: Text('Chưa có giao dịch'));
-            },
-          ),
-        ),
-      );
+                ),
+              )
+            : const _EmptyState(
+                icon: Icons.payments_outlined,
+                message: 'No payment transactions yet.',
+              ),
+      ),
+    ),
+  );
 }
 
-class _MetricCard extends StatelessWidget { final String title; final String value; const _MetricCard(this.title, this.value); @override Widget build(BuildContext context) => Card(child: ListTile(title: Text(title), trailing: Text(value, style: Theme.of(context).textTheme.titleMedium))); }
-class _NavigationTile extends StatelessWidget { final String title; final IconData icon; final VoidCallback onTap; const _NavigationTile(this.title, this.icon, this.onTap); @override Widget build(BuildContext context) => Card(child: ListTile(title: Text(title), leading: Icon(icon), trailing: const Icon(Icons.chevron_right), onTap: onTap)); }
-void _listen(BuildContext context, StaffSalesState state) {
-  if (state is StaffSalesLoadFailure) {
-    _show(context, state.message);
-  }
+class _MetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  const _MetricCard(this.title, this.value, this.icon);
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 220,
+    child: Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: const Color(0xFF0B4D78)),
+            const SizedBox(height: 16),
+            Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(title),
+          ],
+        ),
+      ),
+    ),
+  );
 }
-void _show(BuildContext context, String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+
+class _PageLoading extends StatelessWidget {
+  const _PageLoading();
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: CircularProgressIndicator());
+}
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  const _EmptyState({required this.icon, required this.message});
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 42, color: const Color(0xFF607083)),
+        const SizedBox(height: 12),
+        Text(message),
+      ],
+    ),
+  );
+}
+
+void _listen(BuildContext context, StaffSalesState state) {
+  if (state is StaffSalesLoadFailure) _show(context, state.message);
+}
+
+void _show(BuildContext context, String message) => ScaffoldMessenger.of(
+  context,
+).showSnackBar(SnackBar(content: Text(message)));

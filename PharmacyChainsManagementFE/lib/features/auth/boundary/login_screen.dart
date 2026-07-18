@@ -21,11 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _showAuthBottomSheet(context, true);
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            context.read<AuthBloc>().add(LoginRequested('founder@pharmacy.com', 'Founder@123'));
-          }
-        });
       }
     });
   }

@@ -10,6 +10,8 @@ import '../../features/home/boundary/staff_home_screen.dart';
 import '../../features/home/boundary/inventory_home_screen.dart';
 import '../../features/staff_sales/boundary/staff_sales_screens.dart';
 import '../../features/staff_sales/entity/staff_sales_dto.dart';
+import '../../features/prescription/boundary/prescription_list_screen.dart';
+import '../../features/prescription/boundary/prescription_detail_screen.dart';
 import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
 import 'dart:async';
 
@@ -72,7 +74,9 @@ class AppRouter {
       ),
       GoRoute(path: '/staff/medicines', builder: (_, __) => const MedicineSearchScreen()),
       GoRoute(path: '/staff/invoices/new', builder: (_, state) => InvoiceGenerationScreen(medicine: state.extra as MedicineDto?)),
-      GoRoute(path: '/staff/invoices', builder: (_, __) => const InvoiceHistoryScreen()),
+       GoRoute(path: '/staff/invoices', builder: (_, __) => const InvoiceHistoryScreen()),
+       GoRoute(path: '/staff/prescriptions', builder: (_, __) => const PrescriptionListScreen()),
+       GoRoute(path: '/staff/prescriptions/:prescriptionId', builder: (_, state) => PrescriptionDetailScreen(prescriptionId: state.pathParameters['prescriptionId']!)),
       GoRoute(path: '/staff/payments', builder: (_, __) => const PaymentTransactionsScreen()),
       GoRoute(path: '/staff/payments/process', builder: (_, state) => PaymentProcessingScreen(invoice: state.extra as InvoiceSummaryDto)),
       GoRoute(

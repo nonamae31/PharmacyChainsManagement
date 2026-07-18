@@ -29,6 +29,8 @@ import 'features/finance/domain/usecases/export_financial_report_usecase.dart';
 import 'features/finance/presentation/cubit/financial_export_cubit.dart';
 import 'features/staff_sales/network/staff_sales_api_client.dart';
 import 'features/staff_sales/control/staff_sales_bloc.dart';
+import 'features/prescription/network/prescription_api_client.dart';
+import 'features/prescription/control/prescription_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -47,6 +49,7 @@ Future<void> init() async {
   sl.registerFactory(() => DeactivateAdminCubit(useCase: sl()));
   sl.registerFactory(() => FinancialExportCubit(exportFinancialReportUseCase: sl()));
   sl.registerFactory(() => StaffSalesBloc(apiClient: sl()));
+  sl.registerFactory(() => PrescriptionBloc(apiClient: sl()));
 
   // Bloc
   sl.registerFactory(() => CashFlowBloc(getCashFlowUseCase: sl()));
@@ -71,6 +74,7 @@ Future<void> init() async {
     () => FinancialRepositoryImpl(dio: sl()),
   );
   sl.registerLazySingleton<StaffSalesApiClient>(() => StaffSalesApiClient(sl()));
+  sl.registerLazySingleton<PrescriptionApiClient>(() => PrescriptionApiClient(sl()));
 
   // Data sources
   sl.registerLazySingleton<RevenueReportRemoteDataSource>(
