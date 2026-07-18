@@ -728,6 +728,7 @@ app.*.map.json
 *.pdf
 /.agent_workspace
 PharmacyChainsManagementBE/appsettings.json
+PharmacyChainsManagementBE/appsettings.Development.json
 /PharmacyChainsManagementFE/.agent_workspace
 PharmacyChainsManagementFE/.env.example
 /PharmacyChainsManagementFE/integration_test
@@ -739,3 +740,6 @@ PharmacyChainsManagementFE/android/app/src/main/res/values/strings.xml
 /.swarm-workspace
 *.docx
 /docs/uat
+/PharmacyChainsManagementFE/test
+/screenshots
+/seed

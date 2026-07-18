@@ -78,10 +78,31 @@ public class AuthService : IAuthService
                 return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Invalid email or password."));
             }
 
-            userId = Guid.Empty;
-            userDto = new UserResponse(Guid.Empty, "Founder", _founderSettings.Email, null, null, "ACTIVE");
-            roleDto = new RoleResponse(0, "FOUNDER", "Founder");
-            _logger.LogInformation("Founder logged in successfully from IP: {IpAddress}", ipAddress);
+            var founderUser = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken)
+                ?? await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
+
+            if (founderUser == null)
+            {
+                var role = await _userRepository.GetRoleByCodeAsync("BUSINESS_ADMIN", cancellationToken);
+                founderUser = new User
+                {
+                    UserId = Guid.NewGuid(),
+                    FullName = "Founder",
+                    Email = request.Email,
+                    PasswordHash = _passwordHashingStrategy.HashPassword(request.Password),
+                    Status = "ACTIVE",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    RoleId = role?.RoleId ?? 1 // Fallback if no role found
+                };
+                await _userRepository.AddAsync(founderUser, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+
+            userId = founderUser.UserId;
+            userDto = new UserResponse(userId, founderUser.FullName, founderUser.Email, founderUser.Phone, founderUser.ProfilePhotoUri, founderUser.Status);
+            roleDto = new RoleResponse(0, "Founder", "Founder");
+            _logger.LogInformation("Founder logged in successfully from IP: {IpAddress}. Assigned UserId: {UserId}", ipAddress, userId);
         }
         else
         {
@@ -159,7 +180,7 @@ public class AuthService : IAuthService
                 UserId = userId,
                 RefreshToken = refreshToken,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                ExpiresAt = DateTime.UtcNow.AddMonths(1),
                 IsRevoked = false,
                 IpAddress = ipAddress,
                 UserAgent = userAgent,
@@ -234,7 +255,7 @@ public class AuthService : IAuthService
             UserId = cachedProfile.userId,
             RefreshToken = refreshToken,
             CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            ExpiresAt = DateTime.UtcNow.AddMonths(1),
             IsRevoked = false,
             IpAddress = ipAddress,
             UserAgent = userAgent,

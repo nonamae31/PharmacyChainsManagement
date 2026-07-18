@@ -21,6 +21,7 @@ using PharmacyChainsManagementBE.Services.Strategies;
 using PharmacyChainsManagementBE.Validators;
 using PharmacyChainsManagementBE.Security;
 using Microsoft.AspNetCore.Authorization;
+using PharmacyChainsManagementBE.Common.Settings;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -46,7 +47,7 @@ try
 
     builder.Services.AddSingleton<PharmacyChainsManagementBE.Common.Interceptors.SoftDeleteInterceptor>();
     builder.Services.AddDbContext<PharmacyDbContext>((sp, options) =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), b => b.CommandTimeout(120))
                .AddInterceptors(sp.GetRequiredService<PharmacyChainsManagementBE.Common.Interceptors.SoftDeleteInterceptor>()));
 
     var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
@@ -59,6 +60,7 @@ try
     }
 
     builder.Services.Configure<FounderSettings>(builder.Configuration.GetSection(FounderSettings.SectionName));
+    builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
     builder.Services.AddMemoryCache();
 
     builder.Services.AddRateLimiter(options =>
@@ -98,6 +100,14 @@ try
         options.AddFixedWindowLimiter("export_policy", o =>
         {
             o.PermitLimit = 5;
+            o.Window = TimeSpan.FromMinutes(1);
+            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            o.QueueLimit = 2;
+        });
+
+        options.AddFixedWindowLimiter("ProfileUpdatePolicy", o =>
+        {
+            o.PermitLimit = 10;
             o.Window = TimeSpan.FromMinutes(1);
             o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             o.QueueLimit = 2;
@@ -157,9 +167,15 @@ try
     builder.Services.AddScoped<ISessionRepository, SessionRepository>();
     builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
     builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+    builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+    builder.Services.AddScoped<IReportRepository, ReportRepository>();
+    builder.Services.AddScoped<IRevenueReportService, RevenueReportService>();
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<ITokenService, TokenService>();
+    builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+    builder.Services.AddScoped<IUserService, UserService>();
+    builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
     builder.Services.AddSingleton<IPasswordHashingStrategy, BCryptPasswordHashingStrategy>();
     builder.Services.AddTransient<IEmailService, EmailService>();
     
@@ -210,10 +226,10 @@ try
 
     app.UseHttpsRedirection();
     
-    app.UseRateLimiter();
-
     app.UseRouting();
     app.UseCors();
+
+    app.UseRateLimiter(); // UseRateLimiter must be placed AFTER UseRouting to work with endpoint specific policies
 
     app.UseAuthentication();
     app.UseMiddleware<JwtBlacklistMiddleware>();
