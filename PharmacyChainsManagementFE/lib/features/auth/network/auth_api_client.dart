@@ -78,9 +78,12 @@ class AuthApiClient {
             throw ServerException(data['title'].toString());
           }
         }
-        throw ServerException('Lỗi mạng: ${e.message}');
+        if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+          throw const ServerException('Email hoặc mật khẩu không chính xác.');
+        }
+        throw const ServerException('Không thể kết nối đến máy chủ. Vui lòng thử lại.');
       }
-      throw ServerException('Lỗi hệ thống: $e');
+      throw const ServerException('Đã xảy ra lỗi không xác định.');
     }
   }
 
@@ -131,7 +134,7 @@ class AuthApiClient {
       final refreshToken = await SecureStorageService.readRefreshToken();
       if (refreshToken == null) return false;
       
-      final dio = Dio(BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000'));
+      final dio = Dio(BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? 'https://fallback.api.com'));
       final response = await dio.post(
         '/api/v1/auth/refresh',
         data: {'refresh_token': refreshToken},
