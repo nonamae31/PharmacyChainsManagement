@@ -39,16 +39,133 @@ class _InternalTransferApprovalScreenState extends State<InternalTransferApprova
   ];
 
   void _processTransfer(int index, String action) {
+    if (action == 'Reject') {
+      _showRejectTransferDialog(context, index);
+      return;
+    }
     setState(() {
-      _transfers[index]['status'] = action == 'Approve' ? 'Approved - Ready for Dispatch' : 'Rejected by Manager';
+      _transfers[index]['status'] = 'Approved - Ready for Dispatch';
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(action == 'Approve'
-            ? '✅ Đã duyệt phiếu điều chuyển ${_transfers[index]['transferId']}! Hàng sẵn sàng xuất kho.'
-            : '❌ Đã từ chối phiếu điều chuyển ${_transfers[index]['transferId']}.'),
-        backgroundColor: action == 'Approve' ? AppColors.success : AppColors.error,
+        content: Text('✅ Đã duyệt phiếu điều chuyển ${_transfers[index]['transferId']}! Hàng sẵn sàng xuất kho.'),
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showRejectTransferDialog(BuildContext context, int index) {
+    final transferId = _transfers[index]['transferId'];
+    final fromBranch = _transfers[index]['fromBranch'];
+    final toBranch = _transfers[index]['toBranch'];
+    final reasonController = TextEditingController();
+    String selectedReason = 'Kho xuất không đủ số lượng tồn thực tế (Insufficient actual stock)';
+    final predefinedReasons = [
+      'Kho xuất không đủ số lượng tồn thực tế (Insufficient actual stock)',
+      'Lô thuốc cận date hoặc đang trong quá trình biệt trữ QC (Near-expiry / QC Quarantined)',
+      'Sai lệch mã SKU / Yêu cầu không khớp kế hoạch phân bổ (Wrong SKU / Allocation mismatch)',
+      'Xe chuyên dụng bảo quản lạnh đang bảo dưỡng (Refrigerated transport unavailable)',
+      'Lý do khác (Khác - Vui lòng ghi chi tiết bên dưới)',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 28),
+                const SizedBox(width: 10),
+                const Expanded(child: Text('Ghi nhận Lý do Từ chối Điều chuyển Kho', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.error))),
+              ],
+            ),
+            content: SizedBox(
+              width: 500,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFECACA))),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Phiếu điều chuyển: $transferId', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
+                          Text('Tuyến: $fromBranch ➔ $toBranch', style: const TextStyle(color: Color(0xFF7F1D1D), fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Chọn lý do từ chối (*bắt buộc):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    ...predefinedReasons.map((r) => RadioListTile<String>(
+                      title: Text(r, style: const TextStyle(fontSize: 13)),
+                      value: r,
+                      groupValue: selectedReason,
+                      activeColor: AppColors.error,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      onChanged: (val) {
+                        if (val != null) setStateDialog(() => selectedReason = val);
+                      },
+                    )),
+                    const SizedBox(height: 12),
+                    const Text('Ghi chú chi tiết thêm cho Trưởng kho yêu cầu:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: reasonController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: 'Nhập hướng dẫn xử lý hoặc ngày dự kiến có thể xuất hàng tiếp theo...',
+                        border: const OutlineInputBorder(),
+                        contentPadding: EdgeInsets.all(12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Hủy bỏ'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  final customNote = reasonController.text.trim();
+                  if (selectedReason.contains('Lý do khác') && customNote.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('⚠️ Vui lòng nhập chi tiết lý do từ chối vào ô Ghi chú chi tiết!'), backgroundColor: AppColors.warning),
+                    );
+                    return;
+                  }
+                  final fullReason = customNote.isNotEmpty ? '$selectedReason - $customNote' : selectedReason;
+                  
+                  setState(() {
+                    _transfers[index]['status'] = 'Rejected by Manager';
+                    _transfers[index]['note'] = '❌ LÝ DO TỪ CHỐI: $fullReason';
+                  });
+                  Navigator.of(ctx).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('❌ Đã từ chối phiếu $transferId. Lý do: $fullReason'),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.cancel_outlined, size: 18),
+                label: const Text('Xác nhận Từ chối phiếu'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -141,7 +258,14 @@ class _InternalTransferApprovalScreenState extends State<InternalTransferApprova
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text('Requested By (Người yêu cầu): ${item['requestedBy']} • Note (Ghi chú): ${item['note']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      Text(
+                        'Requested By (Người yêu cầu): ${item['requestedBy']} • Note (Ghi chú): ${item['note']}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: (item['note'] as String).contains('LÝ DO TỪ CHỐI:') ? FontWeight.bold : FontWeight.normal,
+                          color: (item['note'] as String).contains('LÝ DO TỪ CHỐI:') ? AppColors.error : AppColors.textSecondary,
+                        ),
+                      ),
                       const Divider(height: 24, color: AppColors.divider),
                       const Text('Transfer Items Detail (Chi tiết hàng hóa điều chuyển):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textSecondary)),
                       const SizedBox(height: 8),

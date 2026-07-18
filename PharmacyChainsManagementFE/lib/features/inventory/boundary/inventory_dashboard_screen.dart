@@ -40,10 +40,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   String _userPhone = '+84 988 123 456';
   String _userBranch = 'Warehouse 01 - FPT Campus';
   bool _emailAlertsEnabled = true;
-  bool _smsAlertsEnabled = false;
 
   // Dynamic Local Inventory List for Interactive Testing
   late List<Map<String, dynamic>> _inventoryList;
+  late List<Map<String, dynamic>> _branchDispatchOrders;
 
   @override
   void initState() {
@@ -167,6 +167,71 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         'leadTimeDays': 2,
       },
     ];
+
+    _branchDispatchOrders = [
+      {
+        'orderId': 'REQ-20260718-01',
+        'targetStore': 'Store #01 - Pharmacity Nguyễn Thị Minh Khai (Q.1)',
+        'requestDate': '2026-07-18 08:00 AM',
+        'priority': 'Khẩn cấp (Urgent)',
+        'status': 'Đang nhặt hàng (Picking in Progress)',
+        'items': [
+          {
+            'sku': 'SKU-P001',
+            'name': 'Panadol Extra 500mg',
+            'unit': 'boxes',
+            'requestedQty': 100,
+            'issuedQty': 60,
+          },
+          {
+            'sku': 'SKU-A002',
+            'name': 'Amoxicillin 500mg',
+            'unit': 'capsules',
+            'requestedQty': 200,
+            'issuedQty': 200,
+          },
+        ],
+      },
+      {
+        'orderId': 'REQ-20260718-02',
+        'targetStore': 'Store #05 - Nhà thuốc Long Châu Hai Bà Trưng (Q.3)',
+        'requestDate': '2026-07-18 09:15 AM',
+        'priority': 'Bình thường (Normal)',
+        'status': 'Chờ xuất kho (Pending Dispatch)',
+        'items': [
+          {
+            'sku': 'SKU-M004',
+            'name': 'Khẩu trang y tế 4 lớp N95',
+            'unit': 'packs',
+            'requestedQty': 150,
+            'issuedQty': 0,
+          },
+          {
+            'sku': 'SKU-O005',
+            'name': 'Omez 20mg Capsules',
+            'unit': 'boxes',
+            'requestedQty': 40,
+            'issuedQty': 0,
+          },
+        ],
+      },
+      {
+        'orderId': 'REQ-20260718-03',
+        'targetStore': 'Store #12 - An Khang Lê Văn Sỹ (Q.Tân Bình)',
+        'requestDate': '2026-07-18 10:30 AM',
+        'priority': 'Bình thường (Normal)',
+        'status': 'Chờ xuất kho (Pending Dispatch)',
+        'items': [
+          {
+            'sku': 'SKU-I006',
+            'name': 'Ibuprofen 400mg Tablets',
+            'unit': 'boxes',
+            'requestedQty': 25,
+            'issuedQty': 0,
+          },
+        ],
+      },
+    ];
   }
 
   @override
@@ -207,46 +272,82 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Row(
-        children: [
-          // LEFT SIDEBAR
-          _buildSidebar(),
-          
-          // MAIN CONTENT AREA
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopBar(),
-                Expanded(
-                  child: MultiBlocProvider(
-                    providers: [
-                      BlocProvider<StocktakeBloc>(
-                        create: (context) => StocktakeBloc(InventoryApiClient(Dio())),
-                      ),
-                      BlocProvider<ReceiveGoodsBloc>(
-                        create: (context) => ReceiveGoodsBloc(InventoryApiClient(Dio())),
-                      ),
-                      BlocProvider<IssueStockBloc>(
-                        create: (context) => IssueStockBloc(InventoryApiClient(Dio())),
-                      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth > 800;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+          appBar: isDesktop
+              ? null
+              : AppBar(
+                  backgroundColor: Colors.white,
+                  elevation: 0.5,
+                  iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Pharmacy Chains Management • ${_getMenuTitle(_selectedIndex).split(' (')[0]}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)), overflow: TextOverflow.ellipsis),
+                      const Text('Central Warehouse 01', style: TextStyle(fontSize: 11, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
                     ],
-                    child: BlocListener<InventoryDashboardBloc, InventoryDashboardState>(
-                      listener: (context, state) {
-                        if (state is InventoryDashboardLoadFailure) {
-                          showAppErrorDialog(context, message: state.message);
-                        }
-                      },
-                      child: _buildMainBody(),
-                    ),
                   ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_outlined, color: Color(0xFF64748B), size: 22),
+                      onPressed: _showNotificationsDialog,
+                    ),
+                    InkWell(
+                      onTap: _showUserProfileDialog,
+                      borderRadius: BorderRadius.circular(18),
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 12, left: 4),
+                        child: CircleAvatar(
+                          radius: 15,
+                          backgroundColor: const Color(0xFF3B82F6),
+                          child: Text(_userName.isNotEmpty ? _userName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+          body: Row(
+            children: [
+              if (isDesktop) _buildSidebar(),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildTopBar(isMobile: !isDesktop),
+                    Expanded(
+                      child: MultiBlocProvider(
+                        providers: [
+                          BlocProvider<StocktakeBloc>(
+                            create: (context) => StocktakeBloc(InventoryApiClient(Dio())),
+                          ),
+                          BlocProvider<ReceiveGoodsBloc>(
+                            create: (context) => ReceiveGoodsBloc(InventoryApiClient(Dio())),
+                          ),
+                          BlocProvider<IssueStockBloc>(
+                            create: (context) => IssueStockBloc(InventoryApiClient(Dio())),
+                          ),
+                        ],
+                        child: BlocListener<InventoryDashboardBloc, InventoryDashboardState>(
+                          listener: (context, state) {
+                            if (state is InventoryDashboardLoadFailure) {
+                              showAppErrorDialog(context, message: state.message);
+                            }
+                          },
+                          child: _buildMainBody(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+          bottomNavigationBar: isDesktop ? null : _buildMobileBottomNav(),
+        );
+      },
     );
   }
 
@@ -276,18 +377,22 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   child: const Icon(Icons.inventory_2, color: Colors.white, size: 24),
                 ),
                 const SizedBox(width: 12),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'LogisticsPro',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                    ),
-                    Text(
-                      'Warehouse 01',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pharmacy Chains Management',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Central Warehouse 01',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -409,7 +514,53 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   // ---------------------------------------------------------------------------
   // TOP BAR WIDGET
   // ---------------------------------------------------------------------------
-  Widget _buildTopBar() {
+  Widget _buildTopBar({bool isMobile = false}) {
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+        ),
+        child: Container(
+          height: 38,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: Color(0xFF94A3B8), size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                  decoration: InputDecoration(
+                    hintText: 'Tìm kiếm SKU hoặc Thuốc...',
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                    border: InputBorder.none,
+                    isDense: true,
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? InkWell(
+                            onTap: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                            child: const Icon(Icons.clear, size: 16, color: Color(0xFF94A3B8)),
+                          )
+                        : null,
+                  ),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -468,7 +619,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
 
           Flexible(
             child: const Text(
-              'Inventory Management',
+              'Pharmacy Chains Management • WMS Portal',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
               overflow: TextOverflow.ellipsis,
             ),
@@ -528,7 +679,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   Widget _buildMainBody() {
     if (_selectedIndex == 2) return const QcInspectionScreen();
     if (_selectedIndex == 4) return const InternalTransferApprovalScreen();
-    if (_selectedIndex == 5) return const StocktakeScreen();
+    if (_selectedIndex == 5) return StocktakeScreen(onBackToDashboard: () => setState(() => _selectedIndex = 0));
     if (_selectedIndex == 7) return const ExpiredStockManagementScreen();
     if (_selectedIndex == 8) return const BatchExpiryManagementScreen();
     if (_selectedIndex == 9) return const InventoryReportScreen();
@@ -965,65 +1116,280 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     );
   }
 
+    void _showProofImageSelectorModal(BuildContext parentCtx, Map<String, dynamic> item, StateSetter setDialogState) {
+    showModalBottomSheet(
+      context: parentCtx,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (selectorCtx) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.camera_alt, color: Color(0xFF2563EB), size: 24),
+                SizedBox(width: 10),
+                Text('📸 Chọn ảnh minh chứng gửi cho Business Admin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text('Vui lòng chọn hình ảnh thực tế Phiếu giao hàng hoặc Kiện hàng để xác nhận số liệu nhập kho chuẩn xác:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.receipt_long_outlined, color: Color(0xFF2563EB)),
+              ),
+              title: const Text('📄 Phiếu giao hàng & Hóa đơn VAT nhà cung cấp', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Text('phieu_giao_hang_GSK_batch081.jpg • 1.2 MB', style: TextStyle(fontSize: 12)),
+              onTap: () {
+                setDialogState(() => item['proofImage'] = 'phieu_giao_hang_GSK_batch081.jpg');
+                setState(() => item['proofImage'] = 'phieu_giao_hang_GSK_batch081.jpg');
+                Navigator.pop(selectorCtx);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF10B981)),
+              ),
+              title: const Text('📦 Kiện thuốc nguyên seal & Mã vạch GS1 DataMatrix', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Text('thung_panadol_inbound_box.jpg • 2.4 MB', style: TextStyle(fontSize: 12)),
+              onTap: () {
+                setDialogState(() => item['proofImage'] = 'thung_panadol_inbound_box.jpg');
+                setState(() => item['proofImage'] = 'thung_panadol_inbound_box.jpg');
+                Navigator.pop(selectorCtx);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.verified_user_outlined, color: Color(0xFFEF4444)),
+              ),
+              title: const Text('🔬 Phiếu kiểm nghiệm chất lượng COA từ nhà máy', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Text('tem_kiem_dinh_COA_lab.jpg • 1.8 MB', style: TextStyle(fontSize: 12)),
+              onTap: () {
+                setDialogState(() => item['proofImage'] = 'tem_kiem_dinh_COA_lab.jpg');
+                setState(() => item['proofImage'] = 'tem_kiem_dinh_COA_lab.jpg');
+                Navigator.pop(selectorCtx);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showQuickOrderDialog(Map<String, dynamic> item) {
     int qty = item['receiveBatchQty'] ?? ((item['reorderPt'] as int) - (item['currentStock'] as int));
     if (qty <= 0) qty = 100;
     final qtyCtrl = TextEditingController(text: qty.toString());
+    final batchCtrl = TextEditingController(text: item['batchNumber'] ?? 'LOT-2026-GSK-081');
+    final notesCtrl = TextEditingController(text: 'Bao bì nguyên seal, kiểm tra nhiệt độ bảo quản 2-8°C đạt chuẩn');
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Receive / Order Quantity - ${item['sku']}'),
-        content: SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Row(
             children: [
-              Text('Product: ${item['name']}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              Text('Supplier: ${item['supplier']}', style: const TextStyle(color: Color(0xFF64748B))),
-              const SizedBox(height: 16),
-              TextField(
-                controller: qtyCtrl,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Receive / Order Quantity (${item['unit']})',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.shopping_cart_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Color(0xFF2563EB), size: 20),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('Thay đổi số lượng tại đây sẽ lập tức cập nhật con số hiển thị trên nút Nhập Lô (+X) và cộng chính xác số lượng vào tồn kho.', style: TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
-                  ],
-                ),
-              ),
+              const Icon(Icons.inbox, color: Color(0xFF10B981)),
+              const SizedBox(width: 10),
+              Expanded(child: Text('WMS Inbound & Proof Verification - ${item['sku']}')),
             ],
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              final added = int.tryParse(qtyCtrl.text) ?? 100;
-              setState(() {
-                item['receiveBatchQty'] = added;
-                item['currentStock'] = (item['currentStock'] as int) + added;
-                _updateStockStatus(item);
-              });
-              Navigator.pop(ctx);
-              _showToast('✅ Đã cập nhật lô nhập +$added ${item['unit']} cho "${item['name']}"!');
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
-            child: const Text('Confirm Receive Batch'),
+          content: SizedBox(
+            width: 550,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Product: ${item['name']}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                  Text('Supplier: ${item['supplier']} | WMS Putaway: ${item['wmsLocation'] ?? "Zone A - Rack 01"}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          controller: qtyCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Receive Qty (${item['unit']})',
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.add_shopping_cart, size: 18),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 3,
+                        child: TextField(
+                          controller: batchCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Supplier Batch Number',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.qr_code_2, size: 18),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Inspector Notes / Ghi chú kiểm định',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.notes, size: 18),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 📸 PROOF IMAGE SECTION FOR BUSINESS ADMIN VERIFICATION
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: item['proofImage'] != null ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: item['proofImage'] != null ? const Color(0xFF22C55E) : const Color(0xFF94A3B8),
+                        width: item['proofImage'] != null ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(item['proofImage'] != null ? Icons.verified : Icons.camera_alt, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF2563EB), size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  item['proofImage'] != null ? '📸 Ảnh minh chứng xác minh số liệu' : '📸 Gửi ảnh xác minh cho Business Admin',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF1E293B)),
+                                ),
+                              ],
+                            ),
+                            if (item['proofImage'] != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(10)),
+                                child: const Text('Sẵn sàng gửi Admin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          item['proofImage'] != null
+                              ? 'Đã chọn ảnh Phiếu giao hàng / Thùng thuốc thực tế. Business Admin có thể đối chiếu chính xác số lượng và lô hàng.'
+                              : 'Business Admin yêu cầu nhân viên kho đính kèm hình ảnh thực tế Phiếu giao hàng hoặc Kiện hàng để xác minh số liệu nhập kho.',
+                          style: TextStyle(fontSize: 12, color: item['proofImage'] != null ? const Color(0xFF15803D) : const Color(0xFF64748B)),
+                        ),
+                        const SizedBox(height: 12),
+                        if (item['proofImage'] == null) ...[
+                          Row(
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
+                                icon: const Icon(Icons.camera_alt, size: 16),
+                                label: const Text('📷 Chụp ảnh thực tế'),
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+                              ),
+                              const SizedBox(width: 10),
+                              OutlinedButton.icon(
+                                onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
+                                icon: const Icon(Icons.folder_open, size: 16),
+                                label: const Text('📁 Chọn Phiếu / COA'),
+                                style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFBBF7D0))),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.image, color: Color(0xFF16A34A), size: 28),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('${item['proofImage']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF16A34A))),
+                                      const Text('Đã kiểm tra chất lượng • Chờ Business Admin xác minh', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.refresh, color: Color(0xFF2563EB), size: 20),
+                                  tooltip: 'Đổi ảnh khác',
+                                  onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                                  tooltip: 'Xóa ảnh',
+                                  onPressed: () {
+                                    setDialogState(() => item['proofImage'] = null);
+                                    setState(() => item['proofImage'] = null);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Color(0xFF2563EB), size: 18),
+                        SizedBox(width: 8),
+                        Expanded(child: Text('Số lượng nhập, mã lô và ảnh xác minh sẽ lập tức được ghi nhận vào nhật ký kho GSP và gửi thông báo tới Business Admin.', style: TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton.icon(
+              onPressed: () {
+                final added = int.tryParse(qtyCtrl.text) ?? 100;
+                setState(() {
+                  item['receiveBatchQty'] = added;
+                  item['currentStock'] = (item['currentStock'] as int) + added;
+                  _updateStockStatus(item);
+                });
+                Navigator.pop(ctx);
+                if (item['proofImage'] != null) {
+                  _showToast('✅ Đã nhập +$added ${item['unit']} kèm ảnh minh chứng "${item['proofImage']}" cho Business Admin xác minh!');
+                } else {
+                  _showToast('✅ Đã cập nhật lô nhập +$added ${item['unit']} (Chưa kèm ảnh. Vui lòng bổ sung minh chứng sau)!');
+                }
+              },
+              icon: const Icon(Icons.check_circle_outline, size: 18),
+              label: const Text('Confirm Receive Batch & Submit Proof'),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1192,7 +1558,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     final phoneCtrl = TextEditingController(text: _userPhone);
     final branchCtrl = TextEditingController(text: _userBranch);
     bool tempEmailAlerts = _emailAlertsEnabled;
-    bool tempSmsAlerts = _smsAlertsEnabled;
 
     showDialog(
       context: context,
@@ -1254,12 +1619,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     onChanged: (val) => setDialogState(() => tempEmailAlerts = val),
                     contentPadding: EdgeInsets.zero,
                   ),
-                  SwitchListTile(
-                    title: const Text('Nhận tin nhắn SMS khi có lô hàng mới (PO Arrival)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                    value: tempSmsAlerts,
-                    onChanged: (val) => setDialogState(() => tempSmsAlerts = val),
-                    contentPadding: EdgeInsets.zero,
-                  ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     onPressed: () {
@@ -1284,7 +1643,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   _userPhone = phoneCtrl.text.trim();
                   _userBranch = branchCtrl.text.trim();
                   _emailAlertsEnabled = tempEmailAlerts;
-                  _smsAlertsEnabled = tempSmsAlerts;
                 });
                 Navigator.pop(ctx);
                 _showToast('✅ Đã lưu thay đổi hồ sơ: "$_userName" thành công!');
@@ -1347,42 +1705,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. TEMPERATURE & COLD CHAIN MONITORING BANNER (GSP compliance)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFFEFF6FF), Color(0xFFE0F2FE)]),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFBAE6FD)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.ac_unit, color: Color(0xFF0284C7), size: 28),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Pharma Cold Chain & Temperature Monitoring (GSP Verified)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0369A1))),
-                    const SizedBox(height: 4),
-                    Text(
-                      '❄️ Cold Storage (2-8°C): 4.2°C [Optimal]   |   🌡️ Cool Storage (15-25°C): 21.5°C [Optimal]   |   ⚡ Humidity: 58% [Normal]',
-                      style: TextStyle(color: Colors.blue.shade900, fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(20)),
-                child: const Text('ALL SENSORS OK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // 2. PHARMA WMS KPI METRICS ROW
+        // 1. PHARMA WMS KPI METRICS ROW
         Row(
           children: [
             Expanded(child: _buildKpiCard('Inventory Turnover', '4.2x / yr', '+0.5 vs target', Icons.loop, const Color(0xFF3B82F6))),
@@ -1519,13 +1842,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   const Text('📦 Advance Shipping Notice (ASN) & Vendor Schedule', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
                   Row(
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: () => _showBarcodeScanSimulator(),
-                        icon: const Icon(Icons.qr_code_scanner, size: 18),
-                        label: const Text('Scan Barcode / QR (GS1 Datamatrix)'),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white),
-                      ),
-                      const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: () => _showShortageDiscrepancyModal(),
                         icon: const Icon(Icons.report_problem_outlined, size: 18, color: Color(0xFFEF4444)),
@@ -1573,11 +1889,33 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                       Text('Current Stock: ${item['currentStock']} ${item['unit']} | Vendor: ${item['supplier']}'),
                       const SizedBox(height: 2),
                       Text('📍 WMS Putaway Recommendation: ${item['wmsLocation'] ?? "Zone A - Rack 01 - Bin B"}', style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600)),
+                      if (item['proofImage'] != null) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF22C55E))),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.verified_outlined, size: 14, color: Color(0xFF15803D)),
+                              const SizedBox(width: 4),
+                              Text('📸 Minh chứng: ${item['proofImage']} (Chờ Admin duyệt)', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _showQuickOrderDialog(item),
+                        icon: Icon(item['proofImage'] != null ? Icons.photo_camera : Icons.add_a_photo_outlined, size: 16, color: const Color(0xFF2563EB)),
+                        label: Text(item['proofImage'] != null ? '📸 Đổi ảnh xác minh' : '📸 Gửi ảnh xác minh'),
+                        style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), side: const BorderSide(color: Color(0xFF2563EB))),
+                      ),
+                      const SizedBox(width: 8),
                       ElevatedButton.icon(
                         onPressed: () => _showQuickOrderDialog(item),
                         icon: const Icon(Icons.add_box, size: 18),
@@ -1586,7 +1924,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        tooltip: 'Đổi con số lô nhập (+X)',
+                        tooltip: 'Đổi con số lô nhập (+X) & gửi ảnh',
                         icon: const Icon(Icons.edit_note, color: Color(0xFF2563EB), size: 24),
                         onPressed: () => _showQuickOrderDialog(item),
                       ),
@@ -1633,7 +1971,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     Icon(Icons.rule, color: Color(0xFFB45309), size: 22),
                     SizedBox(width: 12),
                     Expanded(
-                      child: Text('FEFO Rule Active (First Expired, First Out): System automatically prioritizes batches with closest expiry date during allocation to prevent expired dead stock.', style: TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.w600)),
+                      child: Text('FEFO Rule Active & Strict Branch Allocation: Xuất kho tuân thủ nghiêm ngặt theo đúng số lượng Phiếu yêu cầu từ Branch/Store. Hệ thống ưu tiên tự động lô cận date (FEFO) và khóa nút xuất khi đã đạt hạn mức, chống thao tác nhầm lẫn hay ấn bừa.', style: TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
@@ -1643,53 +1981,247 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         ),
         const SizedBox(height: 24),
 
-        // 2. ISSUE STOCK LIST
+        // 2. BRANCH DISPATCH ORDERS LIST
         Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Outbound Picking & Branch Dispatch (Xuất kho về Store / Phân phối)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-              const SizedBox(height: 16),
-              ..._inventoryList.map((item) {
-                final pickQty = item['issueBatchQty'] ?? 10;
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  title: Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Column(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 4),
-                      Text('Available Stock: ${item['currentStock']} ${item['unit']} | Allocated Batch: ${item['fefoBatch'] ?? "LOT-2026-GSK-081"}'),
-                      const SizedBox(height: 2),
-                      Text('📍 Picking Bin Coordinates: ${item['wmsLocation'] ?? "Zone A - Rack 04 - Bin B02"}', style: const TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
+                      Text('Outbound Picking & Branch Dispatch (Xuất kho theo Phiếu Yêu cầu từ Branch/Store)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                      SizedBox(height: 4),
+                      Text('Danh sách các phiếu yêu cầu cung ứng hàng từ các chi nhánh/cửa hàng trong chuỗi', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                     ],
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        // Reset demo orders
+                        _branchDispatchOrders[0]['items'][0]['issuedQty'] = 60;
+                        _branchDispatchOrders[0]['items'][1]['issuedQty'] = 200;
+                        _branchDispatchOrders[0]['status'] = 'Đang nhặt hàng (Picking in Progress)';
+                        _branchDispatchOrders[1]['items'][0]['issuedQty'] = 0;
+                        _branchDispatchOrders[1]['items'][1]['issuedQty'] = 0;
+                        _branchDispatchOrders[1]['status'] = 'Chờ xuất kho (Pending Dispatch)';
+                        _branchDispatchOrders[2]['items'][0]['issuedQty'] = 0;
+                        _branchDispatchOrders[2]['status'] = 'Chờ xuất kho (Pending Dispatch)';
+                      });
+                      _showToast('Đã làm mới danh sách phiếu yêu cầu từ Branch/Store!');
+                    },
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Làm mới phiếu Yêu cầu'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ..._branchDispatchOrders.map((order) {
+                final isUrgent = (order['priority'] as String).contains('Khẩn cấp');
+                final isCompleted = (order['status'] as String).contains('Sẵn sàng giao') || (order['status'] as String).contains('Hoàn tất');
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: isCompleted ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: isCompleted ? const Color(0xFFBBF7D0) : const Color(0xFFCBD5E1), width: 1.5),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          if ((item['currentStock'] as int) >= pickQty) {
-                            setState(() {
-                              item['currentStock'] = (item['currentStock'] as int) - pickQty;
-                              _updateStockStatus(item);
-                            });
-                            _showToast('Đã xuất -$pickQty ${item['unit']} (theo chuẩn FEFO) cho "${item['name']}"!');
-                          } else {
-                            _showToast('Không đủ hàng trong kho để xuất!');
-                          }
-                        },
-                        icon: const Icon(Icons.local_shipping_outlined, size: 18),
-                        label: Text('Pick & Issue (-$pickQty)'),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
+                      // Order Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isCompleted ? const Color(0xFFDCFCE7) : (isUrgent ? const Color(0xFFFEE2E2) : const Color(0xFFE2E8F0)),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  isCompleted ? Icons.check_circle : (isUrgent ? Icons.error_outline : Icons.local_shipping),
+                                  color: isCompleted ? const Color(0xFF16A34A) : (isUrgent ? const Color(0xFFDC2626) : const Color(0xFF334155)),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Mã yêu cầu: ${order['orderId']} • ${order['targetStore']}',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isUrgent && !isCompleted ? const Color(0xFF991B1B) : const Color(0xFF1E293B)),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isCompleted
+                                        ? const Color(0xFF15803D)
+                                        : (isUrgent ? const Color(0xFFEF4444) : const Color(0xFF3B82F6)),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    isCompleted ? '✅ Đã nhặt đủ - Sẵn sàng giao Store' : '${order['priority']} | ${order['status']}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        tooltip: 'Đổi con số xuất lô (-Y)',
-                        icon: const Icon(Icons.edit_note, color: Color(0xFFD97706), size: 24),
-                        onPressed: () => _showPickAdjustDialog(item),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                        child: Text('🕒 Thời gian gửi yêu cầu: ${order['requestDate']}', style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontStyle: FontStyle.italic)),
+                      ),
+                      const Divider(height: 20),
+
+                      // Order Items Table / List
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: (order['items'] as List<Map<String, dynamic>>).map((subItem) {
+                            // Find matching WMS item in inventory
+                            final matchingInvIndex = _inventoryList.indexWhere((inv) => inv['sku'] == subItem['sku']);
+                            final invItem = matchingInvIndex != -1 ? _inventoryList[matchingInvIndex] : null;
+
+                            final reqQty = subItem['requestedQty'] as int;
+                            final issuedQty = subItem['issuedQty'] as int;
+                            final remainingQty = reqQty - issuedQty;
+                            final isItemFulfilled = issuedQty >= reqQty;
+                            final currentStock = invItem != null ? (invItem['currentStock'] as int) : 0;
+                            final fefoBatch = invItem != null ? invItem['fefoBatch'] : 'LOT-2026-STD-100 (Exp: 12/2027)';
+                            final wmsBin = invItem != null ? invItem['wmsLocation'] : 'Zone B - Rack 02 - Bin A01';
+
+                            return Container(
+                              margin: const EdgeInsets.only(top: 12),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: isItemFulfilled ? const Color(0xFFDCFCE7).withOpacity(0.5) : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: isItemFulfilled ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '📦 ${subItem['name']} (${subItem['sku']})',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
+                                      ),
+                                      if (isItemFulfilled)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(color: const Color(0xFF16A34A), borderRadius: BorderRadius.circular(12)),
+                                          child: Text('✅ Đã xuất đủ theo yêu cầu ($reqQty/$reqQty ${subItem['unit']})', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                        )
+                                      else
+                                        Text(
+                                          '⚠️ Store yêu cầu: $reqQty ${subItem['unit']} • Đã nhặt: $issuedQty • Còn lại: $remainingQty ${subItem['unit']}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFD97706)),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Text('📍 Vị trí WMS: $wmsBin', style: const TextStyle(fontSize: 13, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
+                                      const SizedBox(width: 16),
+                                      Text('🏷️ Lô FEFO ưu tiên: $fefoBatch', style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
+                                      const SizedBox(width: 16),
+                                      Text('📊 Tồn kho thực tế: $currentStock ${subItem['unit']}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: currentStock < remainingQty ? const Color(0xFFEF4444) : const Color(0xFF10B981))),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: reqQty > 0 ? (issuedQty / reqQty).clamp(0.0, 1.0) : 1.0,
+                                      backgroundColor: const Color(0xFFE2E8F0),
+                                      valueColor: AlwaysStoppedAnimation<Color>(isItemFulfilled ? const Color(0xFF16A34A) : const Color(0xFFF59E0B)),
+                                      minHeight: 8,
+                                    ),
+                                  ),
+                                  if (!isItemFulfilled) ...[
+                                    const SizedBox(height: 14),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        const Text('Hạn mức xuất theo Store: ', style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Color(0xFF64748B))),
+                                        const SizedBox(width: 8),
+                                        OutlinedButton.icon(
+                                          onPressed: () {
+                                            final pickAmt = remainingQty >= 10 ? 10 : remainingQty;
+                                            if (currentStock < pickAmt) {
+                                              _showToast('❌ Kho không đủ số lượng thực tế ($currentStock ${subItem['unit']}) để xuất!');
+                                              return;
+                                            }
+                                            setState(() {
+                                              subItem['issuedQty'] = issuedQty + pickAmt;
+                                              if (invItem != null) {
+                                                invItem['currentStock'] = currentStock - pickAmt;
+                                                _updateStockStatus(invItem);
+                                              }
+                                              // Check if all order items fulfilled
+                                              final allDone = (order['items'] as List).every((i) => (i['issuedQty'] as int) >= (i['requestedQty'] as int));
+                                              if (allDone) {
+                                                order['status'] = 'Sẵn sàng giao Store (Ready for Delivery)';
+                                              } else {
+                                                order['status'] = 'Đang nhặt hàng (Picking in Progress)';
+                                              }
+                                            });
+                                            _showToast('Đã xuất -$pickAmt ${subItem['unit']} cho Store "${order['targetStore']}"!');
+                                          },
+                                          icon: const Icon(Icons.add_shopping_cart, size: 16),
+                                          label: Text('Nhặt phần (-${remainingQty >= 10 ? 10 : remainingQty})'),
+                                          style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFD97706), side: const BorderSide(color: Color(0xFFD97706))),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            if (currentStock < remainingQty) {
+                                              _showToast('❌ Kho không đủ số lượng ($currentStock ${subItem['unit']}) để xuất trọn bộ $remainingQty ${subItem['unit']}!');
+                                              return;
+                                            }
+                                            setState(() {
+                                              subItem['issuedQty'] = reqQty;
+                                              if (invItem != null) {
+                                                invItem['currentStock'] = currentStock - remainingQty;
+                                                _updateStockStatus(invItem);
+                                              }
+                                              final allDone = (order['items'] as List).every((i) => (i['issuedQty'] as int) >= (i['requestedQty'] as int));
+                                              if (allDone) {
+                                                order['status'] = 'Sẵn sàng giao Store (Ready for Delivery)';
+                                              } else {
+                                                order['status'] = 'Đang nhặt hàng (Picking in Progress)';
+                                              }
+                                            });
+                                            _showToast('✅ Đã xuất đủ trọn gói $reqQty ${subItem['unit']} theo đúng Phiếu yêu cầu!');
+                                          },
+                                          icon: const Icon(Icons.check_circle_outline, size: 16),
+                                          label: Text('Xuất đủ theo Yêu cầu (-$remainingQty ${subItem['unit']})'),
+                                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ],
                   ),
@@ -1702,60 +2234,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     );
   }
 
-  void _showBarcodeScanSimulator() {
-    final barcodeCtrl = TextEditingController(text: '(01)08935001234567(17)270115(10)LOT-2026-GSK-081(21)SN99887766');
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.qr_code_scanner, color: Color(0xFF8B5CF6)),
-            SizedBox(width: 10),
-            Text('GS1 Barcode / QR Scan Simulator'),
-          ],
-        ),
-        content: SizedBox(
-          width: 480,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('In enterprise pharma WMS, barcode scanning auto-populates Lot Number, Expiry Date, and Serial Number without manual data entry errors.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: barcodeCtrl,
-                decoration: const InputDecoration(labelText: 'Scanned GS1 DataMatrix String', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Parsed GS1 Attributes:', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
-                    SizedBox(height: 6),
-                    Text('• GTIN (Product Code): 08935001234567\n• Expiry Date (YYMMDD): 2027-01-15\n• Lot Number: LOT-2026-GSK-081\n• Serial Number (Serialization): SN99887766', style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showToast('✅ Scanned & verified Serialized Batch LOT-2026-GSK-081!');
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white),
-            child: const Text('Confirm Putaway Entry'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showShortageDiscrepancyModal() {
     final poQtyCtrl = TextEditingController(text: '1000');
@@ -1842,5 +2320,122 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       case 9: return 'Inventory Reports & Analytics (Báo cáo Thống kê & Định giá)';
       default: return 'Safety Stock Alerts (Quản lý Tồn kho An toàn)';
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // MOBILE RESPONSIVE BOTTOM NAV & MORE MENU
+  // ---------------------------------------------------------------------------
+  Widget _buildMobileBottomNav() {
+    int bottomIndex = 0;
+    if (_selectedIndex == 0) bottomIndex = 0;
+    else if (_selectedIndex == 1) bottomIndex = 1;
+    else if (_selectedIndex == 3) bottomIndex = 2;
+    else if (_selectedIndex == 5) bottomIndex = 3;
+    else bottomIndex = 4;
+
+    return NavigationBar(
+      selectedIndex: bottomIndex,
+      onDestinationSelected: (index) {
+        if (index == 0) setState(() => _selectedIndex = 0);
+        else if (index == 1) setState(() => _selectedIndex = 1);
+        else if (index == 2) setState(() => _selectedIndex = 3);
+        else if (index == 3) setState(() => _selectedIndex = 5);
+        else if (index == 4) _showMobileMoreMenuBottomSheet();
+      },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard, color: Color(0xFF2563EB)),
+          label: 'Tổng quan',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.move_to_inbox_outlined),
+          selectedIcon: Icon(Icons.move_to_inbox, color: Color(0xFF2563EB)),
+          label: 'Nhập hàng',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.outbox_outlined),
+          selectedIcon: Icon(Icons.outbox, color: Color(0xFF2563EB)),
+          label: 'Xuất hàng',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.assignment_outlined),
+          selectedIcon: Icon(Icons.assignment, color: Color(0xFF2563EB)),
+          label: 'Kiểm kê',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.menu),
+          selectedIcon: Icon(Icons.menu_open, color: Color(0xFF2563EB)),
+          label: 'Tất cả',
+        ),
+      ],
+    );
+  }
+
+  void _showMobileMoreMenuBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Text('📦 Các phân hệ quản lý kho', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              ),
+              const Divider(),
+              _buildMobileMenuOption(ctx, 2, 'QC Inspection (Kiểm tra chất lượng)', Icons.fact_check_outlined),
+              _buildMobileMenuOption(ctx, 4, 'Internal Transfers (Chuyển kho nội bộ)', Icons.swap_horiz_outlined),
+              _buildMobileMenuOption(ctx, 6, 'Safety Stock (Cảnh báo tồn an toàn)', Icons.warning_amber_rounded, isAlert: true),
+              _buildMobileMenuOption(ctx, 7, 'Expired/Damaged (Hàng hết hạn/hư hỏng)', Icons.remove_circle_outline),
+              _buildMobileMenuOption(ctx, 8, 'Batch Tracking (Tra cứu lô thuốc GS1)', Icons.qr_code_2_outlined),
+              _buildMobileMenuOption(ctx, 9, 'Reports (Báo cáo & Phân tích GSP)', Icons.bar_chart_outlined),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.person_outline, color: Color(0xFF64748B)),
+                title: const Text('Profile (Hồ sơ người dùng)', style: TextStyle(fontWeight: FontWeight.w500)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showUserProfileDialog();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Color(0xFFEF4444)),
+                title: const Text('Logout (Đăng xuất)', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xFFEF4444))),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileMenuOption(BuildContext ctx, int index, String title, IconData icon, {bool isAlert = false}) {
+    final isSelected = _selectedIndex == index;
+    final alertCount = _inventoryList.where((e) => e['status'] == 'Critical').length;
+
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? const Color(0xFF2563EB) : (isAlert ? const Color(0xFFEF4444) : const Color(0xFF64748B))),
+      title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF334155))),
+      trailing: isAlert && alertCount > 0
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(10)),
+              child: Text('$alertCount', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+            )
+          : (isSelected ? const Icon(Icons.check, color: Color(0xFF2563EB)) : null),
+      onTap: () {
+        setState(() => _selectedIndex = index);
+        Navigator.pop(ctx);
+      },
+    );
   }
 }

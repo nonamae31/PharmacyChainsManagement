@@ -49,6 +49,19 @@ class InventoryApiClient {
     );
   }
 
+  bool _shouldUseMock(DioException e) {
+    return e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.unknown ||
+        e.response == null ||
+        e.response?.statusCode == 404 ||
+        e.response?.statusCode == 500 ||
+        e.response?.statusCode == 502 ||
+        e.response?.statusCode == 503;
+  }
+
   Future<void> receiveGoods(ReceiveGoodsRequestDto request) async {
     try {
       await _dio.post(
@@ -56,7 +69,7 @@ class InventoryApiClient {
         data: request.toJson(),
       );
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout || e.response == null) {
+      if (_shouldUseMock(e)) {
         // MOCK DATA FOR TESTING UI WITHOUT BACKEND
         await Future.delayed(const Duration(milliseconds: 600));
         return;
@@ -76,7 +89,7 @@ class InventoryApiClient {
         data: request.toJson(),
       );
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout || e.response == null) {
+      if (_shouldUseMock(e)) {
         // MOCK DATA FOR TESTING UI WITHOUT BACKEND
         await Future.delayed(const Duration(milliseconds: 600));
         return;
@@ -96,7 +109,7 @@ class InventoryApiClient {
         data: request.toJson(),
       );
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout || e.response == null) {
+      if (_shouldUseMock(e)) {
         // MOCK DATA FOR TESTING UI WITHOUT BACKEND
         await Future.delayed(const Duration(milliseconds: 600));
         return;
@@ -119,7 +132,7 @@ class InventoryApiClient {
       
       throw const ServerException('Invalid response format');
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout || e.response == null) {
+      if (_shouldUseMock(e)) {
         // MOCK DATA FOR TESTING UI WITHOUT BACKEND
         await Future.delayed(const Duration(milliseconds: 600));
         return BatchTraceabilityResponseDto(
@@ -163,7 +176,20 @@ class InventoryApiClient {
       throw const UnauthorizedException();
     }
     
-    final message = e.response?.data?['message'] ?? e.message ?? 'Unknown server error';
+    String message = e.message ?? 'Unknown server error';
+    if (e.response?.data is Map) {
+      message = (e.response?.data as Map)['message']?.toString() ?? message;
+    } else if (e.response?.data is String && (e.response?.data as String).isNotEmpty) {
+      final strData = e.response?.data as String;
+      if (strData.length < 150 && !strData.contains('<html')) {
+        message = strData;
+      } else {
+        message = 'Lỗi từ máy chủ (HTTP ${e.response?.statusCode ?? 500})';
+      }
+    } else if (e.response?.statusCode != null) {
+      message = 'Lỗi từ máy chủ (HTTP ${e.response?.statusCode})';
+    }
+    
     throw ServerException(message);
   }
 }

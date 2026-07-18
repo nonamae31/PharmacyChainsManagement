@@ -22,7 +22,7 @@ class StocktakeBloc extends Bloc<StocktakeEvent, StocktakeState> {
     } on AppException catch (e) {
       emit(StocktakeFailure(e.message));
     } catch (e) {
-      emit(const StocktakeFailure('Đã có lỗi không xác định xảy ra.'));
+      emit(StocktakeFailure('Lỗi hệ thống: ${e.toString()}'));
     }
   }
 }

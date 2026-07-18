@@ -22,7 +22,7 @@ class ReceiveGoodsBloc extends Bloc<ReceiveGoodsEvent, ReceiveGoodsState> {
     } on AppException catch (e) {
       emit(ReceiveGoodsFailure(e.message));
     } catch (e) {
-      emit(const ReceiveGoodsFailure('Đã có lỗi không xác định xảy ra.'));
+      emit(ReceiveGoodsFailure('Lỗi hệ thống: ${e.toString()}'));
     }
   }
 }

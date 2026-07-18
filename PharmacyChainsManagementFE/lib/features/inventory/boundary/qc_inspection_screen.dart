@@ -62,6 +62,10 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
   ];
 
   void _updateStatus(int index, String newStatus) {
+    if (newStatus.contains('Rejected')) {
+      _showRejectDialog(context, index);
+      return;
+    }
     setState(() {
       _qcBatches[index]['status'] = newStatus;
       if (newStatus.contains('Passed')) {
@@ -76,6 +80,123 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
         content: Text('Cập nhật kết quả QC lô ${_qcBatches[index]['batchNo']} thành: $newStatus'),
         backgroundColor: newStatus.contains('Passed') ? AppColors.success : AppColors.error,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showRejectDialog(BuildContext context, int index) {
+    final batchNo = _qcBatches[index]['batchNo'];
+    final medicineName = _qcBatches[index]['medicineName'];
+    final reasonController = TextEditingController();
+    String selectedReason = 'Bao bì rách, móp méo hoặc ngấm nước (Damaged/Wet outer packaging)';
+    final predefinedReasons = [
+      'Bao bì rách, móp méo hoặc ngấm nước (Damaged/Wet outer packaging)',
+      'Vi phạm nhiệt độ bảo quản trong quá trình vận chuyển (Cold chain temperature breach)',
+      'Không đạt kiểm định COA / Phiếu kiểm nghiệm không hợp lệ (Invalid or missing COA)',
+      'Hạn sử dụng dưới 6 tháng hoặc cận date (Near-expiry stock < 6 months)',
+      'Số lượng thực tế sai lệch lớn so với PO (Quantity discrepancy / Wrong SKU)',
+      'Lý do khác (Khác - Vui lòng ghi chi tiết bên dưới)',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 28),
+                const SizedBox(width: 10),
+                const Expanded(child: Text('Ghi nhận Lý do Từ chối & Hoàn trả Lô QC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.error))),
+              ],
+            ),
+            content: SizedBox(
+              width: 550,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFECACA))),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Lô hàng: $batchNo', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
+                          Text('Sản phẩm: $medicineName', style: const TextStyle(color: Color(0xFF7F1D1D), fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Chọn lý do từ chối chuẩn GSP (*bắt buộc):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    ...predefinedReasons.map((r) => RadioListTile<String>(
+                      title: Text(r, style: const TextStyle(fontSize: 13)),
+                      value: r,
+                      groupValue: selectedReason,
+                      activeColor: AppColors.error,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      onChanged: (val) {
+                        if (val != null) setStateDialog(() => selectedReason = val);
+                      },
+                    )),
+                    const SizedBox(height: 12),
+                    const Text('Ghi chú chi tiết & Hướng dẫn hoàn trả cho NCC:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: reasonController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: 'Nhập mô tả cụ thể về tình trạng lỗi, hình thức chụp ảnh xác nhận hoặc biên bản trả hàng...',
+                        border: const OutlineInputBorder(),
+                        contentPadding: EdgeInsets.all(12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Hủy bỏ'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  final customNote = reasonController.text.trim();
+                  if (selectedReason.contains('Lý do khác') && customNote.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('⚠️ Vui lòng nhập chi tiết lý do từ chối vào ô Ghi chú chi tiết!'), backgroundColor: AppColors.warning),
+                    );
+                    return;
+                  }
+                  final fullReason = customNote.isNotEmpty ? '$selectedReason - $customNote' : selectedReason;
+                  
+                  setState(() {
+                    _qcBatches[index]['status'] = 'Rejected - Return to Supplier';
+                    _qcBatches[index]['qcStage'] = 'Quarantined / Return Process';
+                    _qcBatches[index]['signedBy'] = 'Rejected & Signed by QC Inspector';
+                    _qcBatches[index]['inspectorNote'] = '❌ LÝ DO TỪ CHỐI: $fullReason';
+                  });
+                  Navigator.of(ctx).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('❌ Đã từ chối lô $batchNo và lập biên bản hoàn trả NCC. Lý do: $fullReason'),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.cancel_outlined, size: 18),
+                label: const Text('Xác nhận Từ chối & Hoàn trả'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -249,7 +370,17 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(child: Text('Inspector Note: ${item['inspectorNote']}', style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: AppColors.textPrimary))),
+                          Expanded(
+                            child: Text(
+                              'Inspector Note: ${item['inspectorNote']}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
+                                fontWeight: (item['inspectorNote'] as String).contains('LÝ DO TỪ CHỐI:') ? FontWeight.bold : FontWeight.normal,
+                                color: (item['inspectorNote'] as String).contains('LÝ DO TỪ CHỐI:') ? AppColors.error : AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
                           Text('✍️ ${item['signedBy']}', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF059669), fontSize: 12)),
                         ],
                       ),
@@ -257,15 +388,15 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          if (status != 'Rejected')
+                          if (!status.contains('Rejected'))
                             OutlinedButton.icon(
-                              onPressed: () => _updateStatus(idx, 'Rejected - Return to Supplier'),
+                              onPressed: () => _showRejectDialog(context, idx),
                               icon: const Icon(Icons.cancel_outlined, size: 18),
                               label: const Text('Reject & Return (Từ chối & Hoàn trả)'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
                             ),
                           const SizedBox(width: 12),
-                          if (status != 'Passed QC')
+                          if (!status.contains('Passed'))
                             ElevatedButton.icon(
                               onPressed: () => _updateStatus(idx, 'Passed QC - Ready for Storage'),
                               icon: const Icon(Icons.check_circle_outline, size: 18),

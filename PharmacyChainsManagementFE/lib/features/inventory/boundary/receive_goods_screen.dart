@@ -11,7 +11,8 @@ import '../control/receive_goods_state.dart';
 import '../entity/receive_goods_request_dto.dart';
 
 class ReceiveGoodsScreen extends StatefulWidget {
-  const ReceiveGoodsScreen({super.key});
+  final VoidCallback? onBackToDashboard;
+  const ReceiveGoodsScreen({super.key, this.onBackToDashboard});
 
   @override
   State<ReceiveGoodsScreen> createState() => _ReceiveGoodsScreenState();
@@ -55,7 +56,13 @@ class _ReceiveGoodsScreenState extends State<ReceiveGoodsScreen> {
             showAppSuccessDialog(
               context,
               message: 'Goods received successfully!',
-              onClose: () => Navigator.of(context).pop(),
+              onClose: () {
+                if (widget.onBackToDashboard != null) {
+                  widget.onBackToDashboard!();
+                } else if (Navigator.of(context).canPop() && ModalRoute.of(context)?.isFirst == false) {
+                  Navigator.of(context).pop();
+                }
+              },
             );
           }
         },

@@ -11,7 +11,8 @@ import '../control/issue_stock_state.dart';
 import '../entity/issue_stock_request_dto.dart';
 
 class IssueStockScreen extends StatefulWidget {
-  const IssueStockScreen({super.key});
+  final VoidCallback? onBackToDashboard;
+  const IssueStockScreen({super.key, this.onBackToDashboard});
 
   @override
   State<IssueStockScreen> createState() => _IssueStockScreenState();
@@ -54,7 +55,13 @@ class _IssueStockScreenState extends State<IssueStockScreen> {
             showAppSuccessDialog(
               context,
               message: 'Stock issued successfully (FEFO).',
-              onClose: () => Navigator.of(context).pop(),
+              onClose: () {
+                if (widget.onBackToDashboard != null) {
+                  widget.onBackToDashboard!();
+                } else if (Navigator.of(context).canPop() && ModalRoute.of(context)?.isFirst == false) {
+                  Navigator.of(context).pop();
+                }
+              },
             );
           }
         },

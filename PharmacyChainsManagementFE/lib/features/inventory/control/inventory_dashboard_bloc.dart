@@ -22,7 +22,7 @@ class InventoryDashboardBloc extends Bloc<InventoryDashboardEvent, InventoryDash
     } on AppException catch (e) {
       emit(InventoryDashboardLoadFailure(e.message));
     } catch (e) {
-      emit(const InventoryDashboardLoadFailure('Đã có lỗi không xác định xảy ra.'));
+      emit(InventoryDashboardLoadFailure('Lỗi hệ thống: ${e.toString()}'));
     }
   }
 }

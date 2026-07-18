@@ -22,7 +22,7 @@ class IssueStockBloc extends Bloc<IssueStockEvent, IssueStockState> {
     } on AppException catch (e) {
       emit(IssueStockFailure(e.message));
     } catch (e) {
-      emit(const IssueStockFailure('Đã có lỗi không xác định xảy ra.'));
+      emit(IssueStockFailure('Lỗi hệ thống: ${e.toString()}'));
     }
   }
 }
