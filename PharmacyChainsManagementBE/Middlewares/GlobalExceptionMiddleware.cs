@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using PharmacyChainsManagementBE.Common.Exceptions;
 
 namespace PharmacyChainsManagementBE.Middlewares;
 
@@ -41,35 +40,13 @@ public class GlobalExceptionMiddleware
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/problem+json";
-
-        var statusCode = exception switch
-        {
-            DataNotFoundException => StatusCodes.Status404NotFound,
-            GenerationException => StatusCodes.Status500InternalServerError,
-            _ => StatusCodes.Status500InternalServerError
-        };
-
-        var title = exception switch
-        {
-            DataNotFoundException => "Data not found",
-            GenerationException => "File generation failed",
-            _ => "An unexpected error occurred on the server."
-        };
-
-        var detail = exception switch
-        {
-            DataNotFoundException => exception.Message,
-            GenerationException => _env.IsDevelopment() ? exception.ToString() : exception.Message,
-            _ => _env.IsDevelopment() ? exception.ToString() : "An internal server error occurred. Please contact system support."
-        };
-
-        context.Response.StatusCode = statusCode;
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
         var problemDetails = new ProblemDetails
         {
-            Status = statusCode,
-            Title = title,
-            Detail = detail,
+            Status = StatusCodes.Status500InternalServerError,
+            Title = "An unexpected error occurred on the server.",
+            Detail = _env.IsDevelopment() ? exception.ToString() : "An internal server error occurred. Please contact system support.",
             Instance = context.Request.Path,
             Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
         };

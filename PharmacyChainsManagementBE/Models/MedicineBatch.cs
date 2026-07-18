@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -60,17 +60,4 @@ public partial class MedicineBatch
     [ForeignKey("SupplierId")]
     [InverseProperty("MedicineBatches")]
     public virtual Supplier Supplier { get; set; } = null!;
-
-
-    [InverseProperty("Batch")]
-    public virtual ICollection<InventoryReceiptDetail> InventoryReceiptDetails { get; set; } = new List<InventoryReceiptDetail>();
-
-    [InverseProperty("Batch")]
-    public virtual ICollection<StockIssueDetail> StockIssueDetails { get; set; } = new List<StockIssueDetail>();
-
-    [InverseProperty("Batch")]
-    public virtual ICollection<StocktakeDetail> StocktakeDetails { get; set; } = new List<StocktakeDetail>();
-
-    [InverseProperty("Batch")]
-    public virtual ICollection<DamageReport> DamageReports { get; set; } = new List<DamageReport>();
 }

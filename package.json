@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.23.0"
   }
 }

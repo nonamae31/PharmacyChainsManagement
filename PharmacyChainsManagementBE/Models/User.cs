@@ -1,16 +1,14 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-using PharmacyChainsManagementBE.Common.Interfaces;
-
 namespace PharmacyChainsManagementBE.Models;
 
 [Table("USER")]
 [Index("Email", Name = "UQ__USER__AB6E6164A2B157E7", IsUnique = true)]
-public partial class User : ISoftDeletable
+public partial class User
 {
     [Key]
     [Column("user_id")]
@@ -52,9 +50,6 @@ public partial class User : ISoftDeletable
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 
-    [Column("must_change_password")]
-    public bool MustChangePassword { get; set; }
-
     [InverseProperty("Actor")]
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
@@ -86,7 +81,4 @@ public partial class User : ISoftDeletable
 
     [InverseProperty("RequestedByNavigation")]
     public virtual ICollection<StockTransfer> StockTransferRequestedByNavigations { get; set; } = new List<StockTransfer>();
-
-    [Column("is_deleted")]
-    public bool IsDeleted { get; set; } = false;
 }

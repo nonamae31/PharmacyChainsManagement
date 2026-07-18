@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,15 +16,8 @@ public partial class PharmacyDbContext : DbContext
     }
 
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
+
     public virtual DbSet<Branch> Branches { get; set; }
-    public virtual DbSet<InventoryReceipt> InventoryReceipts { get; set; }
-    public virtual DbSet<InventoryReceiptDetail> InventoryReceiptDetails { get; set; }
-    public virtual DbSet<StockIssue> StockIssues { get; set; }
-    public virtual DbSet<StockIssueDetail> StockIssueDetails { get; set; }
-    public virtual DbSet<Stocktake> Stocktakes { get; set; }
-    public virtual DbSet<StocktakeDetail> StocktakeDetails { get; set; }
-    public virtual DbSet<InventoryAdjustment> InventoryAdjustments { get; set; }
-    public virtual DbSet<DamageReport> DamageReports { get; set; }
 
     public virtual DbSet<Inventory> Inventories { get; set; }
 
@@ -60,13 +53,6 @@ public partial class PharmacyDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseNpgsql("Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.mohzctrdjgwajlxiylkn;Password=29032004h@H310824miku@M");
-        }
-    }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AuditLog>(entity =>
@@ -328,12 +314,6 @@ public partial class PharmacyDbContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_USER_ROLE");
-
-            entity.HasIndex(u => u.IsDeleted)
-                .HasFilter("\"is_deleted\" = false")
-                .HasDatabaseName("IX_User_IsDeleted_Filtered");
-
-            entity.HasQueryFilter(u => !u.IsDeleted);
         });
 
         OnModelCreatingPartial(modelBuilder);

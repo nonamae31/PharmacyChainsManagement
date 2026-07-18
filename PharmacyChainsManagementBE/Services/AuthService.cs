@@ -151,24 +151,21 @@ public class AuthService : IAuthService
         var accessToken = _tokenService.IssueJwt(userId, userDto.Email, roleDto.RoleCode);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
-        if (userId != Guid.Empty)
+        var session = new UserSession
         {
-            var session = new UserSession
-            {
-                SessionId = Guid.NewGuid(),
-                UserId = userId,
-                RefreshToken = refreshToken,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-                IsRevoked = false,
-                IpAddress = ipAddress,
-                UserAgent = userAgent,
-                DeviceId = deviceId
-            };
+            SessionId = Guid.NewGuid(),
+            UserId = userId,
+            RefreshToken = refreshToken,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            IsRevoked = false,
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            DeviceId = deviceId
+        };
 
-            await _sessionRepository.AddAsync(session, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
+        await _sessionRepository.AddAsync(session, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new AuthResultResponse(accessToken, refreshToken, userDto, roleDto));
     }
@@ -260,61 +257,11 @@ public class AuthService : IAuthService
 
     public async Task<Result> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
-        if (user == null)
-        {
-            // Return success even if user not found to prevent email enumeration
-            return Result.Success();
-        }
-
-        // Generate a random token
-        var tokenBytes = RandomNumberGenerator.GetBytes(32);
-        var token = Convert.ToBase64String(tokenBytes);
-
-        // Set token and expiry
-        user.PasswordResetToken = token;
-        user.ResetTokenExpiry = DateTimeOffset.UtcNow.AddMinutes(15);
-
-        await _userRepository.UpdateAsync(user, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        // Send email with the reset token
-        await _emailService.SendPasswordResetEmailAsync(user.Email, token, cancellationToken);
-
-        await _auditLogService.LogAsync("PasswordResetRequested", $"Password reset requested for {user.Email}", user.UserId.ToString(), null, cancellationToken);
-
         return Result.Success();
     }
 
     public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
-        if (user == null)
-        {
-            return Result.Failure(Error.Validation("Auth.InvalidReset", "Invalid email or token."));
-        }
-
-        if (user.PasswordResetToken != request.Token || user.ResetTokenExpiry < DateTimeOffset.UtcNow)
-        {
-            return Result.Failure(Error.Validation("Auth.InvalidReset", "Invalid or expired reset token."));
-        }
-
-        // Hash new password
-        user.PasswordHash = _passwordHashingStrategy.HashPassword(request.NewPassword);
-
-        // Clear token
-        user.PasswordResetToken = null;
-        user.ResetTokenExpiry = null;
-
-        // Reset lockout if needed
-        user.AccessFailedCount = 0;
-        user.LockoutEnd = null;
-
-        await _userRepository.UpdateAsync(user, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await _auditLogService.LogAsync("PasswordResetCompleted", $"Password reset completed for {user.Email}", user.UserId.ToString(), null, cancellationToken);
-
         return Result.Success();
     }
 }

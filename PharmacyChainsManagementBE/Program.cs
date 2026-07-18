@@ -17,10 +17,7 @@ using PharmacyChainsManagementBE.Middlewares;
 using PharmacyChainsManagementBE.Models;
 using PharmacyChainsManagementBE.Repositories;
 using PharmacyChainsManagementBE.Services;
-using PharmacyChainsManagementBE.Services.Strategies;
 using PharmacyChainsManagementBE.Validators;
-using PharmacyChainsManagementBE.Security;
-using Microsoft.AspNetCore.Authorization;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -44,10 +41,8 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
-    builder.Services.AddSingleton<PharmacyChainsManagementBE.Common.Interceptors.SoftDeleteInterceptor>();
-    builder.Services.AddDbContext<PharmacyDbContext>((sp, options) =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
-               .AddInterceptors(sp.GetRequiredService<PharmacyChainsManagementBE.Common.Interceptors.SoftDeleteInterceptor>()));
+    builder.Services.AddDbContext<PharmacyDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
     var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
     builder.Services.Configure<JwtSettings>(jwtSettingsSection);
@@ -70,43 +65,17 @@ try
             o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             o.QueueLimit = 2;
         });
-
-        options.AddFixedWindowLimiter("GetAdminPolicy", o =>
-        {
-            o.PermitLimit = 10;
-            o.Window = TimeSpan.FromMinutes(1);
-            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            o.QueueLimit = 2;
-        });
-
-        options.AddFixedWindowLimiter("CreateAdminPolicy", o =>
-        {
-            o.PermitLimit = 5;
-            o.Window = TimeSpan.FromMinutes(1);
-            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            o.QueueLimit = 2;
-        });
-
-        options.AddFixedWindowLimiter("CashFlowReportPolicy", o =>
-        {
-            o.PermitLimit = 5;
-            o.Window = TimeSpan.FromMinutes(1);
-            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            o.QueueLimit = 2;
-        });
-
-        options.AddFixedWindowLimiter("export_policy", o =>
-        {
-            o.PermitLimit = 5;
-            o.Window = TimeSpan.FromMinutes(1);
-            o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            o.QueueLimit = 2;
-        });
     });
 
     builder.Services.AddCors(options =>
     {
-        options.AddDefaultPolicy(policy =>
+        options.AddPolicy("Production", policy =>
+            policy.WithOrigins("https://yourtrusteddomain.com") 
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials());
+                  
+        options.AddPolicy("Development", policy =>
             policy.AllowAnyOrigin()
                   .AllowAnyMethod()
                   .AllowAnyHeader());
@@ -130,33 +99,10 @@ try
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
             ClockSkew = TimeSpan.Zero
         };
-        options.Events = new JwtBearerEvents
-        {
-            OnTokenValidated = context =>
-            {
-                if (context.Principal?.Identity is System.Security.Claims.ClaimsIdentity identity)
-                {
-                    var claims = new System.Collections.Generic.List<System.Security.Claims.Claim>(identity.FindAll(identity.RoleClaimType));
-                    foreach (var claim in claims)
-                    {
-                        if (string.IsNullOrEmpty(claim.Value)) continue;
-                        var normalizedRole = char.ToUpper(claim.Value[0]) + claim.Value.Substring(1).ToLower();
-                        if (claim.Value != normalizedRole)
-                        {
-                            identity.RemoveClaim(claim);
-                            identity.AddClaim(new System.Security.Claims.Claim(identity.RoleClaimType, normalizedRole));
-                        }
-                    }
-                }
-                return Task.CompletedTask;
-            }
-        };
     });
 
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<ISessionRepository, SessionRepository>();
-    builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
-    builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<ITokenService, TokenService>();
@@ -167,63 +113,31 @@ try
     builder.Services.AddSingleton<IEmailAlertQueue, EmailAlertQueue>();
     builder.Services.AddHostedService<SuspiciousLoginAlertBackgroundService>();
 
-    // Inventory Services
-    builder.Services.AddScoped<IInventoryService, InventoryService>();
-    builder.Services.AddHostedService<ExpiredStockBackgroundService>();
-
-    // Business Admin & Finance Services
-    builder.Services.AddScoped<IBusinessAdminService, BusinessAdminService>();
-    builder.Services.AddScoped<IStaffSalesService, StaffSalesService>();
-    builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
-    builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
-    builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, PdfExportStrategy>();
-    builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, ExcelExportStrategy>();
-    builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, CsvExportStrategy>();
-
-    builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
-    builder.Services.AddHttpContextAccessor();
-    builder.Services.AddSingleton<IAuthorizationHandler, AdminOrOwnerHandler>();
-    builder.Services.AddAuthorization(options =>
-    {
-        options.AddPolicy("RequireSuperAdminOrOwner", policy =>
-            policy.Requirements.Add(new AdminOrOwnerRequirement()));
-    });
-
     var app = builder.Build();
-
-    using (var scope = app.Services.CreateScope())
-    {
-        try
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<PharmacyDbContext>();
-            dbContext.Database.Migrate();
-            Log.Information("Supabase PostgreSQL migrations & seed data applied successfully.");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "An error occurred while migrating/seeding the Supabase PostgreSQL database.");
-        }
-    }
 
     app.UseMiddleware<GlobalExceptionMiddleware>();
     app.UseMiddleware<CorrelationIdMiddleware>();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        app.UseCors("Development");
+    }
+    else 
+    {
+        app.UseCors("Production");
+    }
 
     app.UseHttpsRedirection();
     
     app.UseRateLimiter();
 
     app.UseRouting();
-    app.UseCors();
 
     app.UseAuthentication();
     app.UseMiddleware<JwtBlacklistMiddleware>();
     app.UseAuthorization();
-
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
 
     app.MapControllers();
 

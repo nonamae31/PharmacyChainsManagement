@@ -1,246 +1,395 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-using PharmacyChainsManagementBE.Common;
-using PharmacyChainsManagementBE.DTOs;
-using PharmacyChainsManagementBE.DTOs.Responses;
-using PharmacyChainsManagementBE.Filters;
-using PharmacyChainsManagementBE.Services;
+using Microsoft.EntityFrameworkCore;
+using PharmacyChainsManagementBE.Models;
 
 namespace PharmacyChainsManagementBE.Controllers;
 
-[Route("api/v1/business-admin")]
+[Authorize(Roles = "BUSINESS_ADMIN")]
 [ApiController]
+[Route("api/v1/business-admin")]
 public class BusinessAdminController : ControllerBase
 {
-    private readonly IBusinessAdminService _businessAdminService;
-    private readonly MediatR.IMediator _mediator;
+    private readonly PharmacyDbContext _context;
 
-    public BusinessAdminController(IBusinessAdminService businessAdminService, MediatR.IMediator mediator)
+    public BusinessAdminController(PharmacyDbContext context)
     {
-        _businessAdminService = businessAdminService;
-        _mediator = mediator;
+        _context = context;
     }
 
-    /// <summary>
-    /// Gets business admin details by ID.
-    /// </summary>
-    /// <param name="accountId">The account ID.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Business admin details.</returns>
-    [HttpGet("{accountId}")]
-    [Authorize(Policy = "RequireSuperAdminOrOwner")]
-    [EnableRateLimiting("GetAdminPolicy")]
-    [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Client)]
-    [ProducesResponseType(typeof(ApiResponse<BusinessAdminDetailResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetBusinessAdmin(Guid accountId, CancellationToken cancellationToken)
+    [HttpGet("branches")]
+    public async Task<IActionResult> GetBranches(
+        [FromQuery] string? search,
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _businessAdminService.GetBusinessAdminAsync(accountId, cancellationToken);
-        if (!result.Success)
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = _context.Branches.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            return NotFound(result);
+            query = query.Where(branch =>
+                branch.BranchName.Contains(search) || branch.Address.Contains(search));
         }
 
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Gets a list of all business admins.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>List of business admins.</returns>
-    [HttpGet]
-    [Authorize(Policy = "RequireSuperAdminOrOwner")]
-    [EnableRateLimiting("GetAdminPolicy")]
-    [ProducesResponseType(typeof(ApiResponse<System.Collections.Generic.List<BusinessAdminDetailResponse>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetBusinessAdmins(CancellationToken cancellationToken)
-    {
-        var result = await _businessAdminService.GetBusinessAdminsAsync(cancellationToken);
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Creates a new business admin account.
-    /// </summary>
-    /// <param name="request">The create request data.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Business admin details.</returns>
-    [HttpPost]
-    [Authorize(Policy = "RequireSuperAdminOrOwner")]
-    [EnableRateLimiting("CreateAdminPolicy")]
-    [ProducesResponseType(typeof(ApiResponse<BusinessAdminDetailResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<BusinessAdminDetailResponse>), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CreateBusinessAdmin([FromBody] DTOs.CreateBusinessAdminRequest request, CancellationToken cancellationToken)
-    {
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var result = await _businessAdminService.CreateBusinessAdminAsync(request, ipAddress, cancellationToken);
-        if (!result.Success && result.Message == "Email đã tồn tại trong hệ thống.")
+        if (!string.IsNullOrWhiteSpace(status))
         {
-            return Conflict(result);
-        }
-        if (!result.Success)
-        {
-            return BadRequest(result);
+            query = query.Where(branch => branch.Status == status);
         }
 
-        return Ok(result);
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderBy(branch => branch.BranchName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(branch => new
+            {
+                branchId = branch.BranchId,
+                branchName = branch.BranchName,
+                address = branch.Address,
+                phone = branch.Phone,
+                latitude = branch.Latitude,
+                longitude = branch.Longitude,
+                status = branch.Status,
+                managerName = branch.Users
+                    .Where(user => user.Role.RoleCode == "BRANCH_MANAGER")
+                    .Select(user => user.FullName)
+                    .FirstOrDefault(),
+                managerEmail = branch.Users
+                    .Where(user => user.Role.RoleCode == "BRANCH_MANAGER")
+                    .Select(user => user.Email)
+                    .FirstOrDefault(),
+                managerJoinedDate = branch.Users
+                    .Where(user => user.Role.RoleCode == "BRANCH_MANAGER")
+                    .Select(user => (DateTime?)user.CreatedAt)
+                    .FirstOrDefault(),
+                dailyRevenue = branch.Invoices.Sum(invoice => invoice.TotalAmount),
+                staffCount = branch.Users.Count,
+                createdAt = branch.CreatedAt,
+                updatedAt = branch.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return Ok(new { items, page, pageSize, totalCount });
     }
 
-    /// <summary>
-    /// Gets business admin status by ID.
-    /// </summary>
-    /// <param name="adminId">The account ID.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Business admin status.</returns>
-    [HttpGet("{adminId}/status")]
-    [Authorize(Policy = "RequireSuperAdminOrOwner")]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetBusinessAdminStatus(Guid adminId, CancellationToken cancellationToken)
+    [HttpPost("branches")]
+    public async Task<IActionResult> CreateBranch(
+        [FromBody] BranchRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await _businessAdminService.GetBusinessAdminStatusAsync(adminId, cancellationToken);
-        if (!result.Success)
+        var validationResult = ValidateBranchRequest(request);
+        if (validationResult != null)
         {
-            return NotFound(result);
+            return validationResult;
         }
 
-        return Ok(result);
+        var now = DateTime.UtcNow;
+        var branch = new Branch
+        {
+            BranchId = Guid.NewGuid(),
+            BranchName = request.BranchName.Trim(),
+            Address = request.Address.Trim(),
+            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
+            Latitude = request.Latitude.HasValue ? Convert.ToDecimal(request.Latitude.Value) : null,
+            Longitude = request.Longitude.HasValue ? Convert.ToDecimal(request.Longitude.Value) : null,
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        _context.Branches.Add(branch);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Ok(ToBranchResponse(branch));
     }
 
-    /// <summary>
-    /// Deactivates a business admin account.
-    /// </summary>
-    /// <param name="adminId">The account ID.</param>
-    /// <param name="request">The deactivate request data containing reason.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result message.</returns>
-    [HttpPost("{adminId}/deactivate")]
-    [Authorize(Roles = "Founder")]
-    [IdempotencyKey]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> DeactivateBusinessAdmin(Guid adminId, [FromBody] DeactivateBusinessAdminRequest request, CancellationToken cancellationToken)
+    [HttpPut("branches/{branchId:guid}")]
+    public async Task<IActionResult> UpdateBranch(
+        Guid branchId,
+        [FromBody] BranchRequest request,
+        CancellationToken cancellationToken)
     {
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var result = await _businessAdminService.VerifyAndDeactivateAsync(adminId, request.Reason, ipAddress, cancellationToken);
-        if (!result.Success)
+        var validationResult = ValidateBranchRequest(request);
+        if (validationResult != null)
         {
-            if (result.Message == "Business Admin không tồn tại.")
-                return NotFound(result);
-            return BadRequest(result);
+            return validationResult;
         }
 
-        return Ok(result);
-    }
-    /// <summary>
-    /// Updates business admin profile.
-    /// </summary>
-    /// <param name="accountId">The account ID.</param>
-    /// <param name="request">The update request data.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result message.</returns>
-    [HttpPut("{accountId}")]
-    [Authorize(Policy = "RequireSuperAdminOrOwner")]
-    [EnableRateLimiting("ProfileUpdatePolicy")]
-    [ProducesResponseType(typeof(ApiResponse<BusinessAdminDetailResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateBusinessAdmin(Guid accountId, [FromBody] UpdateBusinessAdminRequest request, CancellationToken cancellationToken)
-    {
-        var currentUserIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var currentUserRoleClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-
-        Guid currentUserId = Guid.Empty;
-        if (currentUserIdClaim != null) Guid.TryParse(currentUserIdClaim, out currentUserId);
-
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var result = await _businessAdminService.UpdateBusinessAdminAsync(accountId, request, currentUserId, currentUserRoleClaim, ipAddress, cancellationToken);
-
-        if (!result.Success)
+        var branch = await _context.Branches
+            .FirstOrDefaultAsync(item => item.BranchId == branchId, cancellationToken);
+        if (branch == null)
         {
-            if (result.Message.Contains("không tồn tại"))
-                return NotFound(result);
-            if (result.Message.Contains("tồn tại trong hệ thống"))
-                return Conflict(result);
-            if (result.Message.Contains("quyền") || result.Message.Contains("truy cập"))
-                return StatusCode(403, result);
-            return BadRequest(result);
+            return NotFound();
         }
 
-        return Ok(result);
+        branch.BranchName = request.BranchName.Trim();
+        branch.Address = request.Address.Trim();
+        branch.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
+        branch.Latitude = request.Latitude.HasValue ? Convert.ToDecimal(request.Latitude.Value) : null;
+        branch.Longitude = request.Longitude.HasValue ? Convert.ToDecimal(request.Longitude.Value) : null;
+        branch.Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
+        branch.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Ok(ToBranchResponse(branch));
     }
 
-    /// <summary>
-    /// Soft deletes a business admin account.
-    /// </summary>
-    /// <param name="id">The account ID.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result message.</returns>
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "Founder")]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SoftDeleteBusinessAdmin(Guid id, CancellationToken cancellationToken)
+    [HttpGet("medicine-statistics")]
+    public async Task<IActionResult> GetMedicineStatistics(
+        [FromQuery] string? branchId,
+        [FromQuery] string? category,
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var command = new PharmacyChainsManagementBE.Features.BusinessAdmin.Commands.SoftDeleteBusinessAdmin.SoftDeleteBusinessAdminCommand(id, ipAddress);
-        var result = await _mediator.Send(command, cancellationToken);
-        if (!result.Success)
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var nearExpiryDate = today.AddDays(30);
+
+        var query = _context.Inventories
+            .AsNoTracking()
+            .Include(inventory => inventory.Branch)
+            .Include(inventory => inventory.Medicine)
+            .Include(inventory => inventory.Batch)
+            .AsQueryable();
+
+        if (Guid.TryParse(branchId, out var parsedBranchId))
         {
-            return NotFound(result);
+            query = query.Where(inventory => inventory.BranchId == parsedBranchId);
         }
 
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Reactivates a soft-deleted business admin account.
-    /// </summary>
-    /// <param name="id">The account ID.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Result message.</returns>
-    [HttpPatch("{id}/reactivate")]
-    [Authorize(Roles = "Founder")]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ReactivateBusinessAdmin(Guid id, CancellationToken cancellationToken)
-    {
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var command = new PharmacyChainsManagementBE.Features.BusinessAdmin.Commands.ReactivateBusinessAdmin.ReactivateBusinessAdminCommand(id, ipAddress);
-        var result = await _mediator.Send(command, cancellationToken);
-        if (!result.Success)
+        if (!string.IsNullOrWhiteSpace(category))
         {
-            if (result.Message == "Business Admin không tồn tại.")
-                return NotFound(result);
-            return BadRequest(result);
+            query = query.Where(inventory => inventory.Medicine.Category == category);
         }
 
-        return Ok(result);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(inventory =>
+                inventory.Medicine.MedicineName.Contains(search) ||
+                inventory.Branch.BranchName.Contains(search));
+        }
+
+        var allItems = await query.ToListAsync(cancellationToken);
+
+        var inventoryItems = allItems
+            .OrderBy(item => item.Medicine.MedicineName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(item => new
+            {
+                medicineId = item.MedicineId,
+                medicineName = item.Medicine.MedicineName,
+                category = item.Medicine.Category,
+                branchName = item.Branch.BranchName,
+                batchNumber = item.Batch.BatchNumber,
+                quantityOnHand = item.QuantityOnHand,
+                safetyStockLevel = item.SafetyStockLevel,
+                expiryDate = item.Batch.ExpiryDate.ToDateTime(TimeOnly.MinValue),
+                status = item.Status
+            })
+            .ToList();
+
+        var bestSellingList = await _context.InvoiceDetails
+            .AsNoTracking()
+            .Include(detail => detail.Medicine)
+            .GroupBy(detail => new { detail.MedicineId, detail.Medicine.MedicineName })
+            .Select(group => new
+            {
+                medicineId = group.Key.MedicineId,
+                medicineName = group.Key.MedicineName,
+                quantitySold = group.Sum(detail => detail.Quantity),
+                revenue = group.Sum(detail => detail.LineTotal)
+            })
+            .OrderByDescending(item => item.quantitySold)
+            .Take(10)
+            .ToListAsync(cancellationToken);
+
+        var lowStockList = allItems
+            .Where(item => item.QuantityOnHand <= item.SafetyStockLevel)
+            .Take(10)
+            .Select(item => new
+            {
+                medicineId = item.MedicineId,
+                medicineName = item.Medicine.MedicineName,
+                category = item.Medicine.Category,
+                branchName = item.Branch.BranchName,
+                batchNumber = item.Batch.BatchNumber,
+                quantityOnHand = item.QuantityOnHand,
+                safetyStockLevel = item.SafetyStockLevel,
+                expiryDate = item.Batch.ExpiryDate.ToDateTime(TimeOnly.MinValue),
+                status = item.Status
+            })
+            .ToList();
+
+        var nearExpiryList = allItems
+            .Where(item => item.Batch.ExpiryDate <= nearExpiryDate)
+            .Take(10)
+            .Select(item => new
+            {
+                medicineId = item.MedicineId,
+                medicineName = item.Medicine.MedicineName,
+                category = item.Medicine.Category,
+                branchName = item.Branch.BranchName,
+                batchNumber = item.Batch.BatchNumber,
+                quantityOnHand = item.QuantityOnHand,
+                safetyStockLevel = item.SafetyStockLevel,
+                expiryDate = item.Batch.ExpiryDate.ToDateTime(TimeOnly.MinValue),
+                status = item.Status
+            })
+            .ToList();
+
+        var response = new
+        {
+            generatedAt = DateTime.UtcNow,
+            summary = new
+            {
+                totalMedicines = await _context.Medicines.CountAsync(cancellationToken),
+                outOfStockCount = allItems.Count(item => item.QuantityOnHand <= 0),
+                lowStockCount = allItems.Count(item => item.QuantityOnHand <= item.SafetyStockLevel),
+                nearExpiryCount = allItems.Count(item => item.Batch.ExpiryDate <= nearExpiryDate),
+                fulfillmentRate = allItems.Count == 0
+                    ? 0
+                    : Math.Round(allItems.Count(item => item.QuantityOnHand > 0) * 100.0 / allItems.Count, 2)
+            },
+            inventoryItems,
+            bestSellingList,
+            lowStockList,
+            nearExpiryList
+        };
+
+        return Ok(response);
     }
+
+    [HttpGet("reports/business-analysis")]
+    public async Task<IActionResult> GetBusinessAnalysisReport(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromQuery] string? branchSearch,
+        CancellationToken cancellationToken = default)
+    {
+        var from = DateOnly.FromDateTime(fromDate ?? DateTime.UtcNow.AddDays(-30));
+        var to = DateOnly.FromDateTime(toDate ?? DateTime.UtcNow);
+
+        var invoices = _context.Invoices
+            .AsNoTracking()
+            .Include(invoice => invoice.Branch)
+            .Where(invoice => invoice.InvoiceDate >= from && invoice.InvoiceDate <= to);
+
+        if (!string.IsNullOrWhiteSpace(branchSearch))
+        {
+            invoices = invoices.Where(invoice => invoice.Branch.BranchName.Contains(branchSearch));
+        }
+
+        var invoiceList = await invoices.ToListAsync(cancellationToken);
+        var totalRevenue = invoiceList.Sum(invoice => invoice.TotalAmount);
+        var categoryDetails = _context.InvoiceDetails
+            .AsNoTracking()
+            .Include(detail => detail.Invoice)
+            .ThenInclude(invoice => invoice.Branch)
+            .Include(detail => detail.Medicine)
+            .Where(detail => detail.Invoice.InvoiceDate >= from && detail.Invoice.InvoiceDate <= to);
+
+        if (!string.IsNullOrWhiteSpace(branchSearch))
+        {
+            categoryDetails = categoryDetails.Where(detail =>
+                detail.Invoice.Branch.BranchName.Contains(branchSearch));
+        }
+
+        var salesByCategory = await categoryDetails
+            .GroupBy(detail => detail.Medicine.Category ?? "Uncategorized")
+            .Select(group => new
+            {
+                category = group.Key,
+                revenue = group.Sum(detail => detail.LineTotal)
+            })
+            .OrderByDescending(item => item.revenue)
+            .ToListAsync(cancellationToken);
+
+        var response = new
+        {
+            reportId = Guid.NewGuid(),
+            generatedAt = DateTime.UtcNow,
+            summary = new
+            {
+                totalRevenue,
+                netProfitMargin = 0,
+                customerGrowth = 0,
+                averageBasketSize = invoiceList.Count == 0 ? 0 : totalRevenue / invoiceList.Count,
+                completedTransactionCount = invoiceList.Count
+            },
+            revenueTrend = invoiceList
+                .GroupBy(invoice => invoice.InvoiceDate.ToString("yyyy-MM"))
+                .Select(group => new
+                {
+                    period = group.Key,
+                    revenue = group.Sum(invoice => invoice.TotalAmount)
+                })
+                .OrderBy(item => item.period)
+                .ToList(),
+            salesByCategory,
+            branchFinancialSummary = invoiceList
+                .GroupBy(invoice => new { invoice.BranchId, invoice.Branch.BranchName, invoice.Branch.Status })
+                .Select(group => new
+                {
+                    branchId = group.Key.BranchId,
+                    branchName = group.Key.BranchName,
+                    revenue = group.Sum(invoice => invoice.TotalAmount),
+                    status = group.Key.Status
+                })
+                .OrderByDescending(item => item.revenue)
+                .ToList()
+        };
+
+        return Ok(response);
+    }
+
+    private IActionResult? ValidateBranchRequest(BranchRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.BranchName))
+        {
+            return BadRequest(new { message = "Branch name is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Address))
+        {
+            return BadRequest(new { message = "Address is required." });
+        }
+
+        return null;
+    }
+
+    private static object ToBranchResponse(Branch branch) => new
+    {
+        branchId = branch.BranchId,
+        branchName = branch.BranchName,
+        address = branch.Address,
+        phone = branch.Phone,
+        latitude = branch.Latitude,
+        longitude = branch.Longitude,
+        status = branch.Status,
+        managerName = (string?)null,
+        createdAt = branch.CreatedAt,
+        updatedAt = branch.UpdatedAt
+    };
 }
+
+public sealed record BranchRequest(
+    string BranchName,
+    string Address,
+    string? Phone,
+    double? Latitude,
+    double? Longitude,
+    string? Status);
