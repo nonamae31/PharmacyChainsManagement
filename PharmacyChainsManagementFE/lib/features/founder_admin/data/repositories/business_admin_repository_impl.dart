@@ -62,8 +62,13 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
       if (response.statusCode != 200) {
         throw Exception(response.data['message'] ?? 'Tạo Business Admin thất bại.');
       }
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data is Map) {
+        throw Exception(e.response?.data['message'] ?? 'Lỗi từ server');
+      }
+      throw Exception('Lỗi kết nối: ${e.message}');
     } catch (e) {
-      throw Exception('Lỗi kết nối hoặc xử lý từ server: $e');
+      throw Exception('Lỗi không xác định: $e');
     }
   }
 
@@ -92,18 +97,27 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
   Future<Either<Failure, void>> deactivateBusinessAdmin(String id, String reason) async {
     try {
       final dio = ApiClient.createDio();
-      final response = await dio.post('/api/v1/business-admin/deactivate', data: {
-        'id': id,
-        'reason': reason,
-      });
+      final idempotencyKey = DateTime.now().millisecondsSinceEpoch.toString();
+      final response = await dio.post(
+        '/api/v1/business-admin/$id/deactivate',
+        data: {'reason': reason},
+        options: Options(
+          headers: {'Idempotency-Key': idempotencyKey},
+        ),
+      );
 
       if (response.statusCode == 200) {
         return const Right(null);
       } else {
         return Left(ServerFailure(response.data['message'] ?? 'Vô hiệu hóa thất bại.'));
       }
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data is Map) {
+        return Left(ServerFailure(e.response?.data['message'] ?? 'Lỗi từ server'));
+      }
+      return Left(ServerFailure('Lỗi kết nối: ${e.message}'));
     } catch (e) {
-      return Left(ServerFailure('Lỗi kết nối hoặc xử lý từ server: $e'));
+      return Left(ServerFailure('Lỗi không xác định: $e'));
     }
   }
 

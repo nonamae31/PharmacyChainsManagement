@@ -16,9 +16,9 @@ class ExportCriteriaModel extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       'branchId': branchId,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
-      'format': format,
+      'startDate': startDate.toUtc().toIso8601String(),
+      'endDate': endDate.toUtc().toIso8601String(),
+      'format': format.toUpperCase(),
     };
   }
 

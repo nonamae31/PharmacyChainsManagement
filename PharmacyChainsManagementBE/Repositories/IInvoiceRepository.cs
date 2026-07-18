@@ -7,5 +7,5 @@ namespace PharmacyChainsManagementBE.Repositories;
 
 public interface IInvoiceRepository
 {
-    Task<IEnumerable<Invoice>> GetPaidInvoicesAsync(Guid branchId, DateOnly fromDate, DateOnly toDate);
+    Task<IEnumerable<Invoice>> GetPaidInvoicesAsync(Guid? branchId, DateOnly fromDate, DateOnly toDate);
 }

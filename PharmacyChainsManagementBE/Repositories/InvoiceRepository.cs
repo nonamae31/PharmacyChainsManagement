@@ -16,15 +16,18 @@ public class InvoiceRepository : IInvoiceRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Invoice>> GetPaidInvoicesAsync(Guid branchId, DateOnly fromDate, DateOnly toDate)
+    public async Task<IEnumerable<Invoice>> GetPaidInvoicesAsync(Guid? branchId, DateOnly fromDate, DateOnly toDate)
     {
-        // Sử dụng AsNoTracking cho thao tác chỉ đọc (Tăng cường hiệu năng)
-        return await _context.Invoices
-            .AsNoTracking()
-            .Where(i => i.BranchId == branchId 
-                     && i.PaymentStatus == "Paid" 
+        var query = _context.Invoices.AsNoTracking()
+            .Where(i => i.PaymentStatus == "Paid" 
                      && i.InvoiceDate >= fromDate 
-                     && i.InvoiceDate <= toDate)
-            .ToListAsync();
+                     && i.InvoiceDate <= toDate);
+                     
+        if (branchId.HasValue && branchId.Value != Guid.Empty)
+        {
+            query = query.Where(i => i.BranchId == branchId.Value);
+        }
+
+        return await query.ToListAsync();
     }
 }

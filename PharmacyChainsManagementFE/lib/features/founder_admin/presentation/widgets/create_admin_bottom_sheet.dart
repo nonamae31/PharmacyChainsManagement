@@ -1,11 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/create_admin_cubit.dart';
+import '../../../../injection_container.dart';
 
 class CreateAdminBottomSheet extends StatefulWidget {
   final VoidCallback onSuccess;
 
   const CreateAdminBottomSheet({super.key, required this.onSuccess});
+
+  static void show(BuildContext context, VoidCallback onSuccess) {
+    final isDesktop = MediaQuery.sizeOf(context).width > 800;
+    final widget = BlocProvider(
+      create: (_) => sl<CreateAdminCubit>(),
+      child: CreateAdminBottomSheet(onSuccess: onSuccess),
+    );
+
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: widget,
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (_) => widget,
+      );
+    }
+  }
 
   @override
   State<CreateAdminBottomSheet> createState() => _CreateAdminBottomSheetState();
@@ -37,10 +68,11 @@ class _CreateAdminBottomSheetState extends State<CreateAdminBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.sizeOf(context).width > 800;
     // E1: Mobile-first UX (Bottom Sheet + Keyboard handling)
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom, // Đẩy UI lên khi bàn phím xuất hiện
+        bottom: isDesktop ? 24 : MediaQuery.of(context).viewInsets.bottom, // Đẩy UI lên khi bàn phím xuất hiện
         left: 20,
         right: 20,
         top: 24,
@@ -48,12 +80,14 @@ class _CreateAdminBottomSheetState extends State<CreateAdminBottomSheet> {
       child: BlocConsumer<CreateAdminCubit, CreateAdminState>(
         listener: (context, state) {
           if (state is CreateAdminSuccess) {
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message), backgroundColor: Colors.green),
             );
             widget.onSuccess();
             Navigator.pop(context);
           } else if (state is CreateAdminFailure) {
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error), backgroundColor: Colors.red),
             );

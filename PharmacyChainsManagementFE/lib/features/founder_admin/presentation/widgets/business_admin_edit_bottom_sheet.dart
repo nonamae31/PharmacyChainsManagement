@@ -119,12 +119,14 @@ class _BusinessAdminEditBottomSheetState extends State<BusinessAdminEditBottomSh
         child: BlocConsumer<BusinessAdminEditCubit, BusinessAdminEditState>(
           listener: (context, state) {
             if (state is BusinessAdminEditSuccess) {
+              ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message), backgroundColor: Colors.green),
               );
               widget.onSuccess();
               Navigator.pop(context);
             } else if (state is BusinessAdminEditError) {
+              ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message), backgroundColor: Colors.red),
               );
@@ -198,8 +200,11 @@ class _BusinessAdminEditBottomSheetState extends State<BusinessAdminEditBottomSh
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.phone),
                         ),
-                        validator: (value) =>
-                            value == null || value.isEmpty ? 'Phone is required' : null,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Phone is required';
+                          if (!RegExp(r'^[0-9]+$').hasMatch(value)) return 'Please enter a valid phone number';
+                          return null;
+                        },
                       ),
                     ),
                     const SizedBox(height: 24),

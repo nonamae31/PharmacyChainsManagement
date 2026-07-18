@@ -1,0 +1,18 @@
+using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using PharmacyChainsManagementBE.Models;
+
+var optionsBuilder = new DbContextOptionsBuilder<PharmacyDbContext>();
+optionsBuilder.UseNpgsql("Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.mohzctrdjgwajlxiylkn;Password=29032004h@H310824miku@M;Pooling=false;KeepAlive=30;");
+
+using (var db = new PharmacyDbContext(optionsBuilder.Options))
+{
+    var invoices = db.Invoices.Where(i => i.PaymentStatus == ""Paid"").Include(i => i.InvoiceDetails).ToList();
+    Console.WriteLine($""Total Invoices: {invoices.Count}"");
+    Console.WriteLine($""Invoices with Details: {invoices.Count(i => i.InvoiceDetails.Any())}"");
+    var totalAmount = invoices.Sum(i => i.TotalAmount);
+    var totalDetails = invoices.SelectMany(i => i.InvoiceDetails).Sum(d => d.LineTotal);
+    Console.WriteLine($""Sum of TotalAmount: {totalAmount}"");
+    Console.WriteLine($""Sum of Details LineTotal: {totalDetails}"");
+}

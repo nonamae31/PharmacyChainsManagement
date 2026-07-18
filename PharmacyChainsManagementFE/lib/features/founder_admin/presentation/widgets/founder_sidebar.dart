@@ -85,11 +85,6 @@ class FounderSidebar extends StatelessWidget {
       ),
       destinations: const [
         NavigationRailDestination(
-          icon: Icon(Icons.dashboard_outlined),
-          selectedIcon: Icon(Icons.dashboard),
-          label: Text('Dashboard'),
-        ),
-        NavigationRailDestination(
           icon: Icon(Icons.people_outline),
           selectedIcon: Icon(Icons.people),
           label: Text('Admins'),
@@ -100,14 +95,14 @@ class FounderSidebar extends StatelessWidget {
           label: Text('Revenue'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.file_download_outlined),
-          selectedIcon: Icon(Icons.file_download),
-          label: Text('Export'),
-        ),
-        NavigationRailDestination(
           icon: Icon(Icons.attach_money_outlined),
           selectedIcon: Icon(Icons.attach_money),
           label: Text('Cash Flow'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: Text('Profile'),
         ),
       ],
     );

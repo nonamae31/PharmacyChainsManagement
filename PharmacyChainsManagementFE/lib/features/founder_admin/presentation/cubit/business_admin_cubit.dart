@@ -28,13 +28,8 @@ class BusinessAdminCubit extends Cubit<BusinessAdminState> {
     final currentState = state as BusinessAdminLoaded;
     final originalAdmins = List.of(currentState.allAdmins);
 
-    // Optimistic Update: Change status to 'Deactivated'
-    final updatedAdmins = currentState.allAdmins.map((admin) {
-      if (admin.id == id) {
-        return admin.copyWith(status: 'Deactivated');
-      }
-      return admin;
-    }).toList();
+    // Optimistic Update: Remove the admin from the list
+    final updatedAdmins = currentState.allAdmins.where((admin) => admin.id != id).toList();
     emit(currentState.copyWith(allAdmins: updatedAdmins));
 
     final result = await repository.softDeleteBusinessAdmin(id);
@@ -71,7 +66,10 @@ class BusinessAdminCubit extends Cubit<BusinessAdminState> {
         // Rollback on failure
         emit(currentState.copyWith(allAdmins: originalAdmins));
       },
-      (_) {}, // Success, keep optimistic state
+      (_) {
+        // Fetch fresh data from server to ensure list is accurate (e.g. restoring soft-deleted user)
+        fetchBusinessAdmins(forceRefresh: true);
+      }, // Success, fetch fresh data
     );
   }
 }

@@ -4,6 +4,7 @@ import '../../domain/entities/revenue_report_request.dart';
 import 'revenue_report_event.dart';
 import 'revenue_report_state.dart';
 import '../../../../core/app_logger.dart';
+import '../../domain/entities/revenue_report_response.dart';
 
 class RevenueReportBloc extends Bloc<RevenueReportEvent, RevenueReportState> {
   final GenerateRevenueReportUseCase generateRevenueReportUseCase;
@@ -28,7 +29,9 @@ class RevenueReportBloc extends Bloc<RevenueReportEvent, RevenueReportState> {
           AppLogger.error('Failed to fetch revenue report: ${failure.message}');
           emit(RevenueReportError(failure.message));
         },
-        (report) => emit(RevenueReportLoaded(report)),
+        (report) {
+          emit(RevenueReportLoaded(report));
+        },
       );
     } catch (e) {
       AppLogger.error('Exception fetching revenue report', e);

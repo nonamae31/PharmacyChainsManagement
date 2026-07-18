@@ -42,6 +42,17 @@ public partial class User : ISoftDeletable
     [StringLength(255)]
     public string? ProfilePhotoUri { get; set; }
 
+    [Column("address")]
+    [StringLength(255)]
+    public string? Address { get; set; }
+
+    [Column("date_of_birth")]
+    public DateTime? DateOfBirth { get; set; }
+
+    [Column("gender")]
+    [StringLength(10)]
+    public string? Gender { get; set; }
+
     [Column("status")]
     [StringLength(30)]
     public string Status { get; set; } = null!;

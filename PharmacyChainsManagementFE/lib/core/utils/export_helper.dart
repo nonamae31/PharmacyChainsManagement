@@ -22,6 +22,7 @@ class ExportHelper {
       await file.writeAsBytes(bytes);
 
       final xFile = XFile(filePath);
+      // ignore: deprecated_member_use
       await Share.shareXFiles([xFile], text: 'Financial Report: $fileName');
     }
   }

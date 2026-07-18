@@ -11,7 +11,6 @@ import 'features/auth/control/auth_event.dart';
 import 'features/auth/network/auth_api_client.dart';
 
 import 'injection_container.dart' as di;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.init();

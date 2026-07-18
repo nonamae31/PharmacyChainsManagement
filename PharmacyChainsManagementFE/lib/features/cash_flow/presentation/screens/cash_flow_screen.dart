@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +13,7 @@ import '../bloc/cash_flow_bloc.dart';
 import '../bloc/cash_flow_event.dart';
 import '../bloc/cash_flow_state.dart';
 import '../../domain/entities/cash_flow_statistics_entity.dart';
+import '../../domain/entities/branch_entity.dart';
 
 class CashFlowScreen extends StatelessWidget {
   const CashFlowScreen({super.key});
@@ -35,7 +37,8 @@ class CashFlowView extends StatefulWidget {
 class _CashFlowViewState extends State<CashFlowView> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
-  final TextEditingController _branchIdController = TextEditingController();
+  String? _selectedBranchId;
+  List<BranchEntity> _cachedBranches = [];
 
   @override
   void initState() {
@@ -52,9 +55,9 @@ class _CashFlowViewState extends State<CashFlowView> {
     }
     context.read<CashFlowBloc>().add(
           FetchCashFlowEvent(
-            startDate: _startDate.toIso8601String(),
-            endDate: _endDate.toIso8601String(),
-            branchId: _branchIdController.text.isNotEmpty ? _branchIdController.text : null,
+            startDate: DateFormat('yyyy-MM-dd').format(_startDate),
+            endDate: DateFormat('yyyy-MM-dd').format(_endDate),
+            branchId: _selectedBranchId,
           ),
         );
   }
@@ -210,29 +213,75 @@ class _CashFlowViewState extends State<CashFlowView> {
       );
     }
     
+    double getLogValue(double value) {
+      if (value <= 0) return 0;
+      return math.log(value + 1) / math.ln10; // Log base 10
+    }
+    
+    double maxLogY = 0;
+    for (var d in data) {
+      final inLog = getLogValue(d.inflow);
+      final outLog = getLogValue(d.outflow);
+      if (inLog > maxLogY) maxLogY = inLog;
+      if (outLog > maxLogY) maxLogY = outLog;
+    }
+    
+    if (maxLogY == 0) {
+      maxLogY = 1;
+    } else {
+      maxLogY = maxLogY * 1.2; // 20% padding at the top
+    }
+
     return Container(
       height: 250,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.only(left: 16, right: 32, top: 16, bottom: 8),
       child: LineChart(
         LineChartData(
+          minX: -1, // Horizontal padding left
+          maxX: data.isNotEmpty ? data.length.toDouble() : 0, // Horizontal padding right
+          minY: 0,
+          maxY: maxLogY,
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              fitInsideHorizontally: true,
+              fitInsideVertically: true,
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((LineBarSpot touchedSpot) {
+                  final isGreen = touchedSpot.barIndex == 0;
+                  final int index = touchedSpot.x.round();
+                  if (index < 0 || index >= data.length) return null;
+                  
+                  final originalValue = isGreen ? data[index].inflow : data[index].outflow;
+                  final formatter = NumberFormat.currency(symbol: '\$');
+                  
+                  return LineTooltipItem(
+                    '${isGreen ? 'Inflow' : 'Outflow'}\n${formatter.format(originalValue)}',
+                    TextStyle(color: isGreen ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold),
+                  );
+                }).toList();
+              },
+            ),
+          ),
           lineBarsData: [
             LineChartBarData(
-              spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.inflow)).toList(),
+              spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), getLogValue(e.value.inflow))).toList(),
               isCurved: true,
+              preventCurveOverShooting: true,
               color: Colors.green,
               barWidth: 3,
               isStrokeCapRound: true,
               dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(show: true, color: Colors.green.withAlpha(50)), // using withAlpha instead of withOpacity
+              belowBarData: BarAreaData(show: true, color: Colors.green.withAlpha(50)),
             ),
             LineChartBarData(
-              spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.outflow)).toList(),
+              spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), getLogValue(e.value.outflow))).toList(),
               isCurved: true,
+              preventCurveOverShooting: true,
               color: Colors.red,
               barWidth: 3,
               isStrokeCapRound: true,
               dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(show: true, color: Colors.red.withAlpha(50)), // using withAlpha instead of withOpacity
+              belowBarData: BarAreaData(show: true, color: Colors.red.withAlpha(50)),
             ),
           ],
           titlesData: const FlTitlesData(
@@ -322,13 +371,45 @@ class _CashFlowViewState extends State<CashFlowView> {
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _branchIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'Branch ID (Optional)',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _fetchData(),
+                  child: BlocBuilder<CashFlowBloc, CashFlowState>(
+                    builder: (context, state) {
+                      if (state is CashFlowLoaded) {
+                        final Map<String, BranchEntity> uniqueBranchesMap = {};
+                        for (var branch in state.branches) {
+                          uniqueBranchesMap[branch.id] = branch;
+                        }
+                        _cachedBranches = uniqueBranchesMap.values.toList();
+                      }
+
+                      List<DropdownMenuItem<String>> items = [
+                        const DropdownMenuItem(value: null, child: Text('All Branches')),
+                      ];
+                        
+                      items.addAll(_cachedBranches.map((b) => DropdownMenuItem<String>(
+                        value: b.id,
+                        child: Text(b.name),
+                      )));
+                      
+                      String? validValue = _selectedBranchId;
+                      if (validValue != null && !items.any((item) => item.value == validValue)) {
+                        validValue = null;
+                      }
+
+                      return DropdownButtonFormField<String>(
+                        value: validValue,
+                        decoration: const InputDecoration(
+                          labelText: 'Branch',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: items,
+                        onChanged: (val) {
+                          setState(() {
+                            _selectedBranchId = val;
+                          });
+                          _fetchData();
+                        },
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -407,6 +488,9 @@ class _CashFlowViewState extends State<CashFlowView> {
                           const Text('Cash Flow Trend', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 16),
                           _buildChart(data.dailyData),
+                          _buildLiquidityForecastChart(data.liquidityForecasts),
+                          _buildBudgetAllocationPieChart(data.budgetAllocations),
+                          _buildRecentTransactions(data.recentTransactions),
                         ],
                       ),
                     );
@@ -418,6 +502,146 @@ class _CashFlowViewState extends State<CashFlowView> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLiquidityForecastChart(List<LiquidityForecastEntity> forecasts) {
+    if (forecasts.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        const Text('Liquidity Forecast', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        Container(
+          height: 250,
+          padding: const EdgeInsets.all(8),
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              barGroups: forecasts.asMap().entries.map((e) {
+                return BarChartGroupData(
+                  x: e.key,
+                  barRods: [
+                    BarChartRodData(toY: e.value.projectedInflow, color: Colors.green, width: 15),
+                    BarChartRodData(toY: e.value.projectedOutflow, color: Colors.red, width: 15),
+                  ],
+                );
+              }).toList(),
+              titlesData: FlTitlesData(
+                show: true,
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (double value, TitleMeta meta) {
+                      if (value.toInt() >= 0 && value.toInt() < forecasts.length) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(forecasts[value.toInt()].month, style: const TextStyle(fontSize: 12)),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+                leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              gridData: const FlGridData(show: false),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBudgetAllocationPieChart(List<BudgetAllocationEntity> allocations) {
+    if (allocations.isEmpty) return const SizedBox.shrink();
+    final List<Color> colors = [Colors.blue, Colors.orange, Colors.purple, Colors.teal, Colors.amber];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        const Text('Budget Allocation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 200,
+          child: Row(
+            children: [
+              Expanded(
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 40,
+                    sections: allocations.asMap().entries.map((e) {
+                      final color = colors[e.key % colors.length];
+                      return PieChartSectionData(
+                        color: color,
+                        value: e.value.percentage,
+                        title: '${e.value.percentage}%',
+                        radius: 50,
+                        titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: allocations.asMap().entries.map((e) {
+                    final color = colors[e.key % colors.length];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        children: [
+                          Container(width: 16, height: 16, color: color),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(e.value.categoryName, style: const TextStyle(fontSize: 12))),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecentTransactions(List<RecentTransactionEntity> transactions) {
+    if (transactions.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        const Text('Recent Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        ...transactions.map((t) {
+          final isWeIn = t.type == 'Inflow';
+          return ListTile(
+            leading: Icon(
+              isWeIn ? Icons.arrow_upward : Icons.arrow_downward,
+              color: isWeIn ? Colors.green : Colors.red,
+            ),
+            title: Text(t.description),
+            subtitle: Text(DateFormat('yyyy-MM-dd HH:mm').format(t.date)),
+            trailing: Text(
+              '${isWeIn ? '+' : '-'}\$${t.amount.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: isWeIn ? Colors.green : Colors.red,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          );
+        }),
+      ],
     );
   }
 }
