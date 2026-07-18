@@ -2,16 +2,17 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'secure_storage_service.dart';
 import '../../../core/app_logger.dart';
+import '../../../core/network/api_base_url.dart';
 import '../entity/login_request_dto.dart';
 import '../entity/auth_result_dto.dart';
 import '../../../core/exceptions.dart';
 
 class AuthApiClient {
   late final Dio _dio;
-  
+
   AuthApiClient() {
     _dio = Dio(BaseOptions(
-      baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000',
+      baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl(),
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 60),
       headers: {'Content-Type': 'application/json'},
@@ -131,7 +132,7 @@ class AuthApiClient {
       final refreshToken = await SecureStorageService.readRefreshToken();
       if (refreshToken == null) return false;
       
-      final dio = Dio(BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? 'https://fallback.api.com'));
+      final dio = Dio(BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl()));
       final response = await dio.post(
         '/api/v1/auth/refresh',
         data: {'refresh_token': refreshToken},

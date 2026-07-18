@@ -36,6 +36,10 @@ final class BranchDashboardSearchChanged extends BranchDashboardEvent {
   List<Object?> get props => [query];
 }
 
+final class BranchDashboardAlertsFilterToggled extends BranchDashboardEvent {
+  const BranchDashboardAlertsFilterToggled();
+}
+
 final class DailyRevenueConfirmationSubmitted extends BranchDashboardEvent {
   final ConfirmDailyRevenueRequestDto request;
 

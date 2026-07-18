@@ -11,19 +11,27 @@ class BranchRevenueBloc extends Bloc<BranchRevenueEvent, BranchRevenueState> {
 
   BranchRevenueBloc(this._apiClient) : super(const BranchRevenueInitial()) {
     on<BranchRevenueFetchRequested>(_onFetchRequested);
-    on<BranchRevenueSearchChanged>(_onSearchChanged);
     on<BranchRevenueExportRequested>(_onExportRequested);
   }
 
-  Future<void> _onFetchRequested(BranchRevenueFetchRequested event, Emitter<BranchRevenueState> emit) async {
+  Future<void> _onFetchRequested(
+    BranchRevenueFetchRequested event,
+    Emitter<BranchRevenueState> emit,
+  ) async {
     emit(const BranchRevenueLoading());
     try {
-      final revenue = await _apiClient.fetchRevenue(period: event.period, fromDate: event.fromDate, toDate: event.toDate);
-      emit(BranchRevenueLoadSuccess(
-        revenue: revenue,
+      final revenue = await _apiClient.fetchRevenue(
         period: event.period,
-        visiblePerformance: revenue.performanceByTime,
-      ));
+        fromDate: event.fromDate,
+        toDate: event.toDate,
+      );
+      emit(
+        BranchRevenueLoadSuccess(
+          revenue: revenue,
+          period: event.period,
+          visiblePerformance: revenue.performanceByTime,
+        ),
+      );
     } on BranchManagerAppException catch (error) {
       emit(BranchRevenueLoadFailure(error.message));
     } catch (_) {
@@ -31,21 +39,10 @@ class BranchRevenueBloc extends Bloc<BranchRevenueEvent, BranchRevenueState> {
     }
   }
 
-  void _onSearchChanged(BranchRevenueSearchChanged event, Emitter<BranchRevenueState> emit) {
-    final current = state;
-    if (current is! BranchRevenueLoadSuccess) return;
-    final query = event.query.trim().toLowerCase();
-    emit(BranchRevenueLoadSuccess(
-      revenue: current.revenue,
-      period: current.period,
-      searchQuery: event.query,
-      visiblePerformance: current.revenue.performanceByTime
-          .where((item) => item.timeBlock.toLowerCase().contains(query) || item.status.toLowerCase().contains(query))
-          .toList(growable: false),
-    ));
-  }
-
-  Future<void> _onExportRequested(BranchRevenueExportRequested event, Emitter<BranchRevenueState> emit) async {
+  Future<void> _onExportRequested(
+    BranchRevenueExportRequested event,
+    Emitter<BranchRevenueState> emit,
+  ) async {
     final current = state;
     if (current is! BranchRevenueLoadSuccess) return;
     try {
@@ -54,13 +51,14 @@ class BranchRevenueBloc extends Bloc<BranchRevenueEvent, BranchRevenueState> {
         fromDate: current.period == 'custom' ? current.revenue.fromDate : null,
         toDate: current.period == 'custom' ? current.revenue.toDate : null,
       );
-      emit(BranchRevenueExportSuccess(
-        revenue: current.revenue,
-        period: current.period,
-        searchQuery: current.searchQuery,
-        visiblePerformance: current.visiblePerformance,
-        bytes: bytes,
-      ));
+      emit(
+        BranchRevenueExportSuccess(
+          revenue: current.revenue,
+          period: current.period,
+          visiblePerformance: current.visiblePerformance,
+          bytes: bytes,
+        ),
+      );
     } on BranchManagerAppException catch (error) {
       emit(BranchRevenueLoadFailure(error.message));
     } catch (_) {

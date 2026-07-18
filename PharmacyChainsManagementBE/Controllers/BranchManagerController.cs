@@ -22,6 +22,7 @@ namespace PharmacyChainsManagementBE.Controllers;
 public sealed class BranchManagerController : ControllerBase
 {
     private const int MaximumReportDays = 366;
+    private const int MaximumShiftHours = 16;
     private readonly PharmacyDbContext _dbContext;
     private readonly IPasswordHashingStrategy _passwordHashingStrategy;
 
@@ -150,6 +151,12 @@ public sealed class BranchManagerController : ControllerBase
         [FromBody] CreateBranchStaffRequestDto request,
         CancellationToken cancellationToken)
     {
+        if (request.FullName.Trim().Length < 2)
+        {
+            ModelState.AddModelError(
+                nameof(request.FullName),
+                "Full name must contain at least two non-whitespace characters.");
+        }
         if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
@@ -221,11 +228,31 @@ public sealed class BranchManagerController : ControllerBase
             return Forbid();
         }
 
+        var normalizedStatus = request.Status.Trim().ToUpperInvariant();
+        if (normalizedStatus == "INACTIVE")
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var hasScheduledShift = await _dbContext.StaffShifts
+                .AsNoTracking()
+                .AnyAsync(shift => shift.BranchId == access.Value.BranchId
+                    && shift.StaffId == staffId
+                    && shift.ShiftDate >= today
+                    && shift.Status == "SCHEDULED",
+                    cancellationToken);
+            if (hasScheduledShift)
+            {
+                return Conflict(new
+                {
+                    message = "Cancel the staff member's current and future scheduled shifts before deactivation."
+                });
+            }
+        }
+
         var staff = await BranchManagerDataService.UpdateStaffStatusAsync(
             _dbContext,
             access.Value.BranchId,
             staffId,
-            request.Status.Trim().ToUpperInvariant(),
+            normalizedStatus,
             cancellationToken);
         return staff is null
             ? BadRequest(new { message = "The selected staff member does not belong to this branch." })
@@ -257,9 +284,27 @@ public sealed class BranchManagerController : ControllerBase
         [FromBody] UpsertStaffShiftRequestDto request,
         CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid || request.ShiftDate == default || request.StartTime >= request.EndTime)
+        var normalizedStatus = request.Status.Trim().ToUpperInvariant();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (request.ShiftDate == default || request.ShiftDate < today)
+        {
+            ModelState.AddModelError(
+                nameof(request.ShiftDate),
+                "Shift date cannot be in the past.");
+        }
+        if (normalizedStatus != "OFF" && request.StartTime >= request.EndTime)
         {
             ModelState.AddModelError(nameof(request.EndTime), "End time must be later than start time.");
+        }
+        if (normalizedStatus != "OFF"
+            && request.EndTime - request.StartTime > TimeSpan.FromHours(MaximumShiftHours))
+        {
+            ModelState.AddModelError(
+                nameof(request.EndTime),
+                $"A shift cannot exceed {MaximumShiftHours} hours.");
+        }
+        if (!ModelState.IsValid)
+        {
             return ValidationProblem(ModelState);
         }
 
@@ -275,7 +320,9 @@ public sealed class BranchManagerController : ControllerBase
             access.Value.BranchId,
             request,
             cancellationToken);
-        return shift is null ? BadRequest(new { message = "The selected staff member does not belong to this branch." }) : Ok(shift);
+        return shift is null
+            ? BadRequest(new { message = "The selected staff member does not belong to this branch or is inactive." })
+            : Ok(shift);
     }
 
     [HttpPost("staff-assessments")]
@@ -284,7 +331,23 @@ public sealed class BranchManagerController : ControllerBase
         [FromBody] CreateStaffAssessmentRequestDto request,
         CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid || request.AssessmentDate == default)
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (request.AssessmentDate == default || request.AssessmentDate > today)
+        {
+            ModelState.AddModelError(
+                nameof(request.AssessmentDate),
+                "Assessment date cannot be in the future.");
+        }
+        if (!HasAtMostTwoDecimalPlaces(request.SalesTarget)
+            || !HasAtMostTwoDecimalPlaces(request.CustomerRating)
+            || !HasAtMostTwoDecimalPlaces(request.AttendancePercent)
+            || !HasAtMostTwoDecimalPlaces(request.PerformanceScore))
+        {
+            ModelState.AddModelError(
+                nameof(request.PerformanceScore),
+                "Assessment numbers cannot have more than two decimal places.");
+        }
+        if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
         }
@@ -293,6 +356,20 @@ public sealed class BranchManagerController : ControllerBase
         if (access is null)
         {
             return Forbid();
+        }
+
+        var assessmentExists = await _dbContext.StaffAssessments
+            .AsNoTracking()
+            .AnyAsync(assessment => assessment.BranchId == access.Value.BranchId
+                && assessment.StaffId == request.StaffId
+                && assessment.AssessmentDate == request.AssessmentDate,
+                cancellationToken);
+        if (assessmentExists)
+        {
+            return Conflict(new
+            {
+                message = "This staff member already has an assessment for the selected date."
+            });
         }
 
         var assessment = await BranchManagerDataService.CreateStaffAssessmentAsync(
@@ -386,40 +463,20 @@ public sealed class BranchManagerController : ControllerBase
             cancellationToken));
     }
 
-    [HttpPost("inventory/shipments")]
-    [ProducesResponseType(typeof(ShipmentRequestDto), StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateShipment(
-        [FromBody] CreateShipmentRequestDto request,
-        CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return ValidationProblem(ModelState);
-        }
-
-        var access = await ResolveAccessAsync(cancellationToken);
-        if (access is null)
-        {
-            return Forbid();
-        }
-
-        var shipment = await BranchManagerDataService.CreateShipmentAsync(
-            _dbContext,
-            access.Value.ManagerId,
-            access.Value.BranchId,
-            request,
-            cancellationToken);
-        return shipment is null
-            ? BadRequest(new { message = "The selected batch, source branch, or quantity is invalid." })
-            : StatusCode(StatusCodes.Status201Created, shipment);
-    }
-
     [HttpPost("daily-revenue/confirm")]
     [ProducesResponseType(typeof(DailyRevenueConfirmationDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ConfirmDailyRevenue(
         [FromBody] ConfirmDailyRevenueRequestDto request,
         CancellationToken cancellationToken)
     {
+        if (!HasAtMostTwoDecimalPlaces(request.ActualCash)
+            || !HasAtMostTwoDecimalPlaces(request.ActualBankTransfer)
+            || !HasAtMostTwoDecimalPlaces(request.ActualOther))
+        {
+            ModelState.AddModelError(
+                nameof(request.ActualCash),
+                "Revenue amounts cannot have more than two decimal places.");
+        }
         if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
@@ -432,12 +489,24 @@ public sealed class BranchManagerController : ControllerBase
         }
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var systemAmount = await _dbContext.PaymentTransactions
-            .AsNoTracking()
-            .Where(payment => payment.Invoice.BranchId == access.Value.BranchId
-                && payment.Invoice.InvoiceDate == today
-                && payment.PaymentStatus == "PAID")
-            .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
+        var existingConfirmation = await BranchManagerDataService.GetDailyRevenueConfirmationAsync(
+            _dbContext,
+            access.Value.BranchId,
+            today,
+            cancellationToken);
+        if (existingConfirmation is not null)
+        {
+            return Conflict(new
+            {
+                message = "Daily revenue has already been confirmed for today."
+            });
+        }
+
+        var systemAmount = await BranchManagerDataService.GetDailySystemRevenueAsync(
+            _dbContext,
+            access.Value.BranchId,
+            today,
+            cancellationToken);
         var actualAmount = request.ActualCash + request.ActualBankTransfer + request.ActualOther;
         if (actualAmount != systemAmount && string.IsNullOrWhiteSpace(request.DifferenceReason))
         {
@@ -445,12 +514,18 @@ public sealed class BranchManagerController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        return Ok(await BranchManagerDataService.ConfirmDailyRevenueAsync(
+        var confirmation = await BranchManagerDataService.ConfirmDailyRevenueAsync(
             _dbContext,
             access.Value.ManagerId,
             access.Value.BranchId,
             request,
-            cancellationToken));
+            cancellationToken);
+        return confirmation is null
+            ? Conflict(new
+            {
+                message = "Daily revenue has already been confirmed for today."
+            })
+            : Ok(confirmation);
     }
 
     private async Task<(Guid ManagerId, Guid BranchId)?> ResolveAccessAsync(CancellationToken cancellationToken)
@@ -467,6 +542,11 @@ public sealed class BranchManagerController : ControllerBase
         return branchId.HasValue ? (managerId, branchId.Value) : null;
     }
 
+    private static bool HasAtMostTwoDecimalPlaces(decimal value)
+    {
+        return decimal.Round(value, 2) == value;
+    }
+
     private static (DateOnly FromDate, DateOnly ToDate)? ResolveDateRange(
         string period,
         DateOnly? fromDate,
@@ -475,9 +555,9 @@ public sealed class BranchManagerController : ControllerBase
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         (DateOnly FromDate, DateOnly ToDate)? range = period.ToLowerInvariant() switch
         {
-            "daily" => (FromDate: today.AddDays(-29), ToDate: today),
-            "weekly" => (FromDate: today.AddDays(-7 * 11), ToDate: today),
-            "monthly" => (FromDate: today.AddMonths(-11), ToDate: today),
+            "daily" => (FromDate: today, ToDate: today),
+            "weekly" => (FromDate: today.AddDays(-6), ToDate: today),
+            "monthly" => (FromDate: new DateOnly(today.Year, today.Month, 1), ToDate: today),
             "custom" when fromDate.HasValue && toDate.HasValue => (FromDate: fromDate.Value, ToDate: toDate.Value),
             _ => null
         };

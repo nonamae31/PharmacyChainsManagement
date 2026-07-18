@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../constants/branch_manager_app_strings.dart';
 import '../../features/auth/network/secure_storage_service.dart';
+import 'api_base_url.dart';
 import 'branch_manager_network_exceptions.dart';
 
 final class BranchManagerApiClientBase {
@@ -11,7 +12,7 @@ final class BranchManagerApiClientBase {
   BranchManagerApiClientBase() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: dotenv.env['BASE_URL'] ?? 'http://127.0.0.1:7000',
+        baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl(),
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         headers: const {'Content-Type': 'application/json'},

@@ -85,11 +85,77 @@ class TimeOfDayValue extends Equatable {
 
   const TimeOfDayValue(this.hour, this.minute);
 
+  factory TimeOfDayValue.fromApiValue(String value) {
+    final parts = value.split(':');
+    return TimeOfDayValue(int.parse(parts[0]), int.parse(parts[1]));
+  }
+
   String get asApiValue =>
       '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:00';
 
   @override
   List<Object?> get props => [hour, minute];
+}
+
+class StaffShiftDto extends Equatable {
+  final String shiftId;
+  final String staffId;
+  final String staffName;
+  final DateTime shiftDate;
+  final TimeOfDayValue startTime;
+  final TimeOfDayValue endTime;
+  final String status;
+  final String? notes;
+  final DateTime updatedAt;
+
+  const StaffShiftDto({
+    required this.shiftId,
+    required this.staffId,
+    required this.staffName,
+    required this.shiftDate,
+    required this.startTime,
+    required this.endTime,
+    required this.status,
+    required this.notes,
+    required this.updatedAt,
+  });
+
+  factory StaffShiftDto.fromJson(Map<String, dynamic> json) => StaffShiftDto(
+    shiftId: json['shiftId'].toString(),
+    staffId: json['staffId'].toString(),
+    staffName: json['staffName'].toString(),
+    shiftDate: DateTime.parse(json['shiftDate'].toString()),
+    startTime: TimeOfDayValue.fromApiValue(json['startTime'].toString()),
+    endTime: TimeOfDayValue.fromApiValue(json['endTime'].toString()),
+    status: json['status'].toString(),
+    notes: json['notes'] as String?,
+    updatedAt: DateTime.parse(json['updatedAt'].toString()),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'shiftId': shiftId,
+    'staffId': staffId,
+    'staffName': staffName,
+    'shiftDate': UpsertStaffShiftRequestDto._date(shiftDate),
+    'startTime': startTime.asApiValue,
+    'endTime': endTime.asApiValue,
+    'status': status,
+    'notes': notes,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  @override
+  List<Object?> get props => [
+    shiftId,
+    staffId,
+    staffName,
+    shiftDate,
+    startTime,
+    endTime,
+    status,
+    notes,
+    updatedAt,
+  ];
 }
 
 class CreateStaffAssessmentRequestDto extends Equatable {

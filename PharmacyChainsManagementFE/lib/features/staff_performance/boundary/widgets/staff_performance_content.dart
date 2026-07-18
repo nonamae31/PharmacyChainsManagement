@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/branch_manager_app_strings.dart';
 import '../../../../core/theme/branch_manager_app_theme.dart';
-import '../../../../shared/shared_components/app_chart.dart';
 import '../../../../shared/shared_components/app_empty_state.dart';
 import '../../../../shared/shared_components/app_metric_card.dart';
 import '../../../../shared/shared_components/app_mobile_detail_card.dart';
@@ -14,11 +13,21 @@ import '../../control/staff_performance_bloc.dart';
 import '../../control/staff_performance_event.dart';
 import '../../entity/staff_management_dto.dart';
 import '../../entity/staff_performance_dto.dart';
+import 'staff_shift_roster_panel.dart';
 
 class StaffPerformanceContent extends StatelessWidget {
   final StaffPerformanceDto performance;
+  final List<StaffShiftDto> shifts;
+  final DateTime shiftDate;
+  final ValueChanged<DateTime> onShiftDateSelected;
 
-  const StaffPerformanceContent({super.key, required this.performance});
+  const StaffPerformanceContent({
+    super.key,
+    required this.performance,
+    required this.shifts,
+    required this.shiftDate,
+    required this.onShiftDateSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -50,25 +59,13 @@ class StaffPerformanceContent extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           _StaffMatrix(performance: performance),
           const SizedBox(height: AppSpacing.md),
-          LayoutBuilder(
-            builder: (context, constraints) =>
-                constraints.maxWidth < AppSpacing.stackedPanelBreakpoint
-                ? Column(
-                    children: [
-                      _TrendPanel(performance: performance),
-                      const SizedBox(height: AppSpacing.md),
-                      _FeedbackPanel(performance: performance),
-                    ],
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _TrendPanel(performance: performance)),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(child: _FeedbackPanel(performance: performance)),
-                    ],
-                  ),
+          StaffShiftRosterPanel(
+            shifts: shifts,
+            selectedDate: shiftDate,
+            onDateSelected: onShiftDateSelected,
           ),
+          const SizedBox(height: AppSpacing.md),
+          _FeedbackPanel(performance: performance),
         ],
       ),
     );
@@ -198,6 +195,14 @@ class _StaffMobileList extends StatelessWidget {
                     '${AppStrings.currencySymbol}${member.salesRevenue.toStringAsFixed(0)}',
               ),
               AppMobileDetailItem(
+                label: AppStrings.lastAssessment,
+                value: member.assessmentDate == null
+                    ? AppStrings.unavailable
+                    : MaterialLocalizations.of(
+                        context,
+                      ).formatCompactDate(member.assessmentDate!.toLocal()),
+              ),
+              AppMobileDetailItem(
                 label: AppStrings.salesTarget,
                 value: member.salesTarget == null
                     ? AppStrings.unavailable
@@ -248,20 +253,23 @@ class _StaffTable extends StatelessWidget {
       child: DataTable(
         columns: const [
           DataColumn(label: Text(AppStrings.teamMember)),
+          DataColumn(label: SizedBox.shrink()),
           DataColumn(label: Text(AppStrings.status)),
+          DataColumn(label: Text(AppStrings.lastAssessment)),
           DataColumn(label: Text(AppStrings.salesTarget)),
           DataColumn(label: Text(AppStrings.targetProgress)),
           DataColumn(label: Text(AppStrings.customerRating)),
           DataColumn(label: Text(AppStrings.attendance)),
           DataColumn(label: Text(AppStrings.performance)),
-          DataColumn(label: Text('')),
         ],
-        rows: staff.map(_buildRow).toList(growable: false),
+        rows: staff
+            .map((member) => _buildRow(context, member))
+            .toList(growable: false),
       ),
     );
   }
 
-  DataRow _buildRow(StaffPerformanceRowDto member) {
+  DataRow _buildRow(BuildContext context, StaffPerformanceRowDto member) {
     return DataRow(
       cells: [
         DataCell(
@@ -292,7 +300,17 @@ class _StaffTable extends StatelessWidget {
             ],
           ),
         ),
+        DataCell(_StaffStatusAction(staff: member)),
         DataCell(AppStatusChip(label: member.status)),
+        DataCell(
+          Text(
+            member.assessmentDate == null
+                ? AppStrings.unavailable
+                : MaterialLocalizations.of(
+                    context,
+                  ).formatCompactDate(member.assessmentDate!.toLocal()),
+          ),
+        ),
         DataCell(
           Text(
             '${AppStrings.currencySymbol}${member.salesRevenue.toStringAsFixed(0)} / ${member.salesTarget == null ? AppStrings.unavailable : '${AppStrings.currencySymbol}${member.salesTarget!.toStringAsFixed(0)}'}',
@@ -316,8 +334,7 @@ class _StaffTable extends StatelessWidget {
         ),
         DataCell(
           Text(
-            member.customerRating?.toStringAsFixed(1) ??
-                AppStrings.unavailable,
+            member.customerRating?.toStringAsFixed(1) ?? AppStrings.unavailable,
           ),
         ),
         DataCell(
@@ -338,7 +355,6 @@ class _StaffTable extends StatelessWidget {
             ),
           ),
         ),
-        DataCell(_StaffStatusAction(staff: member)),
       ],
     );
   }
@@ -353,12 +369,14 @@ class _StaffStatusAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final label = _isActive
+        ? AppStrings.deactivateStaff
+        : AppStrings.activateStaff;
+    final icon = _isActive ? Icons.person_off_outlined : Icons.person_outline;
+    final color = _isActive ? AppColors.danger : AppColors.success;
     return IconButton(
-      tooltip: _isActive ? AppStrings.deactivateStaff : AppStrings.activateStaff,
-      icon: Icon(
-        _isActive ? Icons.person_off_outlined : Icons.person_outline,
-        color: _isActive ? AppColors.danger : AppColors.success,
-      ),
+      tooltip: label,
+      icon: Icon(icon, color: color),
       onPressed: () => _handleTap(context),
     );
   }
@@ -398,52 +416,6 @@ class _StaffStatusAction extends StatelessWidget {
   }
 }
 
-class _TrendPanel extends StatelessWidget {
-  final StaffPerformanceDto performance;
-
-  const _TrendPanel({required this.performance});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppSectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            AppStrings.trendAnalysis,
-            style: AppTextStyles.sectionTitle,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AppBarChart(
-            values: performance.trend
-                .map((item) => item.revenue)
-                .toList(growable: false),
-            color: AppColors.teal,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            color: AppColors.tealSoft,
-            child: const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.lightbulb_outline, color: AppColors.primary),
-                SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    AppStrings.managerInsightMessage,
-                    style: AppTextStyles.caption,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _FeedbackPanel extends StatelessWidget {
   final StaffPerformanceDto performance;
 
@@ -472,7 +444,22 @@ class _FeedbackPanel extends StatelessWidget {
                   color: AppColors.primary,
                 ),
                 title: Text(item.staffName),
-                subtitle: Text(item.notes),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      MaterialLocalizations.of(
+                        context,
+                      ).formatCompactDate(item.assessmentDate.toLocal()),
+                      style: AppTextStyles.caption,
+                    ),
+                    Text(
+                      item.notes.isEmpty
+                          ? AppStrings.noAssessmentNotes
+                          : item.notes,
+                    ),
+                  ],
+                ),
                 trailing: Text(
                   '${item.performanceScore.toStringAsFixed(0)}${AppStrings.percentSymbol}',
                   style: AppTextStyles.body,

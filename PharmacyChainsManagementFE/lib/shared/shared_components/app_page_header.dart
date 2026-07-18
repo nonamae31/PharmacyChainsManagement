@@ -5,16 +5,16 @@ import '../../core/theme/branch_manager_app_theme.dart';
 class AppPageHeader extends StatelessWidget {
   final String title;
   final String subtitle;
-  final String searchHint;
-  final ValueChanged<String> onSearchChanged;
+  final String? searchHint;
+  final ValueChanged<String>? onSearchChanged;
   final List<Widget> actions;
 
   const AppPageHeader({
     super.key,
     required this.title,
     required this.subtitle,
-    required this.searchHint,
-    required this.onSearchChanged,
+    this.searchHint,
+    this.onSearchChanged,
     this.actions = const [],
   });
 
@@ -22,18 +22,31 @@ class AppPageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final search = SizedBox(
-          width: constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint
-              ? constraints.maxWidth
-              : AppSpacing.searchWidth,
-          child: TextField(
-            onChanged: onSearchChanged,
-            decoration: InputDecoration(
-              hintText: searchHint,
-              prefixIcon: const Icon(Icons.search, size: AppSpacing.iconMedium),
-            ),
-          ),
-        );
+        final searchField = searchHint == null || onSearchChanged == null
+            ? null
+            : TextField(
+                onChanged: onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: searchHint,
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    size: AppSpacing.iconMedium,
+                  ),
+                ),
+              );
+        final mobile = constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint;
+        final search = searchField == null
+            ? null
+            : mobile
+            ? SizedBox(width: constraints.maxWidth, child: searchField)
+            : Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: AppSpacing.searchWidth,
+                  ),
+                  child: searchField,
+                ),
+              );
         final heading = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -52,13 +65,15 @@ class AppPageHeader extends StatelessWidget {
             ),
           ],
         );
-        if (constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint) {
+        if (mobile) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               heading,
-              const SizedBox(height: AppSpacing.md),
-              search,
+              if (search != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                search,
+              ],
               if (actions.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
                 _MobileActionsLayout(actions: actions),
@@ -69,7 +84,7 @@ class AppPageHeader extends StatelessWidget {
         return Row(
           children: [
             Expanded(child: heading),
-            search,
+            ?search,
             if (actions.isNotEmpty) ...[
               const SizedBox(width: AppSpacing.sm),
               ...actions,

@@ -7,6 +7,7 @@ class StaffPerformanceRowDto extends Equatable {
   final String roleName;
   final String status;
   final double salesRevenue;
+  final DateTime? assessmentDate;
   final double? salesTarget;
   final double? targetProgressPercent;
   final double? customerRating;
@@ -20,6 +21,7 @@ class StaffPerformanceRowDto extends Equatable {
     required this.roleName,
     required this.status,
     required this.salesRevenue,
+    required this.assessmentDate,
     required this.salesTarget,
     required this.targetProgressPercent,
     required this.customerRating,
@@ -35,6 +37,9 @@ class StaffPerformanceRowDto extends Equatable {
         roleName: json['roleName']?.toString() ?? '',
         status: json['status']?.toString() ?? '',
         salesRevenue: (json['salesRevenue'] as num?)?.toDouble() ?? 0,
+        assessmentDate: json['assessmentDate'] == null
+            ? null
+            : DateTime.parse(json['assessmentDate'].toString()),
         salesTarget: (json['salesTarget'] as num?)?.toDouble(),
         targetProgressPercent: (json['targetProgressPercent'] as num?)
             ?.toDouble(),
@@ -50,6 +55,7 @@ class StaffPerformanceRowDto extends Equatable {
     'roleName': roleName,
     'status': status,
     'salesRevenue': salesRevenue,
+    'assessmentDate': assessmentDate?.toIso8601String(),
     'salesTarget': salesTarget,
     'targetProgressPercent': targetProgressPercent,
     'customerRating': customerRating,
@@ -65,6 +71,7 @@ class StaffPerformanceRowDto extends Equatable {
     roleName,
     status,
     salesRevenue,
+    assessmentDate,
     salesTarget,
     targetProgressPercent,
     customerRating,
@@ -99,6 +106,15 @@ class StaffFeedbackDto extends Equatable {
         performanceScore: (json['performanceScore'] as num?)?.toDouble() ?? 0,
         notes: json['notes']?.toString() ?? '',
       );
+
+  Map<String, dynamic> toJson() => {
+    'assessmentId': assessmentId,
+    'staffId': staffId,
+    'staffName': staffName,
+    'assessmentDate': assessmentDate.toIso8601String(),
+    'performanceScore': performanceScore,
+    'notes': notes,
+  };
 
   @override
   List<Object?> get props => [
@@ -187,7 +203,7 @@ class StaffPerformanceDto extends Equatable {
     'topPerformer': topPerformer?.toJson(),
     'staff': staff.map((item) => item.toJson()).toList(),
     'trend': trend.map((item) => item.toJson()).toList(),
-    'recentFeedback': recentFeedback,
+    'recentFeedback': recentFeedback.map((item) => item.toJson()).toList(),
   };
 
   @override

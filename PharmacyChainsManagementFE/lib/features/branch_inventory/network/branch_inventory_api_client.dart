@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 
 import '../../../core/network/branch_manager_api_client_base.dart';
 import '../entity/branch_inventory_dto.dart';
-import '../entity/shipment_dto.dart';
 
 class BranchInventoryApiClient {
   final BranchManagerApiClientBase _apiClient;
@@ -33,19 +32,5 @@ class BranchInventoryApiClient {
       options: Options(responseType: ResponseType.bytes),
     );
     return List<int>.from(response.data as List<dynamic>);
-  }
-
-  Future<ShipmentOptionsDto> fetchShipmentOptions() async {
-    final response = await _apiClient.get(
-      '/api/v1/branch-manager/inventory/shipment-options',
-    );
-    return ShipmentOptionsDto.fromJson(response.data as Map<String, dynamic>);
-  }
-
-  Future<void> createShipment(CreateShipmentRequestDto request) async {
-    await _apiClient.post(
-      '/api/v1/branch-manager/inventory/shipments',
-      data: request.toJson(),
-    );
   }
 }

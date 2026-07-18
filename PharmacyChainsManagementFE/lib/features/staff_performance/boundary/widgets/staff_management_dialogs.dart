@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/branch_manager_app_strings.dart';
+import '../../../../core/constants/branch_manager_validation_rules.dart';
 import '../../../../core/theme/branch_manager_app_theme.dart';
 import '../../entity/staff_management_dto.dart';
 import '../../entity/staff_performance_dto.dart';
@@ -49,42 +50,62 @@ class _CreateStaffDialogState extends State<CreateStaffDialog> {
               children: [
                 TextFormField(
                   controller: _nameController,
+                  maxLength: BranchManagerValidationRules.maximumFullNameLength,
                   decoration: const InputDecoration(
                     labelText: AppStrings.fullName,
                   ),
-                  validator: (value) => value == null || value.trim().length < 2
+                  validator: (value) =>
+                      value == null ||
+                          value.trim().length <
+                              BranchManagerValidationRules.minimumFullNameLength
                       ? AppStrings.requiredField
                       : null,
                 ),
                 TextFormField(
                   controller: _emailController,
+                  maxLength: BranchManagerValidationRules.maximumEmailLength,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: AppStrings.email,
                   ),
                   validator: (value) {
                     final email = value?.trim() ?? '';
-                    return email.contains('@') && email.contains('.')
+                    return BranchManagerValidationRules.emailPattern.hasMatch(
+                          email,
+                        )
                         ? null
                         : AppStrings.invalidEmail;
                   },
                 ),
                 TextFormField(
                   controller: _phoneController,
+                  maxLength: BranchManagerValidationRules.maximumPhoneLength,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
                     labelText: AppStrings.phone,
                   ),
+                  validator: (value) {
+                    final phone = value?.trim() ?? '';
+                    if (phone.isEmpty) return null;
+                    return BranchManagerValidationRules.phonePattern.hasMatch(
+                          phone,
+                        )
+                        ? null
+                        : AppStrings.invalidPhone;
+                  },
                 ),
                 TextFormField(
                   controller: _passwordController,
+                  maxLength: BranchManagerValidationRules.maximumPasswordLength,
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: AppStrings.temporaryPassword,
                   ),
-                  validator: (value) => (value?.length ?? 0) < 8
-                      ? AppStrings.passwordMinimum
-                      : null,
+                  validator: (value) =>
+                      BranchManagerValidationRules.strongPasswordPattern
+                          .hasMatch(value ?? '')
+                      ? null
+                      : AppStrings.passwordStrength,
                 ),
               ],
             ),
@@ -356,6 +377,14 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
       );
       return;
     }
+    if (_status != 'OFF' &&
+        endMinutes - startMinutes >
+            BranchManagerValidationRules.maximumShiftHours * 60) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text(AppStrings.shiftTooLong)));
+      return;
+    }
     Navigator.pop(
       context,
       UpsertStaffShiftRequestDto(
@@ -426,6 +455,7 @@ class _AssessmentFormFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -437,12 +467,17 @@ class _AssessmentFormFields extends StatelessWidget {
         _DateField(
           label: AppStrings.assessmentDate,
           value: date,
+          firstDate: DateTime(
+            BranchManagerValidationRules.earliestSupportedDateYear,
+          ),
+          lastDate: today,
           onChanged: onDateChanged,
         ),
         _NumberField(
           controller: targetController,
           label: AppStrings.salesTarget,
           minimum: 0,
+          maximum: BranchManagerValidationRules.maximumCurrencyAmount,
         ),
         _NumberField(
           controller: ratingController,
@@ -464,6 +499,7 @@ class _AssessmentFormFields extends StatelessWidget {
         ),
         TextFormField(
           controller: notesController,
+          maxLength: BranchManagerValidationRules.maximumAssessmentNotesLength,
           maxLines: 3,
           decoration: const InputDecoration(labelText: AppStrings.notes),
         ),
@@ -503,6 +539,7 @@ class _ShiftFormFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -514,6 +551,12 @@ class _ShiftFormFields extends StatelessWidget {
         _DateField(
           label: AppStrings.shiftDate,
           value: date,
+          firstDate: today,
+          lastDate: DateTime(
+            today.year + BranchManagerValidationRules.maximumSchedulingYears,
+            today.month,
+            today.day,
+          ),
           onChanged: onDateChanged,
         ),
         ListTile(
@@ -546,6 +589,7 @@ class _ShiftFormFields extends StatelessWidget {
         ),
         TextField(
           controller: notesController,
+          maxLength: BranchManagerValidationRules.maximumShiftNotesLength,
           maxLines: 3,
           decoration: const InputDecoration(labelText: AppStrings.notes),
         ),
@@ -557,11 +601,15 @@ class _ShiftFormFields extends StatelessWidget {
 class _DateField extends StatelessWidget {
   final String label;
   final DateTime value;
+  final DateTime firstDate;
+  final DateTime lastDate;
   final ValueChanged<DateTime> onChanged;
 
   const _DateField({
     required this.label,
     required this.value,
+    required this.firstDate,
+    required this.lastDate,
     required this.onChanged,
   });
 
@@ -577,8 +625,8 @@ class _DateField extends StatelessWidget {
         final selected = await showDatePicker(
           context: context,
           initialDate: value,
-          firstDate: DateTime(value.year - 1),
-          lastDate: DateTime(value.year + 1),
+          firstDate: firstDate,
+          lastDate: lastDate,
         );
         if (selected != null) onChanged(selected);
       },
@@ -606,7 +654,12 @@ class _NumberField extends StatelessWidget {
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(labelText: label),
       validator: (value) {
-        final parsed = double.tryParse(value ?? '');
+        final input = value?.trim() ?? '';
+        if (input.isEmpty) return AppStrings.invalidNumber;
+        if (!BranchManagerValidationRules.decimalPattern.hasMatch(input)) {
+          return AppStrings.maximumTwoDecimalPlaces;
+        }
+        final parsed = double.tryParse(input);
         if (parsed == null || parsed < minimum) return AppStrings.invalidNumber;
         if (maximum != null && parsed > maximum!) {
           return '${AppStrings.maximumValue} ${maximum!.toStringAsFixed(0)}';

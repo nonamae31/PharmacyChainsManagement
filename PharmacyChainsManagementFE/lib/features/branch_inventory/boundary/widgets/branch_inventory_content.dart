@@ -75,8 +75,6 @@ class BranchInventoryContent extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          const _InventoryBanner(),
         ],
       ),
     );
@@ -344,61 +342,6 @@ class _Pagination extends StatelessWidget {
           icon: const Icon(Icons.chevron_right),
         ),
       ],
-    );
-  }
-}
-
-class _InventoryBanner extends StatelessWidget {
-  const _InventoryBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.large),
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryDark, AppColors.teal],
-        ),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const icon = Icon(
-            Icons.hub_outlined,
-            color: AppColors.surface,
-            size: AppSpacing.xxl,
-          );
-          const copy = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(AppStrings.centralHub, style: AppTextStyles.bannerTitle),
-              SizedBox(height: AppSpacing.xs),
-              Text(
-                AppStrings.centralHubMessage,
-                style: AppTextStyles.bannerBody,
-              ),
-            ],
-          );
-          if (constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint) {
-            return const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                icon,
-                SizedBox(height: AppSpacing.md),
-                copy,
-              ],
-            );
-          }
-          return const Row(
-            children: [
-              icon,
-              SizedBox(width: AppSpacing.lg),
-              Expanded(child: copy),
-            ],
-          );
-        },
-      ),
     );
   }
 }

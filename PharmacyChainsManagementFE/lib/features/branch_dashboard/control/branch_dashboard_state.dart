@@ -22,6 +22,7 @@ class BranchDashboardLoadSuccess extends BranchDashboardState {
   final BranchDashboardDto dashboard;
   final String searchQuery;
   final String trendPeriod;
+  final bool criticalAlertsOnly;
   final List<DashboardStaffDto> visibleStaff;
   final List<DashboardInventoryDto> visibleInventory;
 
@@ -29,6 +30,7 @@ class BranchDashboardLoadSuccess extends BranchDashboardState {
     required this.dashboard,
     this.searchQuery = '',
     this.trendPeriod = 'month',
+    this.criticalAlertsOnly = false,
     required this.visibleStaff,
     required this.visibleInventory,
   });
@@ -38,6 +40,7 @@ class BranchDashboardLoadSuccess extends BranchDashboardState {
     dashboard,
     searchQuery,
     trendPeriod,
+    criticalAlertsOnly,
     visibleStaff,
     visibleInventory,
   ];
@@ -50,6 +53,7 @@ final class DailyRevenueConfirmationSuccess extends BranchDashboardLoadSuccess {
     required super.dashboard,
     required super.searchQuery,
     required super.trendPeriod,
+    required super.criticalAlertsOnly,
     required super.visibleStaff,
     required super.visibleInventory,
     required this.confirmation,

@@ -6,9 +6,21 @@ import '../../../core/theme/branch_manager_app_theme.dart';
 import '../../auth/control/auth_bloc.dart';
 import '../../auth/control/auth_event.dart';
 import '../../branch_dashboard/boundary/branch_dashboard_screen.dart';
+import '../../branch_dashboard/control/branch_dashboard_bloc.dart';
+import '../../branch_dashboard/control/branch_dashboard_event.dart';
+import '../../branch_dashboard/control/branch_dashboard_state.dart';
 import '../../branch_inventory/boundary/branch_inventory_screen.dart';
+import '../../branch_inventory/control/branch_inventory_bloc.dart';
+import '../../branch_inventory/control/branch_inventory_event.dart';
+import '../../branch_inventory/control/branch_inventory_state.dart';
 import '../../branch_revenue/boundary/branch_revenue_screen.dart';
+import '../../branch_revenue/control/branch_revenue_bloc.dart';
+import '../../branch_revenue/control/branch_revenue_event.dart';
+import '../../branch_revenue/control/branch_revenue_state.dart';
 import '../../staff_performance/boundary/staff_performance_screen.dart';
+import '../../staff_performance/control/staff_performance_bloc.dart';
+import '../../staff_performance/control/staff_performance_event.dart';
+import '../../staff_performance/control/staff_performance_state.dart';
 
 class BranchManagerPortalScreen extends StatefulWidget {
   const BranchManagerPortalScreen({super.key});
@@ -20,6 +32,61 @@ class BranchManagerPortalScreen extends StatefulWidget {
 
 class _BranchManagerPortalScreenState extends State<BranchManagerPortalScreen> {
   int _selectedIndex = 0;
+
+  void _onTabSelected(int index) {
+    setState(() => _selectedIndex = index);
+    _refreshTab(index);
+  }
+
+  void _refreshTab(int index) {
+    switch (index) {
+      case 0:
+        final state = context.read<BranchDashboardBloc>().state;
+        context.read<BranchDashboardBloc>().add(
+          BranchDashboardFetchRequested(
+            trendPeriod: state is BranchDashboardLoadSuccess
+                ? state.trendPeriod
+                : 'month',
+          ),
+        );
+        break;
+      case 1:
+        final state = context.read<BranchRevenueBloc>().state;
+        context.read<BranchRevenueBloc>().add(
+          BranchRevenueFetchRequested(
+            period: state is BranchRevenueLoadSuccess ? state.period : 'daily',
+          ),
+        );
+        break;
+      case 2:
+        final state = context.read<StaffPerformanceBloc>().state;
+        context.read<StaffPerformanceBloc>().add(
+          StaffPerformanceFetchRequested(
+            search: state is StaffPerformanceLoadSuccess ? state.search : null,
+            status: state is StaffPerformanceLoadSuccess ? state.status : 'all',
+            sort: state is StaffPerformanceLoadSuccess
+                ? state.sort
+                : 'revenue_desc',
+            shiftDate: state is StaffPerformanceLoadSuccess
+                ? state.shiftDate
+                : null,
+          ),
+        );
+        break;
+      case 3:
+        final state = context.read<BranchInventoryBloc>().state;
+        context.read<BranchInventoryBloc>().add(
+          BranchInventoryFetchRequested(
+            search: state is BranchInventoryLoadSuccess ? state.search : null,
+            category: state is BranchInventoryLoadSuccess
+                ? state.category
+                : null,
+            status: state is BranchInventoryLoadSuccess ? state.status : null,
+          ),
+        );
+        break;
+    }
+  }
 
   static const _destinations = [
     (AppStrings.dashboard, Icons.dashboard_outlined),
@@ -66,8 +133,7 @@ class _BranchManagerPortalScreenState extends State<BranchManagerPortalScreen> {
         body: content,
         bottomNavigationBar: NavigationBar(
           selectedIndex: _selectedIndex,
-          onDestinationSelected: (index) =>
-              setState(() => _selectedIndex = index),
+          onDestinationSelected: _onTabSelected,
           destinations: [
             for (final destination in _destinations)
               NavigationDestination(
@@ -82,7 +148,7 @@ class _BranchManagerPortalScreenState extends State<BranchManagerPortalScreen> {
     final navigation = _PortalNavigation(
       selectedIndex: _selectedIndex,
       compact: compact,
-      onSelected: (index) => setState(() => _selectedIndex = index),
+      onSelected: _onTabSelected,
       onLogout: () => context.read<AuthBloc>().add(LogoutRequested()),
     );
     return Scaffold(

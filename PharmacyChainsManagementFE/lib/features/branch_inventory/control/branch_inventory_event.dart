@@ -1,7 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-import '../entity/shipment_dto.dart';
-
 sealed class BranchInventoryEvent extends Equatable {
   const BranchInventoryEvent();
 
@@ -28,19 +26,4 @@ final class BranchInventoryFetchRequested extends BranchInventoryEvent {
 
 final class BranchInventoryExportRequested extends BranchInventoryEvent {
   const BranchInventoryExportRequested();
-}
-
-final class BranchInventoryShipmentOptionsRequested
-    extends BranchInventoryEvent {
-  const BranchInventoryShipmentOptionsRequested();
-}
-
-final class BranchInventoryShipmentCreateRequested
-    extends BranchInventoryEvent {
-  final CreateShipmentRequestDto request;
-
-  const BranchInventoryShipmentCreateRequested(this.request);
-
-  @override
-  List<Object?> get props => [request];
 }

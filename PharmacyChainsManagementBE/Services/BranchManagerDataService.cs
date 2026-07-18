@@ -14,11 +14,17 @@ public static class BranchManagerDataService
 {
     private const string ActiveStatus = "ACTIVE";
     private const string PaidStatus = "PAID";
+    private const string CompletedStatus = "COMPLETED";
     private const string CancelledStatus = "CANCELLED";
     private const string StaffRoleCode = "STAFF";
     private const string PendingStatus = "PENDING";
     private const string ApprovedStatus = "APPROVED";
     private const string DailyRevenueAction = "DAILY_REVENUE_CONFIRMED";
+    private const string DailyRevenueEntity = "BRANCH_DAILY_REVENUE";
+    private static readonly JsonSerializerOptions AuditJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public static async Task<Guid?> ResolveAssignedBranchIdAsync(
         PharmacyDbContext dbContext,
@@ -139,6 +145,11 @@ public static class BranchManagerDataService
             .OrderBy(item => item.CurrentStock - item.ReorderPoint)
             .Take(5)
             .ToList();
+        var todayRevenueConfirmation = await GetDailyRevenueConfirmationAsync(
+            dbContext,
+            branchId,
+            today,
+            cancellationToken);
 
         return new BranchDashboardDto(
             branch.BranchId,
@@ -146,7 +157,8 @@ public static class BranchManagerDataService
             new DashboardMetricDto(todayRevenue, revenueChange, activeStaff, staff.Count, alerts.Count, efficiency),
             BuildDailyRevenueTrend(invoices, trendStart, today),
             topStaff,
-            inventoryAlerts);
+            inventoryAlerts,
+            todayRevenueConfirmation);
     }
 
     public static async Task<BranchRevenueDto> GetRevenueAsync(
@@ -170,8 +182,53 @@ public static class BranchManagerDataService
             .Include(detail => detail.Medicine)
             .Where(detail => invoiceIds.Contains(detail.InvoiceId))
             .ToListAsync(cancellationToken);
+        var payments = await dbContext.PaymentTransactions
+            .AsNoTracking()
+            .Where(payment => invoiceIds.Contains(payment.InvoiceId)
+                && (payment.PaymentStatus.ToUpper() == PaidStatus
+                    || payment.PaymentStatus.ToUpper() == CompletedStatus))
+            .ToListAsync(cancellationToken);
 
         var totalRevenue = invoices.Sum(invoice => invoice.TotalAmount);
+        var effectivePayments = new List<(string PaymentMethod, decimal Amount)>();
+        foreach (var invoice in invoices)
+        {
+            var remainingAmount = invoice.TotalAmount;
+            var invoicePayments = payments
+                .Where(payment => payment.InvoiceId == invoice.InvoiceId)
+                .OrderByDescending(payment => payment.PaymentDate ?? payment.CreatedAt)
+                .ThenByDescending(payment => payment.CreatedAt);
+            foreach (var payment in invoicePayments)
+            {
+                if (remainingAmount <= 0m)
+                {
+                    break;
+                }
+
+                var appliedAmount = Math.Min(Math.Max(payment.Amount, 0m), remainingAmount);
+                if (appliedAmount == 0m)
+                {
+                    continue;
+                }
+
+                effectivePayments.Add((payment.PaymentMethod.Trim().ToUpperInvariant(), appliedAmount));
+                remainingAmount -= appliedAmount;
+            }
+        }
+
+        var recordedPaymentTotal = effectivePayments.Sum(payment => payment.Amount);
+        var paymentMethods = effectivePayments
+            .GroupBy(payment => payment.PaymentMethod)
+            .Select(group => new PaymentMethodRevenueDto(
+                group.Key,
+                group.Count(),
+                group.Sum(payment => payment.Amount),
+                recordedPaymentTotal == 0m
+                    ? 0m
+                    : Math.Round(group.Sum(payment => payment.Amount) / recordedPaymentTotal * 100m, 1)))
+            .OrderByDescending(item => item.Revenue)
+            .ThenBy(item => item.PaymentMethod)
+            .ToList();
         var categoryRevenue = details
             .GroupBy(detail => detail.Medicine.Category ?? "Uncategorized")
             .Select(group => new CategoryRevenueDto(
@@ -213,12 +270,12 @@ public static class BranchManagerDataService
             fromDate,
             toDate,
             totalRevenue,
-            invoices.Count == 0 ? 0m : Math.Round(totalRevenue / invoices.Count, 2),
             invoices.Count,
             null,
             BuildDailyRevenueTrend(invoices, fromDate, toDate),
             categoryRevenue,
-            performance);
+            performance,
+            paymentMethods);
     }
 
     public static async Task<StaffPerformanceDto> GetStaffPerformanceAsync(
@@ -282,6 +339,7 @@ public static class BranchManagerDataService
                 item.Role.RoleName,
                 item.Status,
                 revenue,
+                assessment?.AssessmentDate,
                 assessment?.SalesTarget,
                 targetProgress,
                 assessment?.CustomerRating,
@@ -329,7 +387,6 @@ public static class BranchManagerDataService
             rows,
             trend,
             assessments
-                .Where(item => !string.IsNullOrWhiteSpace(item.Notes))
                 .Take(5)
                 .Join(staff, assessment => assessment.StaffId, user => user.UserId,
                     (assessment, user) => new StaffFeedbackDto(
@@ -338,7 +395,7 @@ public static class BranchManagerDataService
                         user.FullName,
                         assessment.AssessmentDate,
                         assessment.PerformanceScore,
-                        assessment.Notes!))
+                        assessment.Notes ?? string.Empty))
                 .ToList());
     }
 
@@ -405,7 +462,8 @@ public static class BranchManagerDataService
             .Include(user => user.Role)
             .SingleOrDefaultAsync(user => user.UserId == request.StaffId
                 && user.BranchId == branchId
-                && user.Role.RoleCode == StaffRoleCode,
+                && user.Role.RoleCode == StaffRoleCode
+                && user.Status == ActiveStatus,
                 cancellationToken);
         if (staff is null)
         {
@@ -617,67 +675,47 @@ public static class BranchManagerDataService
                 item.Batch.ExpiryDate)).ToList());
     }
 
-    public static async Task<ShipmentRequestDto?> CreateShipmentAsync(
+    public static async Task<decimal> GetDailySystemRevenueAsync(
         PharmacyDbContext dbContext,
-        Guid managerId,
-        Guid destinationBranchId,
-        CreateShipmentRequestDto request,
+        Guid branchId,
+        DateOnly revenueDate,
         CancellationToken cancellationToken)
     {
-        if (request.FromBranchId == destinationBranchId)
-        {
-            return null;
-        }
-
-        var sourceInventory = await dbContext.Inventories
+        return await dbContext.Invoices
             .AsNoTracking()
-            .Include(item => item.Batch)
-            .SingleOrDefaultAsync(item => item.BranchId == request.FromBranchId
-                && item.BatchId == request.BatchId
-                && item.Status == ActiveStatus
-                && item.QuantityOnHand >= request.Quantity,
-                cancellationToken);
-        if (sourceInventory is null)
-        {
-            return null;
-        }
-
-        var now = DateTime.UtcNow;
-        var transfer = new StockTransfer
-        {
-            TransferId = Guid.NewGuid(),
-            FromBranchId = request.FromBranchId,
-            ToBranchId = destinationBranchId,
-            RequestedBy = managerId,
-            TransferStatus = PendingStatus,
-            RequestDate = DateOnly.FromDateTime(now),
-            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-        transfer.StockTransferDetails.Add(new StockTransferDetail
-        {
-            TransferDetailId = Guid.NewGuid(),
-            TransferId = transfer.TransferId,
-            MedicineId = sourceInventory.MedicineId,
-            BatchId = sourceInventory.BatchId,
-            Quantity = request.Quantity
-        });
-        dbContext.StockTransfers.Add(transfer);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return new ShipmentRequestDto(
-            transfer.TransferId,
-            transfer.FromBranchId,
-            transfer.ToBranchId,
-            sourceInventory.MedicineId,
-            sourceInventory.BatchId,
-            request.Quantity,
-            transfer.TransferStatus,
-            transfer.RequestDate);
+            .Where(invoice => invoice.BranchId == branchId
+                && invoice.InvoiceDate == revenueDate
+                && invoice.PaymentStatus == PaidStatus
+                && invoice.Status != CancelledStatus)
+            .SumAsync(invoice => (decimal?)invoice.TotalAmount, cancellationToken) ?? 0m;
     }
 
-    public static async Task<DailyRevenueConfirmationDto> ConfirmDailyRevenueAsync(
+    public static async Task<DailyRevenueConfirmationDto?> GetDailyRevenueConfirmationAsync(
+        PharmacyDbContext dbContext,
+        Guid branchId,
+        DateOnly revenueDate,
+        CancellationToken cancellationToken)
+    {
+        var dayStart = DateTime.SpecifyKind(
+            revenueDate.ToDateTime(TimeOnly.MinValue),
+            DateTimeKind.Utc);
+        var dayEnd = dayStart.AddDays(1);
+        var auditLog = await dbContext.AuditLogs
+            .AsNoTracking()
+            .Where(log => log.EntityId == branchId
+                && log.EntityName == DailyRevenueEntity
+                && log.Action == DailyRevenueAction
+                && log.CreatedAt >= dayStart
+                && log.CreatedAt < dayEnd)
+            .OrderBy(log => log.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return auditLog is null
+            ? null
+            : MapDailyRevenueConfirmation(auditLog, revenueDate);
+    }
+
+    public static async Task<DailyRevenueConfirmationDto?> ConfirmDailyRevenueAsync(
         PharmacyDbContext dbContext,
         Guid managerId,
         Guid branchId,
@@ -685,15 +723,30 @@ public static class BranchManagerDataService
         CancellationToken cancellationToken)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var payments = await dbContext.PaymentTransactions
-            .AsNoTracking()
-            .Where(payment => payment.Invoice.BranchId == branchId
-                && payment.Invoice.InvoiceDate == today
-                && payment.PaymentStatus == PaidStatus)
-            .ToListAsync(cancellationToken);
-        var systemAmount = payments.Sum(payment => payment.Amount);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            cancellationToken);
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT 1 FROM \"BRANCH\" WHERE \"branch_id\" = {branchId} FOR UPDATE",
+            cancellationToken);
+        if (await GetDailyRevenueConfirmationAsync(
+                dbContext,
+                branchId,
+                today,
+                cancellationToken) is not null)
+        {
+            return null;
+        }
+
+        var systemAmount = await GetDailySystemRevenueAsync(
+            dbContext,
+            branchId,
+            today,
+            cancellationToken);
         var actualAmount = request.ActualCash + request.ActualBankTransfer + request.ActualOther;
         var difference = actualAmount - systemAmount;
+        var differenceReason = string.IsNullOrWhiteSpace(request.DifferenceReason)
+            ? null
+            : request.DifferenceReason.Trim();
         var confirmationId = Guid.NewGuid();
         var confirmedAt = DateTime.UtcNow;
 
@@ -702,34 +755,94 @@ public static class BranchManagerDataService
             confirmationId,
             revenueDate = today,
             systemAmount,
-            request.ActualCash,
-            request.ActualBankTransfer,
-            request.ActualOther,
+            actualCash = request.ActualCash,
+            actualBankTransfer = request.ActualBankTransfer,
+            actualOther = request.ActualOther,
             actualAmount,
             difference,
-            request.DifferenceReason,
+            differenceReason,
             confirmedAt
         });
         dbContext.AuditLogs.Add(new AuditLog
         {
             AuditId = confirmationId,
             ActorId = managerId,
-            EntityName = "BRANCH_DAILY_REVENUE",
+            EntityName = DailyRevenueEntity,
             EntityId = branchId,
             Action = DailyRevenueAction,
             NewValue = auditPayload,
             CreatedAt = confirmedAt
         });
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return new DailyRevenueConfirmationDto(
             confirmationId,
             today,
             systemAmount,
+            request.ActualCash,
+            request.ActualBankTransfer,
+            request.ActualOther,
             actualAmount,
             difference,
             difference == 0m,
-            confirmedAt);
+            confirmedAt,
+            differenceReason);
+    }
+
+    private static DailyRevenueConfirmationDto MapDailyRevenueConfirmation(
+        AuditLog auditLog,
+        DateOnly fallbackRevenueDate)
+    {
+        DailyRevenueAuditPayload? payload = null;
+        if (!string.IsNullOrWhiteSpace(auditLog.NewValue))
+        {
+            try
+            {
+                payload = JsonSerializer.Deserialize<DailyRevenueAuditPayload>(
+                    auditLog.NewValue,
+                    AuditJsonOptions);
+            }
+            catch (JsonException)
+            {
+                payload = null;
+            }
+        }
+
+        var actualCash = payload?.ActualCash ?? 0m;
+        var actualBankTransfer = payload?.ActualBankTransfer ?? 0m;
+        var actualOther = payload?.ActualOther ?? 0m;
+        var actualAmount = payload?.ActualAmount
+            ?? actualCash + actualBankTransfer + actualOther;
+        var systemAmount = payload?.SystemAmount ?? 0m;
+        var difference = payload?.Difference ?? actualAmount - systemAmount;
+
+        return new DailyRevenueConfirmationDto(
+            payload?.ConfirmationId ?? auditLog.AuditId,
+            payload?.RevenueDate ?? fallbackRevenueDate,
+            systemAmount,
+            actualCash,
+            actualBankTransfer,
+            actualOther,
+            actualAmount,
+            difference,
+            difference == 0m,
+            payload?.ConfirmedAt ?? auditLog.CreatedAt,
+            payload?.DifferenceReason);
+    }
+
+    private sealed class DailyRevenueAuditPayload
+    {
+        public Guid? ConfirmationId { get; init; }
+        public DateOnly? RevenueDate { get; init; }
+        public decimal? SystemAmount { get; init; }
+        public decimal? ActualCash { get; init; }
+        public decimal? ActualBankTransfer { get; init; }
+        public decimal? ActualOther { get; init; }
+        public decimal? ActualAmount { get; init; }
+        public decimal? Difference { get; init; }
+        public string? DifferenceReason { get; init; }
+        public DateTime? ConfirmedAt { get; init; }
     }
 
     private static IReadOnlyList<RevenuePointDto> BuildDailyRevenueTrend(

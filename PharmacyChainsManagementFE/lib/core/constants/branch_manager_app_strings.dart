@@ -9,7 +9,6 @@ abstract final class AppStrings {
   static const retry = 'Retry';
   static const noData = 'No matching records found.';
   static const searchAnalytics = 'Search branch analytics...';
-  static const searchTransactions = 'Search transactions...';
   static const searchStaff = 'Search staff members...';
   static const searchInventory = 'Search inventory items...';
   static const branchManagerDashboard = 'Branch Manager Dashboard';
@@ -34,20 +33,39 @@ abstract final class AppStrings {
   static const inventoryStatusSubtitle =
       'Real-time tracking of critical stock levels';
   static const filterAlerts = 'Filter Alerts';
+  static const showAllAlerts = 'Show All Alerts';
   static const skuItemName = 'SKU / ITEM NAME';
   static const category = 'CATEGORY';
   static const currentStock = 'CURRENT STOCK';
   static const reorderPoint = 'REORDER POINT';
   static const status = 'STATUS';
   static const confirmDailyRevenue = 'Confirm Daily Revenue';
-  static const systemRevenue = 'System revenue';
-  static const actualCash = 'Actual cash';
-  static const actualBankTransfer = 'Actual bank transfer';
-  static const actualOther = 'Actual other';
+  static const systemRevenue = "Today's system revenue";
+  static const actualCash = 'Cash revenue received';
+  static const actualBankTransfer = 'Bank transfer revenue received';
+  static const actualOther = 'Other revenue received';
   static const differenceReason = 'Difference reason';
   static const confirm = 'Confirm';
   static const cancel = 'Cancel';
-  static const confirmationSucceeded = 'Daily revenue has been confirmed.';
+  static const confirmationSucceeded =
+      "Daily revenue confirmed. Today's revenue was not changed.";
+  static const dailyRevenueConfirmationStatus = 'Daily Revenue Confirmation';
+  static const dailyRevenueConfirmed = 'Confirmed';
+  static const dailyRevenueNotConfirmed = 'Not Confirmed';
+  static const dailyRevenueConfirmedMessage =
+      "Today's revenue has been confirmed and cannot be confirmed again.";
+  static const dailyRevenueNotConfirmedMessage =
+      "Today's revenue has not been confirmed yet.";
+  static const viewConfirmation = 'View Confirmation';
+  static const confirmationDetails = 'Revenue Confirmation Details';
+  static const revenueDate = 'Revenue date';
+  static const confirmedAt = 'Confirmed at';
+  static const systemAmount = 'System amount';
+  static const actualAmount = 'Total received';
+  static const difference = 'Difference';
+  static const matched = 'Matched';
+  static const differenceFound = 'Difference found';
+  static const close = 'Close';
   static const branchRevenueTitle = 'Branch Revenue Statistics';
   static const daily = 'Daily';
   static const weekly = 'Weekly';
@@ -55,24 +73,25 @@ abstract final class AppStrings {
   static const custom = 'Custom';
   static const exportReport = 'Export Report';
   static const totalRevenue = 'TOTAL REVENUE';
-  static const averageTicket = 'AVERAGE TICKET';
+  static const totalInvoices = 'TOTAL INVOICES';
   static const transactions = 'TRANSACTIONS';
   static const grossMargin = 'GROSS MARGIN';
+  static const reportingPeriod = 'Reporting Period';
+  static const reportingPeriodSubtitle =
+      'Choose the date range used throughout this revenue report.';
+  static const dateRangeSeparator = ' - ';
+  static const revenueByPaymentMethod = 'Revenue by Payment Method';
+  static const revenueByPaymentMethodSubtitle =
+      'Paid invoice amounts allocated by recorded payment method.';
+  static const noPaymentMethodRevenue =
+      'No paid payment transactions were recorded for this period.';
+  static const otherPaymentMethod = 'Other';
   static const unavailable = 'N/A';
-  static const revenueTrend = 'Revenue Trend';
-  static const revenueTrendSubtitle =
-      'Performance for the selected reporting period';
   static const byCategory = 'By Category';
   static const recentPerformance = 'Sales by Time of Day';
   static const timeBlock = 'TIME BLOCK';
   static const averageOrder = 'AVG ORDER';
   static const performance = 'PERFORMANCE';
-  static const revenueForecast = 'Revenue Forecast';
-  static const forecastMessage =
-      'Use recent completed sales to plan staffing and replenishment for the next period.';
-  static const optimizationInsights = 'Optimization Insights';
-  static const insightsMessage =
-      'Review peak time blocks and low-stock categories before changing shifts or orders.';
   static const staffPerformanceTitle = 'Monitor Staff Performance';
   static const staffPerformanceSubtitle =
       'Sales productivity and operational indicators across your branch team.';
@@ -84,23 +103,27 @@ abstract final class AppStrings {
   static const teamAttendance = 'TEAM ATTENDANCE';
   static const topPerformer = 'TOP PERFORMER';
   static const staffPerformanceMatrix = 'Staff Performance Matrix';
+  static const shiftRosterTitle = 'Staff Shift Roster';
+  static const shiftRosterSubtitle =
+      'View staff schedules for the selected date.';
+  static const selectShiftDate = 'Select shift date';
+  static const noShiftsForDate = 'No staff shifts are scheduled for this date.';
+  static const shiftTime = 'SHIFT TIME';
+  static const shiftStatus = 'SHIFT STATUS';
   static const teamMember = 'TEAM MEMBER';
   static const salesTarget = 'SALES TARGET';
   static const targetProgress = 'TARGET PROGRESS';
   static const customerRating = 'CUSTOMER RATING';
   static const attendance = 'ATTENDANCE';
-  static const trendAnalysis = 'Trend Analysis';
-  static const managerInsight = 'Manager Insight';
-  static const managerInsightMessage =
-      'Sales revenue comes from completed paid invoices. Targets, attendance, ratings, and scores use the latest saved manager assessment.';
-  static const recentFeedback = 'Recent Feedback';
+  static const recentFeedback = 'Recent Performance Reviews';
   static const noFeedbackData =
       'No staff assessment feedback has been recorded yet.';
+  static const noAssessmentNotes = 'No notes were provided.';
+  static const lastAssessment = 'LAST REVIEW';
   static const inventoryTitle = 'Branch Inventory Status';
   static const inventorySubtitle =
       'Real-time oversight of branch medicine stock and incoming transfers.';
   static const exportCsv = 'Export CSV';
-  static const newShipment = 'New Shipment';
   static const totalItems = 'TOTAL ITEMS';
   static const criticalStock = 'CRITICAL STOCK';
   static const inTransit = 'IN TRANSIT';
@@ -137,9 +160,6 @@ abstract final class AppStrings {
   static const activeTeam = 'Active Team';
   static const showing = 'Showing';
   static const results = 'results';
-  static const centralHub = 'Central Hub: Inventory Visibility';
-  static const centralHubMessage =
-      'Monitor approved stock, safety levels, batches, suppliers, and incoming internal transfers from one branch view.';
   static const inStock = 'In Stock';
   static const lowStock = 'Low Stock';
   static const critical = 'Critical';
@@ -159,14 +179,16 @@ abstract final class AppStrings {
       'This staff member will no longer be counted as active on your branch dashboard. You can reactivate them at any time.';
   static const shiftSaved = 'Shift roster saved successfully.';
   static const assessmentSaved = 'Staff assessment saved successfully.';
-  static const shipmentCreated = 'Shipment request created successfully.';
   static const fullName = 'Full name';
   static const email = 'Email';
   static const phone = 'Phone';
   static const temporaryPassword = 'Temporary password';
   static const requiredField = 'This field is required.';
   static const invalidEmail = 'Enter a valid email address.';
-  static const passwordMinimum = 'Password must contain at least 8 characters.';
+  static const invalidPhone =
+      'Phone number must contain 9 to 15 digits and may start with +.';
+  static const passwordStrength =
+      'Use at least 8 characters with uppercase, lowercase, number, and special character.';
   static const create = 'Create';
   static const save = 'Save';
   static const apply = 'Apply';
@@ -181,6 +203,7 @@ abstract final class AppStrings {
   static const assessmentDate = 'Assessment date';
   static const notes = 'Notes';
   static const invalidNumber = 'Enter a valid number.';
+  static const maximumTwoDecimalPlaces = 'Use no more than two decimal places.';
   static const maximumValue = 'Maximum value:';
   static const staffLoading = 'Staff data is loading. Please try again.';
   static const noStaffAvailable = 'No branch staff is available.';
@@ -191,13 +214,7 @@ abstract final class AppStrings {
   static const dayOff = 'Day off';
   static const cancelled = 'Cancelled';
   static const invalidShiftTime = 'End time must be later than start time.';
-  static const sourceBranch = 'Source branch';
-  static const medicineBatch = 'Medicine batch';
-  static const quantity = 'Quantity';
-  static const available = 'Available';
-  static const invalidQuantity = 'Enter a quantity greater than zero.';
-  static const quantityExceedsStock = 'Quantity exceeds source stock.';
-  static const createRequest = 'Create request';
-  static const noShipmentStock =
-      'No available stock was found in another active branch.';
+  static const shiftTooLong = 'A shift cannot exceed 16 hours.';
+  static const differenceReasonRequired =
+      'Enter a reason when received revenue differs from system revenue.';
 }

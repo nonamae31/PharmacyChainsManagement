@@ -50,11 +50,7 @@ class _BranchRevenueScreenState extends State<BranchRevenueScreen> {
               children: [
                 AppPageHeader(
                   title: AppStrings.branchRevenueTitle,
-                  subtitle: AppStrings.revenueTrendSubtitle,
-                  searchHint: AppStrings.searchTransactions,
-                  onSearchChanged: (value) => context
-                      .read<BranchRevenueBloc>()
-                      .add(BranchRevenueSearchChanged(value)),
+                  subtitle: AppStrings.revenueStatisticsSubtitle,
                   actions: [
                     FilledButton.icon(
                       onPressed: state is BranchRevenueLoadSuccess

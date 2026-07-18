@@ -37,6 +37,16 @@ class StaffPerformanceApiClient {
     );
   }
 
+  Future<List<StaffShiftDto>> fetchStaffShifts(DateTime date) async {
+    final response = await _apiClient.get(
+      '/api/v1/branch-manager/staff-shifts',
+      queryParameters: {'date': _date(date)},
+    );
+    return (response.data as List<dynamic>)
+        .map((json) => StaffShiftDto.fromJson(json as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
   Future<void> createAssessment(CreateStaffAssessmentRequestDto request) async {
     await _apiClient.post(
       '/api/v1/branch-manager/staff-assessments',
@@ -50,4 +60,7 @@ class StaffPerformanceApiClient {
       data: request.toJson(),
     );
   }
+
+  String _date(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 }

@@ -101,7 +101,14 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
         ),
       ),
       StaffPerformanceLoadSuccess(:final performance) =>
-        StaffPerformanceContent(performance: performance),
+        StaffPerformanceContent(
+          performance: performance,
+          shifts: state.shifts,
+          shiftDate: state.shiftDate,
+          onShiftDateSelected: (date) => context
+              .read<StaffPerformanceBloc>()
+              .add(StaffShiftDateSelected(date)),
+        ),
     };
   }
 
@@ -112,6 +119,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
         search: value,
         status: state.status,
         sort: state.sort,
+        shiftDate: state.shiftDate,
       ),
     );
   }
@@ -130,6 +138,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
         search: state.search,
         status: selection.status,
         sort: selection.sort,
+        shiftDate: state.shiftDate,
       ),
     );
   }

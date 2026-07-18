@@ -17,6 +17,7 @@ import '../control/branch_dashboard_state.dart';
 import '../entity/daily_revenue_confirmation_dto.dart';
 import 'widgets/branch_dashboard_content.dart';
 import 'widgets/daily_revenue_confirmation_dialog.dart';
+import 'widgets/daily_revenue_confirmation_details_dialog.dart';
 
 class BranchDashboardScreen extends StatefulWidget {
   const BranchDashboardScreen({super.key});
@@ -58,19 +59,6 @@ class _BranchDashboardScreenState extends State<BranchDashboardScreen> {
                   subtitle: state is BranchDashboardLoadSuccess
                       ? '${AppStrings.dashboardSubtitle} — ${state.dashboard.branchName}'
                       : AppStrings.dashboardSubtitle,
-                  searchHint: AppStrings.searchAnalytics,
-                  onSearchChanged: (value) => context
-                      .read<BranchDashboardBloc>()
-                      .add(BranchDashboardSearchChanged(value)),
-                  actions: [
-                    FilledButton.icon(
-                      onPressed: state is BranchDashboardLoadSuccess
-                          ? () => _showConfirmation(state)
-                          : null,
-                      icon: const Icon(Icons.verified_outlined),
-                      label: const Text(AppStrings.confirmDailyRevenue),
-                    ),
-                  ],
                 ),
                 SizedBox(height: mobile ? AppSpacing.md : AppSpacing.lg),
                 Expanded(child: _buildBody(state)),
@@ -99,8 +87,11 @@ class _BranchDashboardScreenState extends State<BranchDashboardScreen> {
           BranchDashboardPeriodChanged(period),
         ),
         onFilterAlerts: () => context.read<BranchDashboardBloc>().add(
-          const BranchDashboardSearchChanged('Critical'),
+          const BranchDashboardAlertsFilterToggled(),
         ),
+        onConfirmRevenue: () => _showConfirmation(state),
+        onViewConfirmation: () =>
+            _showConfirmationDetails(state.dashboard.todayRevenueConfirmation!),
       ),
     };
   }
@@ -119,6 +110,16 @@ class _BranchDashboardScreenState extends State<BranchDashboardScreen> {
     }
   }
 
+  Future<void> _showConfirmationDetails(
+    DailyRevenueConfirmationDto confirmation,
+  ) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) =>
+          DailyRevenueConfirmationDetailsDialog(confirmation: confirmation),
+    );
+  }
+
   Future<void> _showShiftRoster() async {
     final staffBloc = context.read<StaffPerformanceBloc>();
     StaffPerformanceState staffState = staffBloc.state;
@@ -134,9 +135,8 @@ class _BranchDashboardScreenState extends State<BranchDashboardScreen> {
           )
           .timeout(
             const Duration(seconds: 35),
-            onTimeout: () => const StaffPerformanceLoadFailure(
-              AppStrings.requestTimedOut,
-            ),
+            onTimeout: () =>
+                const StaffPerformanceLoadFailure(AppStrings.requestTimedOut),
           );
       if (!mounted) return;
     }

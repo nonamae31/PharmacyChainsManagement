@@ -13,6 +13,7 @@ class StaffPerformanceBloc
   StaffPerformanceBloc(this._apiClient)
     : super(const StaffPerformanceInitial()) {
     on<StaffPerformanceFetchRequested>(_onFetchRequested);
+    on<StaffShiftDateSelected>(_onShiftDateSelected);
     on<BranchStaffCreateRequested>(_onCreateStaff);
     on<StaffShiftUpsertRequested>(_onUpsertShift);
     on<StaffAssessmentCreateRequested>(_onCreateAssessment);
@@ -25,16 +26,47 @@ class StaffPerformanceBloc
   ) async {
     emit(const StaffPerformanceLoading());
     try {
+      final shiftDate = _dateOnly(event.shiftDate ?? DateTime.now());
+      final performance = await _apiClient.fetchStaffPerformance(
+        search: event.search,
+        status: event.status,
+        sort: event.sort,
+      );
+      final shifts = await _apiClient.fetchStaffShifts(shiftDate);
       emit(
         StaffPerformanceLoadSuccess(
-          await _apiClient.fetchStaffPerformance(
-            search: event.search,
-            status: event.status,
-            sort: event.sort,
-          ),
+          performance,
           search: event.search ?? '',
           status: event.status,
           sort: event.sort,
+          shifts: shifts,
+          shiftDate: shiftDate,
+        ),
+      );
+    } on BranchManagerAppException catch (error) {
+      emit(StaffPerformanceLoadFailure(error.message));
+    } catch (_) {
+      emit(const StaffPerformanceLoadFailure(AppStrings.dataCannotLoad));
+    }
+  }
+
+  Future<void> _onShiftDateSelected(
+    StaffShiftDateSelected event,
+    Emitter<StaffPerformanceState> emit,
+  ) async {
+    final current = state;
+    if (current is! StaffPerformanceLoadSuccess) return;
+    try {
+      final shiftDate = _dateOnly(event.date);
+      final shifts = await _apiClient.fetchStaffShifts(shiftDate);
+      emit(
+        StaffPerformanceLoadSuccess(
+          current.performance,
+          search: current.search,
+          status: current.status,
+          sort: current.sort,
+          shifts: shifts,
+          shiftDate: shiftDate,
         ),
       );
     } on BranchManagerAppException catch (error) {
@@ -63,6 +95,7 @@ class StaffPerformanceBloc
       emit,
       () => _apiClient.upsertShift(event.request),
       AppStrings.shiftSaved,
+      shiftDate: event.request.shiftDate,
     );
   }
 
@@ -93,8 +126,9 @@ class StaffPerformanceBloc
   Future<void> _runOperation(
     Emitter<StaffPerformanceState> emit,
     Future<void> Function() operation,
-    String successMessage,
-  ) async {
+    String successMessage, {
+    DateTime? shiftDate,
+  }) async {
     final current = state;
     if (current is! StaffPerformanceLoadSuccess) return;
     try {
@@ -104,20 +138,26 @@ class StaffPerformanceBloc
           search: current.search,
           status: current.status,
           sort: current.sort,
+          shifts: current.shifts,
+          shiftDate: current.shiftDate,
         ),
       );
       await operation();
+      final effectiveShiftDate = _dateOnly(shiftDate ?? current.shiftDate);
       final performance = await _apiClient.fetchStaffPerformance(
         search: current.search,
         status: current.status,
         sort: current.sort,
       );
+      final shifts = await _apiClient.fetchStaffShifts(effectiveShiftDate);
       emit(
         StaffPerformanceOperationSuccess(
           performance,
           search: current.search,
           status: current.status,
           sort: current.sort,
+          shifts: shifts,
+          shiftDate: effectiveShiftDate,
           message: successMessage,
         ),
       );
@@ -127,4 +167,7 @@ class StaffPerformanceBloc
       emit(const StaffPerformanceLoadFailure(AppStrings.dataCannotLoad));
     }
   }
+
+  DateTime _dateOnly(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
 }

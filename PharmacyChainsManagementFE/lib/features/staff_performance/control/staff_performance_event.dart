@@ -13,15 +13,26 @@ final class StaffPerformanceFetchRequested extends StaffPerformanceEvent {
   final String? search;
   final String status;
   final String sort;
+  final DateTime? shiftDate;
 
   const StaffPerformanceFetchRequested({
     this.search,
     this.status = 'all',
     this.sort = 'revenue_desc',
+    this.shiftDate,
   });
 
   @override
-  List<Object?> get props => [search, status, sort];
+  List<Object?> get props => [search, status, sort, shiftDate];
+}
+
+final class StaffShiftDateSelected extends StaffPerformanceEvent {
+  final DateTime date;
+
+  const StaffShiftDateSelected(this.date);
+
+  @override
+  List<Object?> get props => [date];
 }
 
 final class BranchStaffCreateRequested extends StaffPerformanceEvent {

@@ -12,19 +12,14 @@ final class BranchRevenueFetchRequested extends BranchRevenueEvent {
   final DateTime? fromDate;
   final DateTime? toDate;
 
-  const BranchRevenueFetchRequested({required this.period, this.fromDate, this.toDate});
+  const BranchRevenueFetchRequested({
+    required this.period,
+    this.fromDate,
+    this.toDate,
+  });
 
   @override
   List<Object?> get props => [period, fromDate, toDate];
-}
-
-final class BranchRevenueSearchChanged extends BranchRevenueEvent {
-  final String query;
-
-  const BranchRevenueSearchChanged(this.query);
-
-  @override
-  List<Object?> get props => [query];
 }
 
 final class BranchRevenueExportRequested extends BranchRevenueEvent {

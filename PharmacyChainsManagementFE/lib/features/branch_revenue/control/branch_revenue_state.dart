@@ -20,18 +20,16 @@ final class BranchRevenueLoading extends BranchRevenueState {
 class BranchRevenueLoadSuccess extends BranchRevenueState {
   final BranchRevenueDto revenue;
   final String period;
-  final String searchQuery;
   final List<TimeBlockPerformanceDto> visiblePerformance;
 
   const BranchRevenueLoadSuccess({
     required this.revenue,
     required this.period,
-    this.searchQuery = '',
     required this.visiblePerformance,
   });
 
   @override
-  List<Object?> get props => [revenue, period, searchQuery, visiblePerformance];
+  List<Object?> get props => [revenue, period, visiblePerformance];
 }
 
 final class BranchRevenueExportSuccess extends BranchRevenueLoadSuccess {
@@ -40,7 +38,6 @@ final class BranchRevenueExportSuccess extends BranchRevenueLoadSuccess {
   const BranchRevenueExportSuccess({
     required super.revenue,
     required super.period,
-    required super.searchQuery,
     required super.visiblePerformance,
     required this.bytes,
   });

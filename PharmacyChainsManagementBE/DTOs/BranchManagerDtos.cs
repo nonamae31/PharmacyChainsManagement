@@ -35,7 +35,8 @@ public sealed record BranchDashboardDto(
     DashboardMetricDto Metrics,
     IReadOnlyList<RevenuePointDto> RevenueTrend,
     IReadOnlyList<DashboardStaffDto> TopStaff,
-    IReadOnlyList<DashboardInventoryDto> InventoryAlerts);
+    IReadOnlyList<DashboardInventoryDto> InventoryAlerts,
+    DailyRevenueConfirmationDto? TodayRevenueConfirmation);
 
 public sealed record CategoryRevenueDto(string Category, decimal Revenue, decimal ContributionPercent);
 
@@ -46,17 +47,23 @@ public sealed record TimeBlockPerformanceDto(
     decimal AverageOrder,
     string Status);
 
+public sealed record PaymentMethodRevenueDto(
+    string PaymentMethod,
+    int Transactions,
+    decimal Revenue,
+    decimal ContributionPercent);
+
 public sealed record BranchRevenueDto(
     Guid BranchId,
     DateOnly FromDate,
     DateOnly ToDate,
     decimal TotalRevenue,
-    decimal AverageTicket,
-    int Transactions,
+    int TotalInvoices,
     decimal? GrossMarginPercent,
     IReadOnlyList<RevenuePointDto> RevenueTrend,
     IReadOnlyList<CategoryRevenueDto> CategoryRevenue,
-    IReadOnlyList<TimeBlockPerformanceDto> PerformanceByTime);
+    IReadOnlyList<TimeBlockPerformanceDto> PerformanceByTime,
+    IReadOnlyList<PaymentMethodRevenueDto> PaymentMethods);
 
 public sealed record StaffPerformanceRowDto(
     Guid StaffId,
@@ -65,6 +72,7 @@ public sealed record StaffPerformanceRowDto(
     string RoleName,
     string Status,
     decimal SalesRevenue,
+    DateOnly? AssessmentDate,
     decimal? SalesTarget,
     decimal? TargetProgressPercent,
     decimal? CustomerRating,
@@ -134,10 +142,14 @@ public sealed record DailyRevenueConfirmationDto(
     Guid ConfirmationId,
     DateOnly RevenueDate,
     decimal SystemAmount,
+    decimal ActualCash,
+    decimal ActualBankTransfer,
+    decimal ActualOther,
     decimal ActualAmount,
     decimal Difference,
     bool IsMatched,
-    DateTime ConfirmedAt);
+    DateTime ConfirmedAt,
+    string? DifferenceReason);
 
 public sealed class CreateBranchStaffRequestDto
 {
@@ -148,9 +160,14 @@ public sealed class CreateBranchStaffRequestDto
     public string Email { get; init; } = string.Empty;
 
     [Required, StringLength(100, MinimumLength = 8)]
+    [RegularExpression(
+        @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])\S{8,100}$",
+        ErrorMessage = "Password must include uppercase, lowercase, number, and special character.")]
     public string Password { get; init; } = string.Empty;
 
-    [StringLength(30)]
+    [StringLength(30), RegularExpression(
+        @"^\+?[0-9]{9,15}$",
+        ErrorMessage = "Phone number must contain 9 to 15 digits and may start with +.")]
     public string? Phone { get; init; }
 }
 
@@ -179,7 +196,7 @@ public sealed class UpsertStaffShiftRequestDto
 
     public TimeOnly EndTime { get; init; }
 
-    [Required, StringLength(30)]
+    [Required, StringLength(30), RegularExpression("^(SCHEDULED|OFF|CANCELLED)$")]
     public string Status { get; init; } = "SCHEDULED";
 
     [StringLength(500)]
@@ -245,28 +262,3 @@ public sealed record TransferBatchOptionDto(
 public sealed record ShipmentOptionsDto(
     IReadOnlyList<TransferSourceBranchDto> SourceBranches,
     IReadOnlyList<TransferBatchOptionDto> Batches);
-
-public sealed class CreateShipmentRequestDto
-{
-    [Required]
-    public Guid FromBranchId { get; init; }
-
-    [Required]
-    public Guid BatchId { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int Quantity { get; init; }
-
-    [StringLength(1000)]
-    public string? Notes { get; init; }
-}
-
-public sealed record ShipmentRequestDto(
-    Guid TransferId,
-    Guid FromBranchId,
-    Guid ToBranchId,
-    Guid MedicineId,
-    Guid BatchId,
-    int Quantity,
-    string Status,
-    DateOnly RequestDate);

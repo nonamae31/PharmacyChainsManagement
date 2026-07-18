@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'daily_revenue_confirmation_dto.dart';
+
 class RevenuePointDto extends Equatable {
   final DateTime date;
   final double revenue;
@@ -161,6 +163,7 @@ class BranchDashboardDto extends Equatable {
   final List<RevenuePointDto> revenueTrend;
   final List<DashboardStaffDto> topStaff;
   final List<DashboardInventoryDto> inventoryAlerts;
+  final DailyRevenueConfirmationDto? todayRevenueConfirmation;
 
   const BranchDashboardDto({
     required this.branchId,
@@ -169,6 +172,7 @@ class BranchDashboardDto extends Equatable {
     required this.revenueTrend,
     required this.topStaff,
     required this.inventoryAlerts,
+    required this.todayRevenueConfirmation,
   });
 
   factory BranchDashboardDto.fromJson(
@@ -191,6 +195,11 @@ class BranchDashboardDto extends Equatable {
               DashboardInventoryDto.fromJson(item as Map<String, dynamic>),
         )
         .toList(growable: false),
+    todayRevenueConfirmation: json['todayRevenueConfirmation'] == null
+        ? null
+        : DailyRevenueConfirmationDto.fromJson(
+            json['todayRevenueConfirmation'] as Map<String, dynamic>,
+          ),
   );
 
   Map<String, dynamic> toJson() => {
@@ -200,6 +209,7 @@ class BranchDashboardDto extends Equatable {
     'revenueTrend': revenueTrend.map((item) => item.toJson()).toList(),
     'topStaff': topStaff.map((item) => item.toJson()).toList(),
     'inventoryAlerts': inventoryAlerts.map((item) => item.toJson()).toList(),
+    'todayRevenueConfirmation': todayRevenueConfirmation?.toJson(),
   };
 
   @override
@@ -210,5 +220,6 @@ class BranchDashboardDto extends Equatable {
     revenueTrend,
     topStaff,
     inventoryAlerts,
+    todayRevenueConfirmation,
   ];
 }

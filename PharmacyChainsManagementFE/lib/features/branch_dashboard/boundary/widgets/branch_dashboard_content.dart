@@ -11,11 +11,14 @@ import '../../../../shared/shared_components/app_section_card.dart';
 import '../../../../shared/shared_components/app_status_chip.dart';
 import '../../control/branch_dashboard_state.dart';
 import '../../entity/branch_dashboard_dto.dart';
+import 'daily_revenue_confirmation_status_card.dart';
 
 class BranchDashboardContent extends StatelessWidget {
   final BranchDashboardLoadSuccess state;
   final VoidCallback onUpdateRoster;
   final VoidCallback onFilterAlerts;
+  final VoidCallback onConfirmRevenue;
+  final VoidCallback onViewConfirmation;
   final ValueChanged<String> onPeriodSelected;
 
   const BranchDashboardContent({
@@ -23,6 +26,8 @@ class BranchDashboardContent extends StatelessWidget {
     required this.state,
     required this.onUpdateRoster,
     required this.onFilterAlerts,
+    required this.onConfirmRevenue,
+    required this.onViewConfirmation,
     required this.onPeriodSelected,
   });
 
@@ -44,7 +49,8 @@ class BranchDashboardContent extends StatelessWidget {
                 label: AppStrings.activeStaff,
                 value: '${metrics.activeStaff} / ${metrics.totalStaff}',
                 icon: Icons.groups_outlined,
-                helper: metrics.totalStaff > 0 &&
+                helper:
+                    metrics.totalStaff > 0 &&
                         metrics.activeStaff >= metrics.totalStaff
                     ? AppStrings.fullStaff
                     : '${metrics.totalStaff - metrics.activeStaff} ${AppStrings.staffOnBreak}',
@@ -71,6 +77,12 @@ class BranchDashboardContent extends StatelessWidget {
                 emphasized: true,
               ),
             ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          DailyRevenueConfirmationStatusCard(
+            confirmation: state.dashboard.todayRevenueConfirmation,
+            onConfirmRevenue: onConfirmRevenue,
+            onViewConfirmation: onViewConfirmation,
           ),
           const SizedBox(height: AppSpacing.md),
           LayoutBuilder(
@@ -281,7 +293,10 @@ class _InventoryPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InventoryPanelHeader(onFilterAlerts: onFilterAlerts),
+          _InventoryPanelHeader(
+            alertsFiltered: state.criticalAlertsOnly,
+            onFilterAlerts: onFilterAlerts,
+          ),
           const SizedBox(height: AppSpacing.sm),
           if (state.visibleInventory.isEmpty)
             const AppEmptyState()
@@ -299,9 +314,13 @@ class _InventoryPanel extends StatelessWidget {
 }
 
 class _InventoryPanelHeader extends StatelessWidget {
+  final bool alertsFiltered;
   final VoidCallback onFilterAlerts;
 
-  const _InventoryPanelHeader({required this.onFilterAlerts});
+  const _InventoryPanelHeader({
+    required this.alertsFiltered,
+    required this.onFilterAlerts,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -320,8 +339,12 @@ class _InventoryPanelHeader extends StatelessWidget {
         );
         final action = OutlinedButton.icon(
           onPressed: onFilterAlerts,
-          icon: const Icon(Icons.filter_list),
-          label: const Text(AppStrings.filterAlerts),
+          icon: Icon(
+            alertsFiltered ? Icons.filter_alt_off_outlined : Icons.filter_list,
+          ),
+          label: Text(
+            alertsFiltered ? AppStrings.showAllAlerts : AppStrings.filterAlerts,
+          ),
         );
         if (constraints.maxWidth < AppSpacing.mobileHeaderBreakpoint) {
           return Column(
@@ -333,7 +356,12 @@ class _InventoryPanelHeader extends StatelessWidget {
             ],
           );
         }
-        return Row(children: [const Expanded(child: heading), action]);
+        return Row(
+          children: [
+            const Expanded(child: heading),
+            action,
+          ],
+        );
       },
     );
   }
