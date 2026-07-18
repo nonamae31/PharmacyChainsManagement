@@ -739,3 +739,5 @@ PharmacyChainsManagementFE/android/app/src/main/res/values/strings.xml
 /.swarm-workspace
 *.docx
 /docs/uat
+/PharmacyChainsManagementFE/test
+/screenshots
