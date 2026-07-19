@@ -17,11 +17,16 @@ public sealed class StaffSalesService : IStaffSalesService
 {
     private readonly PharmacyDbContext _context;
     private readonly QrPaymentSettings _qrPaymentSettings;
+    private readonly CurrencyConversionSettings _currencyConversionSettings;
 
-    public StaffSalesService(PharmacyDbContext context, IOptions<QrPaymentSettings> qrPaymentSettings)
+    public StaffSalesService(
+        PharmacyDbContext context,
+        IOptions<QrPaymentSettings> qrPaymentSettings,
+        IOptions<CurrencyConversionSettings> currencyConversionSettings)
     {
         _context = context;
         _qrPaymentSettings = qrPaymentSettings.Value;
+        _currencyConversionSettings = currencyConversionSettings.Value;
     }
 
     public async Task<IReadOnlyList<MedicineSearchResponseDto>> SearchMedicinesAsync(Guid staffId, string? search, string? category, string? availability, CancellationToken cancellationToken)
@@ -114,11 +119,23 @@ public sealed class StaffSalesService : IStaffSalesService
         if (!methods.Contains(paymentMethod)) throw new InvalidOperationException("Unsupported payment method.");
         var now = DateTime.UtcNow;
         if (paymentMethod == "QR") ValidateQrSettings();
+        var exchangeRate = paymentMethod == "QR"
+            ? GetConfiguredUsdToVndRate()
+            : (decimal?)null;
+        var expectedAmountVnd = exchangeRate.HasValue
+            ? decimal.Round(invoice.TotalAmount * exchangeRate.Value, 0, MidpointRounding.AwayFromZero)
+            : (decimal?)null;
         var payment = new PaymentTransaction
         {
             PaymentId = Guid.NewGuid(),
             InvoiceId = invoice.InvoiceId,
             Amount = invoice.TotalAmount,
+            ExchangeRate = exchangeRate,
+            ExpectedAmountVnd = expectedAmountVnd,
+            BaseCurrency = _currencyConversionSettings.BaseCurrency.ToUpperInvariant(),
+            SettlementCurrency = paymentMethod == "QR"
+                ? _currencyConversionSettings.PaymentCurrency.ToUpperInvariant()
+                : _currencyConversionSettings.BaseCurrency.ToUpperInvariant(),
             PaymentMethod = paymentMethod,
             PaymentStatus = paymentMethod == "QR" ? "PENDING" : "PAID",
             PaymentDate = paymentMethod == "QR" ? null : now,
@@ -184,11 +201,22 @@ public sealed class StaffSalesService : IStaffSalesService
             return;
         }
 
+        var virtualAccountMatches =
+            string.IsNullOrWhiteSpace(_qrPaymentSettings.VirtualAccount)
+            || string.Equals(
+                request.SubAccount,
+                _qrPaymentSettings.VirtualAccount,
+                StringComparison.OrdinalIgnoreCase);
+
+        payment.ReceivedAmountVnd = request.TransferAmount;
+
         if (!string.Equals(
                 request.AccountNumber,
                 _qrPaymentSettings.AccountNumber,
                 StringComparison.Ordinal)
-            || request.TransferAmount != payment.Amount)
+            || !virtualAccountMatches
+            || !payment.ExpectedAmountVnd.HasValue
+            || request.TransferAmount != payment.ExpectedAmountVnd.Value)
         {
             payment.PaymentStatus = "AMOUNT_MISMATCH";
             payment.UpdatedAt = DateTime.UtcNow;
@@ -238,6 +266,8 @@ public sealed class StaffSalesService : IStaffSalesService
         {
             return new PaymentTransactionResponseDto(
                 payment.PaymentId, payment.InvoiceId, invoiceCode, payment.Amount,
+                payment.ExchangeRate, payment.ExpectedAmountVnd, payment.ReceivedAmountVnd,
+                payment.BaseCurrency, payment.SettlementCurrency,
                 payment.PaymentMethod, payment.PaymentStatus, payment.PaymentDate,
                 payment.GatewayReference, null, null, null, null, null, null);
         }
@@ -246,24 +276,34 @@ public sealed class StaffSalesService : IStaffSalesService
         {
             return new PaymentTransactionResponseDto(
                 payment.PaymentId, payment.InvoiceId, invoiceCode, payment.Amount,
+                payment.ExchangeRate, payment.ExpectedAmountVnd, payment.ReceivedAmountVnd,
+                payment.BaseCurrency, payment.SettlementCurrency,
                 payment.PaymentMethod, payment.PaymentStatus, payment.PaymentDate,
                 payment.GatewayReference, null, null, null, null, null, null);
         }
 
         var transferContent = payment.GatewayReference?.Split('|')[0] ?? invoiceCode;
-        var amount = payment.Amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        var amount = payment.ExpectedAmountVnd?.ToString(
+            "0",
+            System.Globalization.CultureInfo.InvariantCulture)
+            ?? throw new InvalidOperationException("The QR payment does not have a VND settlement amount.");
+        var paymentAccountNumber = string.IsNullOrWhiteSpace(_qrPaymentSettings.VirtualAccount)
+            ? _qrPaymentSettings.AccountNumber
+            : _qrPaymentSettings.VirtualAccount;
         var qrCodeUrl =
             $"https://img.vietqr.io/image/{Uri.EscapeDataString(_qrPaymentSettings.BankBin)}-" +
-            $"{Uri.EscapeDataString(_qrPaymentSettings.AccountNumber)}-compact2.png" +
+            $"{Uri.EscapeDataString(paymentAccountNumber)}-compact2.png" +
             $"?amount={amount}" +
             $"&addInfo={Uri.EscapeDataString(transferContent)}" +
             $"&accountName={Uri.EscapeDataString(_qrPaymentSettings.AccountName)}";
 
         return new PaymentTransactionResponseDto(
             payment.PaymentId, payment.InvoiceId, invoiceCode, payment.Amount,
+            payment.ExchangeRate, payment.ExpectedAmountVnd, payment.ReceivedAmountVnd,
+            payment.BaseCurrency, payment.SettlementCurrency,
             payment.PaymentMethod, payment.PaymentStatus, payment.PaymentDate,
             payment.GatewayReference, qrCodeUrl, _qrPaymentSettings.BankName,
-            _qrPaymentSettings.AccountName, MaskAccountNumber(_qrPaymentSettings.AccountNumber),
+            _qrPaymentSettings.AccountName, MaskAccountNumber(paymentAccountNumber),
             transferContent, payment.CreatedAt.AddMinutes(_qrPaymentSettings.ExpirationMinutes));
     }
 
@@ -273,6 +313,18 @@ public sealed class StaffSalesService : IStaffSalesService
         {
             throw new InvalidOperationException("QR payment has not been configured for this environment.");
         }
+    }
+
+    private decimal GetConfiguredUsdToVndRate()
+    {
+        if (_currencyConversionSettings.UsdToVndRate <= 0
+            || !string.Equals(_currencyConversionSettings.BaseCurrency, "USD", StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(_currencyConversionSettings.PaymentCurrency, "VND", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("USD to VND currency conversion has not been configured correctly.");
+        }
+
+        return _currencyConversionSettings.UsdToVndRate;
     }
 
     private bool IsQrConfigured() =>

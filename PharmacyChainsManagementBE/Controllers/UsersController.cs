@@ -110,7 +110,10 @@ namespace PharmacyChainsManagementBE.Controllers
         [HttpPost("profile/avatar")]
         [Authorize]
         [EnableRateLimiting("ProfileUpdatePolicy")]
-        public async Task<IActionResult> UploadAvatar([FromForm] IFormFile file, CancellationToken cancellationToken)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadAvatar(
+            IFormFile file,
+            CancellationToken cancellationToken)
         {
             var userId = _currentUserService.UserId;
             if (userId == null)
