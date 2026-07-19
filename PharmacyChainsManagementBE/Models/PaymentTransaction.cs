@@ -22,6 +22,23 @@ public partial class PaymentTransaction
     [Column("amount", TypeName = "decimal(12, 2)")]
     public decimal Amount { get; set; }
 
+    [Column("exchange_rate", TypeName = "decimal(18, 4)")]
+    public decimal? ExchangeRate { get; set; }
+
+    [Column("expected_amount_vnd", TypeName = "decimal(18, 0)")]
+    public decimal? ExpectedAmountVnd { get; set; }
+
+    [Column("received_amount_vnd", TypeName = "decimal(18, 0)")]
+    public decimal? ReceivedAmountVnd { get; set; }
+
+    [Column("base_currency")]
+    [StringLength(3)]
+    public string BaseCurrency { get; set; } = "USD";
+
+    [Column("settlement_currency")]
+    [StringLength(3)]
+    public string SettlementCurrency { get; set; } = "USD";
+
     [Column("payment_method")]
     [StringLength(50)]
     public string PaymentMethod { get; set; } = null!;

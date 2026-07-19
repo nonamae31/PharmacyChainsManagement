@@ -190,6 +190,11 @@ class PaymentDto extends Equatable {
   final String invoiceId;
   final String invoiceCode;
   final double amount;
+  final double? exchangeRate;
+  final double? expectedAmountVnd;
+  final double? receivedAmountVnd;
+  final String baseCurrency;
+  final String settlementCurrency;
   final String paymentMethod;
   final String paymentStatus;
   final String? qrCodeUrl;
@@ -204,6 +209,11 @@ class PaymentDto extends Equatable {
     required this.invoiceId,
     required this.invoiceCode,
     required this.amount,
+    required this.exchangeRate,
+    required this.expectedAmountVnd,
+    required this.receivedAmountVnd,
+    required this.baseCurrency,
+    required this.settlementCurrency,
     required this.paymentMethod,
     required this.paymentStatus,
     required this.qrCodeUrl,
@@ -219,6 +229,11 @@ class PaymentDto extends Equatable {
     invoiceId: json['invoiceId'] as String,
     invoiceCode: json['invoiceCode'] as String,
     amount: (json['amount'] as num).toDouble(),
+    exchangeRate: (json['exchangeRate'] as num?)?.toDouble(),
+    expectedAmountVnd: (json['expectedAmountVnd'] as num?)?.toDouble(),
+    receivedAmountVnd: (json['receivedAmountVnd'] as num?)?.toDouble(),
+    baseCurrency: json['baseCurrency'] as String,
+    settlementCurrency: json['settlementCurrency'] as String,
     paymentMethod: json['paymentMethod'] as String,
     paymentStatus: json['paymentStatus'] as String,
     qrCodeUrl: json['qrCodeUrl'] as String?,
@@ -237,6 +252,11 @@ class PaymentDto extends Equatable {
     invoiceId,
     invoiceCode,
     amount,
+    exchangeRate,
+    expectedAmountVnd,
+    receivedAmountVnd,
+    baseCurrency,
+    settlementCurrency,
     paymentMethod,
     paymentStatus,
     qrCodeUrl,

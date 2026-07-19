@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -194,8 +195,23 @@ class _PaymentDetails extends StatelessWidget {
       _DetailRow(label: AppStrings.accountName, value: payment.accountName),
       _DetailRow(label: AppStrings.accountNumber, value: payment.accountNumber),
       _DetailRow(
+        label: AppStrings.invoiceAmount,
+        value: '${payment.amount.toStringAsFixed(2)} ${payment.baseCurrency}',
+      ),
+      _DetailRow(
+        label: AppStrings.exchangeRate,
+        value: payment.exchangeRate == null
+            ? null
+            : '1 ${payment.baseCurrency} = '
+                  '${NumberFormat.decimalPattern().format(payment.exchangeRate)} '
+                  '${payment.settlementCurrency}',
+      ),
+      _DetailRow(
         label: AppStrings.transferAmount,
-        value: payment.amount.toStringAsFixed(0),
+        value: payment.expectedAmountVnd == null
+            ? null
+            : '${NumberFormat.decimalPattern().format(payment.expectedAmountVnd)} '
+                  '${payment.settlementCurrency}',
       ),
       _DetailRow(
         label: AppStrings.transferContent,
