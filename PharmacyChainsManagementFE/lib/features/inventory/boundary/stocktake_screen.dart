@@ -17,53 +17,145 @@ class StocktakeScreen extends StatefulWidget {
 }
 
 class _StocktakeScreenState extends State<StocktakeScreen> {
-  String _selectedBranch = 'Warehouse 01 (Central Hub)';
-  final _notesController = TextEditingController(text: 'Audit: Cycle Count (Zone A - Fast Moving) • Warehouse 01 (Central Hub)');
+  String _selectedBranch = 'Store 01 (Hoan Kiem Pharmacy Branch)';
+  final _notesController = TextEditingController(text: 'Audit: Cycle Count (Zone A - Fast Moving) • Store 01 (Hoan Kiem Pharmacy Branch)');
   bool _isBlindCount = false;
   String _countMode = 'Cycle Count (Zone A - Fast Moving)';
+  bool _isLoadingList = false;
 
   late List<Map<String, dynamic>> _stocktakeItems;
 
   @override
   void initState() {
     super.initState();
-    _stocktakeItems = _getScopeItems(_countMode);
+    _stocktakeItems = _getScopeItems(_countMode, _selectedBranch);
   }
 
-  List<Map<String, dynamic>> _getScopeItems(String scope) {
+  List<Map<String, dynamic>> _getScopeItems(String scope, String branch) {
+    // 1. Store 01 (Hoan Kiem Pharmacy Branch)
+    if (branch.contains('Store 01')) {
+      final zoneA = [
+        {'sku': 'SKU-A001', 'name': 'Panadol Extra 500mg', 'unit': 'boxes', 'bookQty': 45, 'physicalQty': 45, 'wmsBin': 'Store01 - Shelf A1 - Bin 01', 'notes': 'Khớp số liệu quầy (Matched)'},
+        {'sku': 'SKU-B002', 'name': 'Amoxicillin 500mg Capsules', 'unit': 'boxes', 'bookQty': 18, 'physicalQty': 17, 'wmsBin': 'Store01 - Shelf A2 - Bin 03', 'notes': 'Thiếu 1 hộp do khách đang thử hàng'},
+        {'sku': 'SKU-V003', 'name': 'Vitamin C Sủi 1000mg', 'unit': 'tubes', 'bookQty': 30, 'physicalQty': 32, 'wmsBin': 'Store01 - Shelf A3 - Bin 02', 'notes': 'Dư 2 tuýp từ đợt KM trước'},
+        {'sku': 'SKU-I006', 'name': 'Ibuprofen 400mg Tablets', 'unit': 'boxes', 'bookQty': 25, 'physicalQty': 25, 'wmsBin': 'Store01 - Shelf A1 - Bin 04', 'notes': 'Khớp số liệu quầy (Matched)'},
+      ];
+      final zoneB = [
+        {'sku': 'SKU-B101', 'name': 'Augmentin 1g Tablets', 'unit': 'boxes', 'bookQty': 15, 'physicalQty': 15, 'wmsBin': 'Store01 - Counter B1 - Bin 01', 'notes': 'Khớp số liệu quầy (Matched)'},
+        {'sku': 'SKU-B102', 'name': 'Betadine Antiseptic Solution 10%', 'unit': 'bottles', 'bookQty': 12, 'physicalQty': 11, 'wmsBin': 'Store01 - Counter B2 - Bin 02', 'notes': 'Vỡ 1 lọ đang lập biên bản'},
+        {'sku': 'SKU-B103', 'name': 'Omeprazole 20mg Capsules', 'unit': 'boxes', 'bookQty': 40, 'physicalQty': 40, 'wmsBin': 'Store01 - Counter B1 - Bin 03', 'notes': 'Khớp số liệu quầy (Matched)'},
+        {'sku': 'SKU-B104', 'name': 'Cetirizine 10mg Tablets', 'unit': 'boxes', 'bookQty': 28, 'physicalQty': 28, 'wmsBin': 'Store01 - Counter B3 - Bin 01', 'notes': 'Khớp số liệu quầy (Matched)'},
+      ];
+      final coldChain = [
+        {'sku': 'SKU-C201', 'name': 'Insulin Glargine 100IU/ml (Thuốc lạnh 2-8°C)', 'unit': 'vials', 'bookQty': 8, 'physicalQty': 8, 'wmsBin': 'Store01 - Medical Fridge - Shelf 1', 'notes': 'Nhiệt độ tủ 4.1°C (Khớp số liệu)'},
+        {'sku': 'SKU-C202', 'name': 'Hepatitis B Vaccine Recombinant', 'unit': 'vials', 'bookQty': 5, 'physicalQty': 5, 'wmsBin': 'Store01 - Medical Fridge - Shelf 2', 'notes': 'Khớp số liệu quầy (Matched)'},
+        {'sku': 'SKU-C203', 'name': 'Oxytocin 10 IU/ml Injection', 'unit': 'ampoules', 'bookQty': 12, 'physicalQty': 12, 'wmsBin': 'Store01 - Medical Fridge - Shelf 1', 'notes': 'Khớp số liệu quầy (Matched)'},
+      ];
+      if (scope.contains('Zone B')) return zoneB;
+      if (scope.contains('Cold Chain')) return coldChain;
+      if (scope.contains('Full Annual')) return [...zoneA, ...zoneB, ...coldChain];
+      return zoneA;
+    }
+
+    // 2. Store 02 (Cau Giay Pharmacy Branch)
+    if (branch.contains('Store 02')) {
+      final zoneA = [
+        {'sku': 'SKU-A001', 'name': 'Panadol Extra 500mg', 'unit': 'boxes', 'bookQty': 60, 'physicalQty': 60, 'wmsBin': 'Store02 - Rack A - Shelf 01', 'notes': 'Khớp số liệu chi nhánh Cầu Giấy'},
+        {'sku': 'SKU-B002', 'name': 'Amoxicillin 500mg Capsules', 'unit': 'boxes', 'bookQty': 25, 'physicalQty': 25, 'wmsBin': 'Store02 - Rack A - Shelf 02', 'notes': 'Khớp số liệu chi nhánh Cầu Giấy'},
+        {'sku': 'SKU-V003', 'name': 'Vitamin C Sủi 1000mg', 'unit': 'tubes', 'bookQty': 40, 'physicalQty': 41, 'wmsBin': 'Store02 - Rack A - Shelf 03', 'notes': 'Dư 1 tuýp kiểm kê'},
+      ];
+      final zoneB = [
+        {'sku': 'SKU-B101', 'name': 'Augmentin 1g Tablets', 'unit': 'boxes', 'bookQty': 22, 'physicalQty': 22, 'wmsBin': 'Store02 - Rack B - Shelf 01', 'notes': 'Khớp số liệu'},
+        {'sku': 'SKU-B102', 'name': 'Betadine Antiseptic Solution 10%', 'unit': 'bottles', 'bookQty': 18, 'physicalQty': 18, 'wmsBin': 'Store02 - Rack B - Shelf 02', 'notes': 'Khớp số liệu'},
+      ];
+      final coldChain = [
+        {'sku': 'SKU-C201', 'name': 'Insulin Glargine 100IU/ml (Thuốc lạnh 2-8°C)', 'unit': 'vials', 'bookQty': 10, 'physicalQty': 10, 'wmsBin': 'Store02 - Fridge 01 - Zone A', 'notes': 'Nhiệt độ 3.8°C (Khớp số liệu)'},
+      ];
+      if (scope.contains('Zone B')) return zoneB;
+      if (scope.contains('Cold Chain')) return coldChain;
+      if (scope.contains('Full Annual')) return [...zoneA, ...zoneB, ...coldChain];
+      return zoneA;
+    }
+
+    // 3. Warehouse 02 (North Region Distribution)
+    if (branch.contains('Warehouse 02')) {
+      final zoneA = [
+        {'sku': 'SKU-A001', 'name': 'Panadol Extra 500mg', 'unit': 'boxes', 'bookQty': 2200, 'physicalQty': 2200, 'wmsBin': 'NorthHub - Zone A - Pallet 12', 'notes': 'Pallet nguyên tem WMS (Matched)'},
+        {'sku': 'SKU-B002', 'name': 'Amoxicillin 500mg Capsules', 'unit': 'boxes', 'bookQty': 850, 'physicalQty': 848, 'wmsBin': 'NorthHub - Zone A - Pallet 14', 'notes': 'Thiếu 2 hộp lúc bốc dỡ xe container'},
+        {'sku': 'SKU-V003', 'name': 'Vitamin C Sủi 1000mg', 'unit': 'tubes', 'bookQty': 1100, 'physicalQty': 1100, 'wmsBin': 'NorthHub - Zone A - Pallet 15', 'notes': 'Khớp số liệu tổng kho'},
+      ];
+      final zoneB = [
+        {'sku': 'SKU-B101', 'name': 'Augmentin 1g Tablets', 'unit': 'boxes', 'bookQty': 950, 'physicalQty': 950, 'wmsBin': 'NorthHub - Zone B - Pallet 04', 'notes': 'Khớp số liệu tổng kho'},
+        {'sku': 'SKU-B102', 'name': 'Betadine Antiseptic Solution 10%', 'unit': 'bottles', 'bookQty': 420, 'physicalQty': 420, 'wmsBin': 'NorthHub - Zone B - Pallet 06', 'notes': 'Khớp số liệu tổng kho'},
+      ];
+      final coldChain = [
+        {'sku': 'SKU-C201', 'name': 'Insulin Glargine 100IU/ml (Thuốc lạnh 2-8°C)', 'unit': 'vials', 'bookQty': 350, 'physicalQty': 350, 'wmsBin': 'NorthHub - Cold Room B - Bay 1', 'notes': 'Hệ thống lạnh tự động GSP (Matched)'},
+        {'sku': 'SKU-C202', 'name': 'Hepatitis B Vaccine Recombinant', 'unit': 'vials', 'bookQty': 220, 'physicalQty': 220, 'wmsBin': 'NorthHub - Cold Room B - Bay 2', 'notes': 'Khớp số liệu tổng kho'},
+      ];
+      if (scope.contains('Zone B')) return zoneB;
+      if (scope.contains('Cold Chain')) return coldChain;
+      if (scope.contains('Full Annual')) return [...zoneA, ...zoneB, ...coldChain];
+      return zoneA;
+    }
+
+    // 4. Warehouse 01 (Central Hub) & Default
     final zoneA = [
-      {'sku': 'SKU-A001', 'name': 'Panadol Extra 500mg', 'unit': 'boxes', 'bookQty': 450, 'physicalQty': 450, 'wmsBin': 'Zone A - Rack 01 - Bin A', 'notes': 'Matched (Khớp số liệu)'},
-      {'sku': 'SKU-B002', 'name': 'Amoxicillin 500mg Capsules', 'unit': 'boxes', 'bookQty': 120, 'physicalQty': 118, 'wmsBin': 'Zone A - Rack 02 - Bin C', 'notes': 'Missing 2 boxes due to tear (Thiếu 2 hộp do rách vỏ)'},
-      {'sku': 'SKU-V003', 'name': 'Vitamin C Sủi 1000mg', 'unit': 'tubes', 'bookQty': 45, 'physicalQty': 47, 'wmsBin': 'Zone A - Rack 03 - Bin B', 'notes': 'Surplus 2 tubes unrecorded (Dư 2 tuýp chưa nhập sổ)'},
-      {'sku': 'SKU-I006', 'name': 'Ibuprofen 400mg Tablets', 'unit': 'boxes', 'bookQty': 15, 'physicalQty': 15, 'wmsBin': 'Zone A - Rack 01 - Bin D', 'notes': 'Matched (Khớp số liệu)'},
+      {'sku': 'SKU-A001', 'name': 'Panadol Extra 500mg', 'unit': 'boxes', 'bookQty': 4500, 'physicalQty': 4500, 'wmsBin': 'Hub01 - Zone A - Rack 01 - Bin A', 'notes': 'Khớp số liệu tổng kho trung tâm (Matched)'},
+      {'sku': 'SKU-B002', 'name': 'Amoxicillin 500mg Capsules', 'unit': 'boxes', 'bookQty': 1200, 'physicalQty': 1198, 'wmsBin': 'Hub01 - Zone A - Rack 02 - Bin C', 'notes': 'Thiếu 2 hộp do rách vỏ lúc lấy mẫu QC'},
+      {'sku': 'SKU-V003', 'name': 'Vitamin C Sủi 1000mg', 'unit': 'tubes', 'bookQty': 2400, 'physicalQty': 2405, 'wmsBin': 'Hub01 - Zone A - Rack 03 - Bin B', 'notes': 'Dư 5 tuýp chưa nhập sổ WMS'},
+      {'sku': 'SKU-I006', 'name': 'Ibuprofen 400mg Tablets', 'unit': 'boxes', 'bookQty': 1500, 'physicalQty': 1500, 'wmsBin': 'Hub01 - Zone A - Rack 01 - Bin D', 'notes': 'Khớp số liệu tổng kho trung tâm'},
     ];
-
     final zoneB = [
-      {'sku': 'SKU-B101', 'name': 'Augmentin 1g Tablets', 'unit': 'boxes', 'bookQty': 200, 'physicalQty': 200, 'wmsBin': 'Zone B - Rack 04 - Bin A', 'notes': 'Matched (Khớp số liệu)'},
-      {'sku': 'SKU-B102', 'name': 'Betadine Antiseptic Solution 10%', 'unit': 'bottles', 'bookQty': 80, 'physicalQty': 78, 'wmsBin': 'Zone B - Rack 05 - Bin B', 'notes': 'Missing 2 bottles (Thiếu 2 lọ)'},
-      {'sku': 'SKU-B103', 'name': 'Omeprazole 20mg Capsules', 'unit': 'boxes', 'bookQty': 310, 'physicalQty': 310, 'wmsBin': 'Zone B - Rack 04 - Bin C', 'notes': 'Matched (Khớp số liệu)'},
-      {'sku': 'SKU-B104', 'name': 'Cetirizine 10mg Tablets', 'unit': 'boxes', 'bookQty': 150, 'physicalQty': 153, 'wmsBin': 'Zone B - Rack 06 - Bin A', 'notes': 'Surplus 3 boxes unrecorded (Dư 3 hộp)'},
+      {'sku': 'SKU-B101', 'name': 'Augmentin 1g Tablets', 'unit': 'boxes', 'bookQty': 2000, 'physicalQty': 2000, 'wmsBin': 'Hub01 - Zone B - Rack 04 - Bin A', 'notes': 'Khớp số liệu tổng kho trung tâm'},
+      {'sku': 'SKU-B102', 'name': 'Betadine Antiseptic Solution 10%', 'unit': 'bottles', 'bookQty': 800, 'physicalQty': 797, 'wmsBin': 'Hub01 - Zone B - Rack 05 - Bin B', 'notes': 'Thiếu 3 lọ trong thùng carton'},
+      {'sku': 'SKU-B103', 'name': 'Omeprazole 20mg Capsules', 'unit': 'boxes', 'bookQty': 3100, 'physicalQty': 3100, 'wmsBin': 'Hub01 - Zone B - Rack 04 - Bin C', 'notes': 'Khớp số liệu tổng kho trung tâm'},
+      {'sku': 'SKU-B104', 'name': 'Cetirizine 10mg Tablets', 'unit': 'boxes', 'bookQty': 1500, 'physicalQty': 1503, 'wmsBin': 'Hub01 - Zone B - Rack 06 - Bin A', 'notes': 'Dư 3 hộp theo thực tế pallet'},
     ];
-
     final coldChain = [
-      {'sku': 'SKU-C201', 'name': 'Insulin Glargine 100IU/ml (Thuốc lạnh 2-8°C)', 'unit': 'vials', 'bookQty': 60, 'physicalQty': 60, 'wmsBin': 'Cold Chain - Fridge 01 - Shelf A', 'notes': 'Optimal Temp 4.2°C (Khớp số liệu)'},
-      {'sku': 'SKU-C202', 'name': 'Hepatitis B Vaccine Recombinant', 'unit': 'vials', 'bookQty': 40, 'physicalQty': 39, 'wmsBin': 'Cold Chain - Fridge 02 - Shelf B', 'notes': '1 vial damaged during transit (Vỡ 1 lọ)'},
-      {'sku': 'SKU-C203', 'name': 'Oxytocin 10 IU/ml Injection', 'unit': 'ampoules', 'bookQty': 90, 'physicalQty': 90, 'wmsBin': 'Cold Chain - Fridge 01 - Shelf C', 'notes': 'Matched (Khớp số liệu)'},
-      {'sku': 'SKU-C204', 'name': 'Adrenaline Injection 1mg/ml', 'unit': 'ampoules', 'bookQty': 110, 'physicalQty': 110, 'wmsBin': 'Cold Chain - Fridge 03 - Shelf A', 'notes': 'Matched (Khớp số liệu)'},
+      {'sku': 'SKU-C201', 'name': 'Insulin Glargine 100IU/ml (Thuốc lạnh 2-8°C)', 'unit': 'vials', 'bookQty': 600, 'physicalQty': 600, 'wmsBin': 'Hub01 - Cold Room A - Fridge 01', 'notes': 'Optimal Temp 4.2°C (Khớp số liệu)'},
+      {'sku': 'SKU-C202', 'name': 'Hepatitis B Vaccine Recombinant', 'unit': 'vials', 'bookQty': 400, 'physicalQty': 399, 'wmsBin': 'Hub01 - Cold Room A - Fridge 02Bay', 'notes': 'Vỡ 1 lọ khi vận chuyển ra quầy kiểm định'},
+      {'sku': 'SKU-C203', 'name': 'Oxytocin 10 IU/ml Injection', 'unit': 'ampoules', 'bookQty': 900, 'physicalQty': 900, 'wmsBin': 'Hub01 - Cold Room A - Fridge 01Bay', 'notes': 'Khớp số liệu kho lạnh GSP'},
+      {'sku': 'SKU-C204', 'name': 'Adrenaline Injection 1mg/ml', 'unit': 'ampoules', 'bookQty': 1100, 'physicalQty': 1100, 'wmsBin': 'Hub01 - Cold Room A - Fridge 03Bay', 'notes': 'Khớp số liệu kho lạnh GSP'},
     ];
-
     if (scope.contains('Zone B')) return zoneB;
     if (scope.contains('Cold Chain')) return coldChain;
     if (scope.contains('Full Annual')) return [...zoneA, ...zoneB, ...coldChain];
     return zoneA;
   }
 
-  void _onScopeOrBranchChanged({String? scope, String? branch}) {
+  void _onScopeOrBranchChanged({String? scope, String? branch, bool isReload = false}) {
     setState(() {
       if (scope != null) _countMode = scope;
       if (branch != null) _selectedBranch = branch;
-      _stocktakeItems = _getScopeItems(_countMode);
-      _notesController.text = 'Audit: $_countMode • $_selectedBranch';
+      
+      // Preservation: Only update note text automatically if user hasn't typed custom notes or when explicitly reloading
+      if (_notesController.text.isEmpty || _notesController.text.startsWith('Audit: ') || isReload) {
+        _notesController.text = 'Audit: $_countMode • $_selectedBranch';
+      }
+      _isLoadingList = true;
+    });
+
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      setState(() {
+        _stocktakeItems = _getScopeItems(_countMode, _selectedBranch);
+        _isLoadingList = false;
+      });
+
+      if (isReload || branch != null || scope != null) {
+        String msg = '🔄 Đã đồng bộ và nạp ${_stocktakeItems.length} mã SKU từ WMS cho "$_selectedBranch" (Phạm vi: $_countMode)';
+        if (branch != null) msg = '🏢 Đã chuyển sang kho/chi nhánh "$_selectedBranch". Đang hiển thị dữ liệu tồn thực tế.';
+        if (scope != null) msg = '📦 Đã chuyển phạm vi kiểm kê sang "$_countMode" tại "$_selectedBranch".';
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     });
   }
 
@@ -167,7 +259,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                             Text('🙈 Blind Count Mode (Che số sổ sách): ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isBlindCount ? const Color(0xFFD97706) : AppColors.textSecondary)),
                             Switch(
                               value: _isBlindCount,
-                              activeColor: const Color(0xFFD97706),
+                              activeThumbColor: const Color(0xFFD97706),
                               onChanged: (val) {
                                 setState(() {
                                   _isBlindCount = val;
@@ -185,7 +277,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                   builder: (context, constraints) {
                     final isNarrow = constraints.maxWidth < 1100;
                     final scopeDropdown = DropdownButtonFormField<String>(
-                      value: _countMode,
+                      initialValue: _countMode,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Stocktake Scope (Phạm vi kiểm kê)',
@@ -201,13 +293,15 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                         DropdownMenuItem(value: 'Cold Chain Quarantine Zone Check', child: Text('Cold Chain Quarantine Zone Check', overflow: TextOverflow.ellipsis)),
                         DropdownMenuItem(value: 'Full Annual Warehouse Stocktake', child: Text('Full Annual Warehouse Stocktake', overflow: TextOverflow.ellipsis)),
                       ],
-                      onChanged: (val) {
-                        if (val != null) _onScopeOrBranchChanged(scope: val);
-                      },
+                      onChanged: _isLoadingList
+                          ? null
+                          : (val) {
+                              if (val != null) _onScopeOrBranchChanged(scope: val);
+                            },
                     );
 
                     final branchDropdown = DropdownButtonFormField<String>(
-                      value: _selectedBranch,
+                      initialValue: _selectedBranch,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Branch / Warehouse Code (Mã chi nhánh / Kho)',
@@ -223,15 +317,19 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                         DropdownMenuItem(value: 'Store 01 (Hoan Kiem Pharmacy Branch)', child: Text('Store 01 (Hoan Kiem Pharmacy Branch)', overflow: TextOverflow.ellipsis)),
                         DropdownMenuItem(value: 'Store 02 (Cau Giay Pharmacy Branch)', child: Text('Store 02 (Cau Giay Pharmacy Branch)', overflow: TextOverflow.ellipsis)),
                       ],
-                      onChanged: (val) {
-                        if (val != null) _onScopeOrBranchChanged(branch: val);
-                      },
+                      onChanged: _isLoadingList
+                          ? null
+                          : (val) {
+                              if (val != null) _onScopeOrBranchChanged(branch: val);
+                            },
                     );
 
                     final notesField = TextField(
                       controller: _notesController,
+                      enabled: !_isLoadingList,
                       decoration: const InputDecoration(
-                        labelText: 'Stocktake Notes & Audit Reference',
+                        labelText: 'Stocktake Notes & Audit Reference (Ghi chú & Mã tham chiếu)',
+                        hintText: 'Nhập ghi chú chi tiết đợt kiểm kê hoặc mã tham chiếu...',
                         border: OutlineInputBorder(),
                         isDense: true,
                         filled: true,
@@ -241,9 +339,11 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                     );
 
                     final reloadButton = ElevatedButton.icon(
-                      onPressed: () => _onScopeOrBranchChanged(),
-                      icon: const Icon(Icons.sync, size: 18),
-                      label: const Text('Nạp danh sách'),
+                      onPressed: _isLoadingList ? null : () => _onScopeOrBranchChanged(isReload: true),
+                      icon: _isLoadingList
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.sync, size: 18),
+                      label: Text(_isLoadingList ? 'Đang nạp...' : '🔄 Nạp danh sách'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
@@ -310,14 +410,36 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.borderRadiusLg), side: BorderSide(color: AppColors.border)),
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: LayoutBuilder(
-                      builder: (context, cardConstraints) {
+                    child: _isLoadingList
+                        ? Container(
+                            height: 280,
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const CircularProgressIndicator(color: AppColors.primary),
+                                const SizedBox(height: 16),
+                                Text(
+                                  '⏳ Đang đồng bộ danh sách kiểm kê thực tế từ WMS cho "$_selectedBranch"...',
+                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Phạm vi: $_countMode',
+                                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          )
+                        : LayoutBuilder(
+                            builder: (context, cardConstraints) {
+                        final tableWidth = cardConstraints.maxWidth > 850 ? cardConstraints.maxWidth : 850.0;
                         return SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minWidth: cardConstraints.maxWidth > 850 ? cardConstraints.maxWidth : 850,
-                            ),
+                          child: SizedBox(
+                            width: tableWidth,
                             child: Column(
                               children: [
                                 Row(

@@ -53,6 +53,7 @@ class AppRouter {
         case 'staff':
           targetPath = '/staff_home';
           break;
+        case 'inventory':
         case 'inventory_manager':
           targetPath = '/inventory_home';
           break;

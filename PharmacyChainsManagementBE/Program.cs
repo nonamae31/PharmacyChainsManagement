@@ -215,6 +215,9 @@ try
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<PharmacyDbContext>();
             dbContext.Database.Migrate();
+            try {
+                dbContext.Database.ExecuteSqlRaw("UPDATE \"USER\" SET email = 'phanmanh14122000@gmail.com' WHERE email = 'inventory@pharmacy.com'");
+            } catch { /* ignore if already updated or table casing differs */ }
             Log.Information("Supabase PostgreSQL migrations & seed data applied successfully.");
         }
         catch (Exception ex)

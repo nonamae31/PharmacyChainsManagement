@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart' as html;
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 
@@ -235,12 +238,6 @@ class _InventoryReportScreenState extends State<InventoryReportScreen> {
 
   Future<void> _exportToExcel() async {
     try {
-      final downloadsDir = Directory('C:\\\\Users\\\\hoang\\\\Downloads');
-      if (!await downloadsDir.exists()) await downloadsDir.create(recursive: true);
-
-      final filePath = 'C:\\\\Users\\\\hoang\\\\Downloads\\\\Bao_Cao_Dinh_Gia_Kho_GSP_Q3_2026.csv';
-      final file = File(filePath);
-
       final buffer = StringBuffer();
       // UTF-8 BOM (\uFEFF) giúp Excel mở tiếng Việt chuẩn 100% không bị lỗi font
       buffer.write('\uFEFF');
@@ -260,6 +257,33 @@ class _InventoryReportScreenState extends State<InventoryReportScreen> {
         buffer.writeln('"$cat","$skus SKUs","$val","$turn","$st"');
       }
 
+      if (kIsWeb) {
+        final bytes = utf8.encode(buffer.toString());
+        final blob = html.Blob([bytes], 'text/csv;charset=utf-8');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        html.AnchorElement(href: url)
+          ..setAttribute('download', 'Bao_Cao_Dinh_Gia_Kho_GSP_Q3_2026.csv')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Đã tải file Excel (CSV): "Bao_Cao_Dinh_Gia_Kho_GSP_Q3_2026.csv" xuống trình duyệt thành công! Bạn có thể kiểm tra mục Downloads (Tải xuống).'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
+      final downloadsDir = Directory('C:\\\\Users\\\\hoang\\\\Downloads');
+      if (!await downloadsDir.exists()) await downloadsDir.create(recursive: true);
+
+      final filePath = 'C:\\\\Users\\\\hoang\\\\Downloads\\\\Bao_Cao_Dinh_Gia_Kho_GSP_Q3_2026.csv';
+      final file = File(filePath);
       await file.writeAsString(buffer.toString(), flush: true);
 
       if (mounted) {
@@ -274,12 +298,6 @@ class _InventoryReportScreenState extends State<InventoryReportScreen> {
 
   Future<void> _exportToPdf() async {
     try {
-      final downloadsDir = Directory('C:\\\\Users\\\\hoang\\\\Downloads');
-      if (!await downloadsDir.exists()) await downloadsDir.create(recursive: true);
-
-      final filePath = 'C:\\\\Users\\\\hoang\\\\Downloads\\\\Bao_Cao_Kho_GSP_Q3_2026_Report.html';
-      final file = File(filePath);
-
       final htmlContent = '''
 <!DOCTYPE html>
 <html lang="vi">
@@ -396,6 +414,33 @@ class _InventoryReportScreenState extends State<InventoryReportScreen> {
 </html>
 ''';
 
+      if (kIsWeb) {
+        final bytes = utf8.encode(htmlContent);
+        final blob = html.Blob([bytes], 'text/html;charset=utf-8');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        html.AnchorElement(href: url)
+          ..setAttribute('download', 'Bao_Cao_Kho_GSP_Q3_2026_Report.html')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Đã tải Báo cáo "Bao_Cao_Kho_GSP_Q3_2026_Report.html" xuống trình duyệt! Hãy mở file vừa tải và bấm "🖨️ In Báo Cáo / Lưu PDF (Print to PDF)" để lưu dưới dạng file PDF.'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+
+      final downloadsDir = Directory('C:\\\\Users\\\\hoang\\\\Downloads');
+      if (!await downloadsDir.exists()) await downloadsDir.create(recursive: true);
+
+      final filePath = 'C:\\\\Users\\\\hoang\\\\Downloads\\\\Bao_Cao_Kho_GSP_Q3_2026_Report.html';
+      final file = File(filePath);
       await file.writeAsString(htmlContent, flush: true);
 
       if (mounted) {

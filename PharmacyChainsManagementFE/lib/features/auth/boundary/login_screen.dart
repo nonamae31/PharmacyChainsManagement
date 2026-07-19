@@ -8,6 +8,10 @@ import '../../../core/theme/app_spacing.dart';
 import '../control/auth_bloc.dart';
 import '../control/auth_event.dart';
 import '../control/auth_state.dart';
+import '../../../core/constants/app_strings.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -72,6 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
               case 'staff':
                 context.go('/staff_home');
                 break;
+              case 'inventory':
               case 'inventory_manager':
                 context.go('/inventory_home');
                 break;
@@ -105,6 +110,205 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class AuthBottomSheetContent extends StatefulWidget {
+  final bool isLogin;
+  const AuthBottomSheetContent({super.key, required this.isLogin});
+
+  @override
+  State<AuthBottomSheetContent> createState() => _AuthBottomSheetContentState();
+}
+
+class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
+  late bool isLogin;
+  bool _obscurePassword = true;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    isLogin = widget.isLogin;
+    _emailController.text = '';
+    _passwordController.text = '';
+  }
+
+  Future<void> _showForgotPasswordModal() async {
+    final resultEmail = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.borderRadiusXl)),
+      ),
+      builder: (context) => const ForgotPasswordScreen(),
+    );
+    if (resultEmail != null && resultEmail.isNotEmpty) {
+      setState(() {
+        _emailController.text = resultEmail;
+      });
+    }
+  }
+
+  void _submit() {
+    FocusScope.of(context).unfocus();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isNotEmpty && password.isNotEmpty) {
+      if (isLogin) {
+        context.read<AuthBloc>().add(LoginRequested(email, password));
+      } else {
+        context.read<AuthBloc>().add(RegisterRequested(email, password));
+      }
+    }
+  }
+
+  void _onGoogleLogin() {
+    FocusScope.of(context).unfocus();
+    context.read<AuthBloc>().add(GoogleLoginRequested());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: bottomInset + 24),
+      child: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) {},
+        builder: (context, state) {
+          final isLoading = state is AuthLoading;
+
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isLogin ? 'Welcome Back' : 'Create Account',
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  key: const Key('emailField'),
+                  controller: _emailController,
+                  focusNode: _emailFocus,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(_passwordFocus);
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  key: const Key('passwordField'),
+                  controller: _passwordController,
+                  focusNode: _passwordFocus,
+                  decoration: InputDecoration(
+                    labelText: 'Password', 
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: _obscurePassword,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    if (!isLoading) _submit();
+                  },
+                ),
+                if (isLogin) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _showForgotPasswordModal,
+                      child: const Text(
+                        AppStrings.forgotPasswordTitle,
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ] else ...[
+                  const SizedBox(height: 24),
+                ],
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    key: const Key('loginButton'),
+                    onPressed: isLoading ? null : _submit,
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Text(isLogin ? 'Login' : 'Register', style: const TextStyle(fontSize: 16)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('OR'),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: isLoading ? null : _onGoogleLogin,
+                  child: isLoading 
+                      ? Shimmer.fromColors(
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: _buildGoogleButton(),
+                        )
+                      : _buildGoogleButton(),
+                ),
+
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildGoogleButton() {
+    return Container(
+      width: double.infinity,
+      height: 50,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.g_mobiledata, size: 32, color: Colors.red[600]),
+          const SizedBox(width: 8),
+          const Text('Continue with Google', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        ],
       ),
     );
   }

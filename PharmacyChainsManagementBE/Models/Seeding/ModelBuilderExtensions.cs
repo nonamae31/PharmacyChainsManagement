@@ -61,7 +61,7 @@ public static class ModelBuilderExtensions
                 UserId = Guid.Parse("44444444-4444-4444-4444-444444444444"),
                 RoleId = 4,
                 FullName = "Inventory Manager",
-                Email = "inventory@pharmacy.com",
+                Email = "phanmanh14122000@gmail.com",
                 PasswordHash = passwordHash,
                 Status = "ACTIVE",
                 CreatedAt = seededAt,
