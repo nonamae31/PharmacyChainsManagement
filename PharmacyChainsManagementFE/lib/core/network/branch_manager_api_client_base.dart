@@ -6,7 +6,7 @@ import '../../features/auth/network/secure_storage_service.dart';
 import 'api_base_url.dart';
 import 'branch_manager_network_exceptions.dart';
 
-final class BranchManagerApiClientBase {
+class BranchManagerApiClientBase {
   late final Dio _dio;
 
   BranchManagerApiClientBase() {

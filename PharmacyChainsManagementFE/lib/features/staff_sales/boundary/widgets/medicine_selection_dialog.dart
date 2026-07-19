@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/currency_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../injection_container.dart';
 import '../../../../shared/shared_components/app_error_snack_bar.dart';
@@ -146,7 +147,12 @@ class _MedicineTable extends StatelessWidget {
                         Text(medicine.category ?? AppStrings.notAvailable),
                       ),
                       DataCell(Text(medicine.unit)),
-                      DataCell(Text(medicine.unitPrice.toStringAsFixed(2))),
+                      DataCell(
+                        Text(
+                          '${CurrencyConstants.usdSymbol}'
+                          '${medicine.unitPrice.toStringAsFixed(2)}',
+                        ),
+                      ),
                       DataCell(Text('${medicine.availableQuantity}')),
                       DataCell(
                         FilledButton(

@@ -325,6 +325,7 @@ class _ReceiveGoodsScreenState extends State<ReceiveGoodsScreen> {
                                 return Column(
                                   children: [
                                     DropdownButtonFormField<String>(
+                                      isExpanded: true,
                                       initialValue: _selectedSupplier,
                                       decoration: const InputDecoration(labelText: 'Nhà cung cấp (Supplier) *', border: OutlineInputBorder(), isDense: true, prefixIcon: Icon(Icons.business)),
                                       items: const [
@@ -351,6 +352,7 @@ class _ReceiveGoodsScreenState extends State<ReceiveGoodsScreen> {
                                   Expanded(
                                     flex: 3,
                                     child: DropdownButtonFormField<String>(
+                                      isExpanded: true,
                                       initialValue: _selectedSupplier,
                                       decoration: const InputDecoration(labelText: 'Nhà cung cấp (Supplier) *', border: OutlineInputBorder(), isDense: true, prefixIcon: Icon(Icons.business)),
                                       items: const [

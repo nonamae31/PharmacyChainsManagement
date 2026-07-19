@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/currency_constants.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../injection_container.dart';
 import '../../../shared/shared_components/app_error_snack_bar.dart';
@@ -171,8 +172,18 @@ class _InvoiceItemsCard extends StatelessWidget {
                         DataCell(Text(item.medicineName)),
                         DataCell(Text(item.batchNumber)),
                         DataCell(Text('${item.quantity}')),
-                        DataCell(Text(item.unitPrice.toStringAsFixed(0))),
-                        DataCell(Text(item.lineTotal.toStringAsFixed(0))),
+                        DataCell(
+                          Text(
+                            '${CurrencyConstants.usdSymbol}'
+                            '${item.unitPrice.toStringAsFixed(2)}',
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            '${CurrencyConstants.usdSymbol}'
+                            '${item.lineTotal.toStringAsFixed(2)}',
+                          ),
+                        ),
                       ],
                     ),
                   )

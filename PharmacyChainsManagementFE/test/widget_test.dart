@@ -79,8 +79,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('INVENTORY MASTER LIST'), findsOneWidget);
-    expect(find.text('Paracetamol'), findsOneWidget);
+    expect(find.text('Paracetamol'), findsWidgets);
 
+    await tester.ensureVisible(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_vert).first);
     await tester.pumpAndSettle();
 

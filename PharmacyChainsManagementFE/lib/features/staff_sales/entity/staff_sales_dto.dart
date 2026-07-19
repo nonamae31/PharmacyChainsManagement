@@ -132,8 +132,8 @@ class InvoiceDto extends Equatable {
     invoiceCode: json['invoiceCode'] as String,
     invoiceDate: json['invoiceDate'] as String,
     totalAmount: (json['totalAmount'] as num).toDouble(),
-    paymentStatus: json['paymentStatus'] as String,
-    status: json['status'] as String,
+    paymentStatus: (json['paymentStatus'] as String).toUpperCase(),
+    status: (json['status'] as String).toUpperCase(),
     items: ((json['items'] as List?) ?? [])
         .map((item) => InvoiceLineDto.fromJson(item as Map<String, dynamic>))
         .toList(),
@@ -156,6 +156,7 @@ class InvoiceSummaryDto extends Equatable {
   final String invoiceDate;
   final double totalAmount;
   final String paymentStatus;
+  final String status;
   final int itemCount;
   const InvoiceSummaryDto({
     required this.invoiceId,
@@ -163,6 +164,7 @@ class InvoiceSummaryDto extends Equatable {
     required this.invoiceDate,
     required this.totalAmount,
     required this.paymentStatus,
+    required this.status,
     required this.itemCount,
   });
   factory InvoiceSummaryDto.fromJson(Map<String, dynamic> json) =>
@@ -171,7 +173,8 @@ class InvoiceSummaryDto extends Equatable {
         invoiceCode: json['invoiceCode'] as String,
         invoiceDate: json['invoiceDate'] as String,
         totalAmount: (json['totalAmount'] as num).toDouble(),
-        paymentStatus: json['paymentStatus'] as String,
+        paymentStatus: (json['paymentStatus'] as String).toUpperCase(),
+        status: (json['status'] as String).toUpperCase(),
         itemCount: json['itemCount'] as int,
       );
   @override
@@ -181,6 +184,7 @@ class InvoiceSummaryDto extends Equatable {
     invoiceDate,
     totalAmount,
     paymentStatus,
+    status,
     itemCount,
   ];
 }
@@ -234,8 +238,8 @@ class PaymentDto extends Equatable {
     receivedAmountVnd: (json['receivedAmountVnd'] as num?)?.toDouble(),
     baseCurrency: json['baseCurrency'] as String,
     settlementCurrency: json['settlementCurrency'] as String,
-    paymentMethod: json['paymentMethod'] as String,
-    paymentStatus: json['paymentStatus'] as String,
+    paymentMethod: (json['paymentMethod'] as String).toUpperCase(),
+    paymentStatus: (json['paymentStatus'] as String).toUpperCase(),
     qrCodeUrl: json['qrCodeUrl'] as String?,
     bankName: json['bankName'] as String?,
     accountName: json['accountName'] as String?,

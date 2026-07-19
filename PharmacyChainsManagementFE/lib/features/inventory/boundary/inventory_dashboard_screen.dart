@@ -988,8 +988,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                       ),
                     ),
                     SizedBox(width: 160, child: _buildTableHeaderText('AI DEMAND FORECAST')),
-                    SizedBox(width: 120, child: _buildTableHeaderText('STATUS')),
-                    SizedBox(width: 220, child: _buildTableHeaderText('ACTIONS', alignRight: true)),
+                    SizedBox(width: 150, child: _buildTableHeaderText('STATUS')),
+                    SizedBox(width: 260, child: _buildTableHeaderText('ACTIONS', alignRight: true)),
                   ],
                 ),
               ),
@@ -1108,48 +1108,55 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             ),
           ),
           SizedBox(
-            width: 120,
+            width: 150,
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: (item['statusColor'] as Color).withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                  child: Text(
-                    item['status'],
-                    style: TextStyle(color: item['statusColor'], fontSize: 12, fontWeight: FontWeight.w600),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: (item['statusColor'] as Color).withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                    child: FittedBox(
+                      child: Text(
+                        item['status'],
+                        style: TextStyle(color: item['statusColor'], fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           SizedBox(
-            width: 220,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => _showQuickOrderDialog(item),
-                  icon: const Icon(Icons.inbox_outlined, size: 14),
-                  label: const Text('Nhập/Ảnh', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEFF6FF),
-                    foregroundColor: const Color(0xFF2563EB),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            width: 260,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _showQuickOrderDialog(item),
+                    icon: const Icon(Icons.inbox_outlined, size: 14),
+                    label: const Text('Nhập/Ảnh', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEFF6FF),
+                      foregroundColor: const Color(0xFF2563EB),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: const Icon(Icons.outbox_outlined, size: 18, color: Color(0xFFF59E0B)),
-                  onPressed: () => _showPickAdjustDialog(item),
-                  tooltip: 'Cấu hình xuất kho (Pick / Issue)',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
-                  onPressed: () => _showStockAdjustDialog(item),
-                  tooltip: 'Điều chỉnh nhanh số lượng kho',
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(Icons.outbox_outlined, size: 18, color: Color(0xFFF59E0B)),
+                    onPressed: () => _showPickAdjustDialog(item),
+                    tooltip: 'Cấu hình xuất kho (Pick / Issue)',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
+                    onPressed: () => _showStockAdjustDialog(item),
+                    tooltip: 'Điều chỉnh nhanh số lượng kho',
+                  ),
+                ],
+              ),
             ),
           ),
         ],

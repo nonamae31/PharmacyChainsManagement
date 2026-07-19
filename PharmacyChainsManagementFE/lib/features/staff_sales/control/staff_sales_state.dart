@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+
+import '../../../core/constants/currency_constants.dart';
 import '../entity/staff_sales_dto.dart';
 
 sealed class StaffSalesState extends Equatable {
@@ -122,3 +124,18 @@ final class StaffSalesLoadFailure extends StaffSalesState {
   @override
   List<Object?> get props => [message];
 }
+
+double invoiceDraftTotalVnd(StaffSalesState state) {
+  final totalUsd = switch (state) {
+    InvoiceDraftReady(:final total) => total,
+    InvoiceDraftValidationFailure(:final total) => total,
+    InvoiceSubmitting(:final total) => total,
+    InvoiceSubmitFailure(:final total) => total,
+    _ => 0.0,
+  };
+
+  return CurrencyConstants.convertUsdToVnd(totalUsd);
+}
+
+double checkoutTotalVnd(InvoiceSummaryDto invoice) =>
+    CurrencyConstants.convertUsdToVnd(invoice.totalAmount);

@@ -344,6 +344,7 @@ class _IssueStockScreenState extends State<IssueStockScreen> {
                                   Expanded(
                                     flex: 3,
                                     child: DropdownButtonFormField<String>(
+                                      isExpanded: true,
                                       initialValue: _selectedStore,
                                       decoration: const InputDecoration(labelText: 'Chi Nhánh Đích (Target Store / Branch) *', border: OutlineInputBorder(), isDense: true, prefixIcon: Icon(Icons.store)),
                                       items: const [
@@ -365,6 +366,7 @@ class _IssueStockScreenState extends State<IssueStockScreen> {
                                   Expanded(
                                     flex: 2,
                                     child: DropdownButtonFormField<String>(
+                                      isExpanded: true,
                                       initialValue: _priority,
                                       decoration: const InputDecoration(labelText: 'Mức Độ Ưu Tiên (Priority)', border: OutlineInputBorder(), isDense: true, prefixIcon: Icon(Icons.priority_high, color: AppColors.error)),
                                       items: const [

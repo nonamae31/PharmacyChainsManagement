@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/currency_constants.dart';
+import '../../../core/theme/branch_manager_app_theme.dart';
 import '../../../injection_container.dart';
 import '../../../shared/shared_components/app_error_snack_bar.dart';
+import '../../../shared/shared_components/app_status_chip.dart';
 import '../control/staff_sales_bloc.dart';
 import '../control/staff_sales_event.dart';
 import '../control/staff_sales_state.dart';
@@ -163,8 +168,9 @@ class _MedicineSearchViewState extends State<_MedicineSearchView> {
             listener: _listen,
             builder: (context, state) {
               if (state is StaffSalesLoading) return const _PageLoading();
-              if (state is MedicineSearchLoadSuccess)
+              if (state is MedicineSearchLoadSuccess) {
                 return _MedicineResults(medicines: state.medicines);
+              }
               return const _EmptyState(
                 icon: Icons.medication_outlined,
                 message: 'No medicines found.',
@@ -186,7 +192,7 @@ class _MedicineResults extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: ListView.separated(
       itemCount: medicines.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final medicine = medicines[index];
         final low = medicine.stockStatus == 'LOW';
@@ -268,6 +274,7 @@ class _InvoiceGenerationViewState extends State<_InvoiceGenerationView> {
                 invoiceDate: state.invoice.invoiceDate,
                 totalAmount: state.invoice.totalAmount,
                 paymentStatus: state.invoice.paymentStatus,
+                status: state.invoice.status,
                 itemCount: state.invoice.items.length,
               ),
             );
@@ -275,7 +282,7 @@ class _InvoiceGenerationViewState extends State<_InvoiceGenerationView> {
         },
         builder: (context, state) {
           final lines = _invoiceDraftLines(state);
-          final total = _invoiceDraftTotal(state);
+          final totalVnd = invoiceDraftTotalVnd(state);
           return StaffWorkspaceShell(
             title: AppStrings.invoiceGeneration,
             subtitle: AppStrings.invoiceGenerationDescription,
@@ -304,7 +311,7 @@ class _InvoiceGenerationViewState extends State<_InvoiceGenerationView> {
                 );
                 final summary = _InvoiceSummary(
                   itemCount: lines.length,
-                  totalAmount: total,
+                  totalAmountVnd: totalVnd,
                 );
                 return desktop
                     ? Row(
@@ -384,8 +391,11 @@ class _InvoiceForm extends StatelessWidget {
 
 class _InvoiceSummary extends StatelessWidget {
   final int itemCount;
-  final double totalAmount;
-  const _InvoiceSummary({required this.itemCount, required this.totalAmount});
+  final double totalAmountVnd;
+  const _InvoiceSummary({
+    required this.itemCount,
+    required this.totalAmountVnd,
+  });
   @override
   Widget build(BuildContext context) => Card(
     color: const Color(0xFF0B4979),
@@ -409,7 +419,11 @@ class _InvoiceSummary extends StatelessWidget {
             const SizedBox(height: 16),
             const Text(AppStrings.subtotal),
             Text(
-              totalAmount.toStringAsFixed(2),
+              NumberFormat.currency(
+                locale: 'vi_VN',
+                symbol: '${CurrencyConstants.vndCode} ',
+                decimalDigits: 0,
+              ).format(totalAmountVnd),
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
             ),
           ],
@@ -428,14 +442,6 @@ List<InvoiceDraftLineModel> _invoiceDraftLines(StaffSalesState state) =>
       _ => const <InvoiceDraftLineModel>[],
     };
 
-double _invoiceDraftTotal(StaffSalesState state) => switch (state) {
-  InvoiceDraftReady(:final total) => total,
-  InvoiceDraftValidationFailure(:final total) => total,
-  InvoiceSubmitting(:final total) => total,
-  InvoiceSubmitFailure(:final total) => total,
-  _ => 0,
-};
-
 class InvoiceHistoryScreen extends StatelessWidget {
   const InvoiceHistoryScreen({super.key});
   @override
@@ -444,8 +450,8 @@ class InvoiceHistoryScreen extends StatelessWidget {
     child: BlocConsumer<StaffSalesBloc, StaffSalesState>(
       listener: _listen,
       builder: (context, state) => StaffWorkspaceShell(
-        title: 'Invoices',
-        subtitle: 'Review and process financial transactions for this branch.',
+        title: AppStrings.invoicesTitle,
+        subtitle: AppStrings.invoiceHistoryDescription,
         section: StaffWorkspaceSection.invoices,
         child: state is StaffSalesLoading
             ? const _PageLoading()
@@ -453,7 +459,7 @@ class InvoiceHistoryScreen extends StatelessWidget {
             ? _InvoiceList(invoices: state.invoices)
             : const _EmptyState(
                 icon: Icons.receipt_long_outlined,
-                message: 'No invoices yet.',
+                message: AppStrings.noInvoices,
               ),
       ),
     ),
@@ -463,60 +469,163 @@ class InvoiceHistoryScreen extends StatelessWidget {
 class _InvoiceList extends StatelessWidget {
   final List<InvoiceSummaryDto> invoices;
   const _InvoiceList({required this.invoices});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < AppSpacing.fourColumnBreakpoint;
+      if (isMobile) {
+        return ListView.separated(
+          itemCount: invoices.length,
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+          itemBuilder: (context, index) =>
+              _MobileInvoiceCard(invoice: invoices[index]),
+        );
+      }
+
+      return Card(
+        child: ListView.separated(
+          itemCount: invoices.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (context, index) =>
+              _DesktopInvoiceTile(invoice: invoices[index]),
+        ),
+      );
+    },
+  );
+}
+
+class _MobileInvoiceCard extends StatelessWidget {
+  final InvoiceSummaryDto invoice;
+  const _MobileInvoiceCard({required this.invoice});
+
   @override
   Widget build(BuildContext context) => Card(
-    child: ListView.separated(
-      itemCount: invoices.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final invoice = invoices[index];
-        final pending = invoice.paymentStatus != 'PAID';
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 8,
-          ),
-          title: Text(
-            invoice.invoiceCode,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          subtitle: Text('${invoice.invoiceDate} • ${invoice.itemCount} items'),
-          trailing: Wrap(
-            spacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
+    margin: EdgeInsets.zero,
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                invoice.totalAmount.toStringAsFixed(0),
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              Chip(label: Text(invoice.paymentStatus)),
-              OutlinedButton(
-                onPressed: () =>
-                    context.push('/staff/invoices/${invoice.invoiceId}'),
-                child: const Text(AppStrings.viewDetails),
-              ),
-              if (pending)
-                FilledButton(
-                  onPressed: () =>
-                      context.push('/staff/payments/process', extra: invoice),
-                  child: const Text('Process payment'),
+              Expanded(
+                child: Text(
+                  invoice.invoiceCode,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              AppStatusChip(label: invoice.paymentStatus),
             ],
           ),
-        );
-      },
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${invoice.invoiceDate} • '
+            '${AppStrings.invoiceItemCount(invoice.itemCount)}',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            invoice.totalAmount.toStringAsFixed(0),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _InvoiceActions(invoice: invoice),
+        ],
+      ),
     ),
   );
+}
+
+class _DesktopInvoiceTile extends StatelessWidget {
+  final InvoiceSummaryDto invoice;
+  const _DesktopInvoiceTile({required this.invoice});
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.xs,
+    ),
+    title: Text(
+      invoice.invoiceCode,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(fontWeight: FontWeight.w700),
+    ),
+    subtitle: Text(
+      '${invoice.invoiceDate} • '
+      '${AppStrings.invoiceItemCount(invoice.itemCount)}',
+    ),
+    trailing: Wrap(
+      spacing: AppSpacing.sm,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          invoice.totalAmount.toStringAsFixed(0),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        AppStatusChip(label: invoice.paymentStatus),
+        _InvoiceActions(invoice: invoice),
+      ],
+    ),
+  );
+}
+
+class _InvoiceActions extends StatelessWidget {
+  final InvoiceSummaryDto invoice;
+  const _InvoiceActions({required this.invoice});
+
+  @override
+  Widget build(BuildContext context) {
+    final canProcessPayment =
+        invoice.paymentStatus != 'PAID' && invoice.status != 'CANCELLED';
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
+      children: [
+        OutlinedButton(
+          onPressed: () => context.push('/staff/invoices/${invoice.invoiceId}'),
+          child: const Text(AppStrings.viewDetails),
+        ),
+        if (canProcessPayment)
+          FilledButton(
+            onPressed: () =>
+                context.push('/staff/payments/process', extra: invoice),
+            child: const Text(AppStrings.processPayment),
+          ),
+      ],
+    );
+  }
 }
 
 class PaymentProcessingScreen extends StatelessWidget {
   final InvoiceSummaryDto invoice;
   const PaymentProcessingScreen({super.key, required this.invoice});
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) => sl<StaffSalesBloc>(),
-    child: _PaymentProcessingView(invoice: invoice),
-  );
+  Widget build(BuildContext context) {
+    if (invoice.status == 'CANCELLED') {
+      return const StaffWorkspaceShell(
+        title: AppStrings.cancelledInvoicePaymentTitle,
+        subtitle: AppStrings.cancelledInvoicePaymentMessage,
+        section: StaffWorkspaceSection.payments,
+        child: _EmptyState(
+          icon: Icons.block_outlined,
+          message: AppStrings.cancelledInvoicePaymentMessage,
+        ),
+      );
+    }
+
+    return BlocProvider(
+      create: (_) => sl<StaffSalesBloc>(),
+      child: _PaymentProcessingView(invoice: invoice),
+    );
+  }
 }
 
 class _PaymentProcessingView extends StatefulWidget {
@@ -527,7 +636,7 @@ class _PaymentProcessingView extends StatefulWidget {
 }
 
 class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
-  String _method = 'CARD';
+  String _method = 'CASH';
   @override
   Widget build(
     BuildContext context,
@@ -549,7 +658,7 @@ class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
       section: StaffWorkspaceSection.payments,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final methods = ['CARD', 'CASH', 'QR'];
+          final methods = ['CASH', 'QR'];
           final selection = Card(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -576,16 +685,12 @@ class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
                             (method) => RadioListTile<String>(
                               value: method,
                               title: Text(
-                                method == 'CARD'
-                                    ? 'Credit / Debit card'
-                                    : method == 'CASH'
+                                method == 'CASH'
                                     ? 'Cash payment'
                                     : AppStrings.qrPayment,
                               ),
                               subtitle: Text(
-                                method == 'CARD'
-                                    ? 'Visa, Mastercard, Amex'
-                                    : method == 'CASH'
+                                method == 'CASH'
                                     ? 'Physical currency at terminal'
                                     : AppStrings.qrPaymentDescription,
                               ),
@@ -635,10 +740,14 @@ class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Total payable'),
+                    const Text(AppStrings.totalPayable),
                     const SizedBox(height: 12),
                     Text(
-                      widget.invoice.totalAmount.toStringAsFixed(0),
+                      NumberFormat.currency(
+                        locale: 'vi_VN',
+                        symbol: '${CurrencyConstants.vndCode} ',
+                        decimalDigits: 0,
+                      ).format(checkoutTotalVnd(widget.invoice)),
                       style: const TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w800,
@@ -712,7 +821,7 @@ class PaymentTransactionsScreen extends StatelessWidget {
             ? Card(
                 child: ListView.separated(
                   itemCount: state.payments.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (_, index) {
                     final payment = state.payments[index];
                     return ListTile(
