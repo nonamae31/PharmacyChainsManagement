@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../injection_container.dart';
 import '../../../shared/shared_components/app_error_snack_bar.dart';
@@ -163,8 +164,9 @@ class _MedicineSearchViewState extends State<_MedicineSearchView> {
             listener: _listen,
             builder: (context, state) {
               if (state is StaffSalesLoading) return const _PageLoading();
-              if (state is MedicineSearchLoadSuccess)
+              if (state is MedicineSearchLoadSuccess) {
                 return _MedicineResults(medicines: state.medicines);
+              }
               return const _EmptyState(
                 icon: Icons.medication_outlined,
                 message: 'No medicines found.',
@@ -186,7 +188,7 @@ class _MedicineResults extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: ListView.separated(
       itemCount: medicines.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final medicine = medicines[index];
         final low = medicine.stockStatus == 'LOW';
@@ -268,6 +270,7 @@ class _InvoiceGenerationViewState extends State<_InvoiceGenerationView> {
                 invoiceDate: state.invoice.invoiceDate,
                 totalAmount: state.invoice.totalAmount,
                 paymentStatus: state.invoice.paymentStatus,
+                status: state.invoice.status,
                 itemCount: state.invoice.items.length,
               ),
             );
@@ -409,7 +412,11 @@ class _InvoiceSummary extends StatelessWidget {
             const SizedBox(height: 16),
             const Text(AppStrings.subtotal),
             Text(
-              totalAmount.toStringAsFixed(2),
+              NumberFormat.currency(
+                locale: 'vi_VN',
+                symbol: '₫',
+                decimalDigits: 0,
+              ).format(totalAmount),
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
             ),
           ],
@@ -467,10 +474,11 @@ class _InvoiceList extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: ListView.separated(
       itemCount: invoices.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final invoice = invoices[index];
-        final pending = invoice.paymentStatus != 'PAID';
+        final canProcessPayment =
+            invoice.paymentStatus != 'PAID' && invoice.status != 'CANCELLED';
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
@@ -495,11 +503,11 @@ class _InvoiceList extends StatelessWidget {
                     context.push('/staff/invoices/${invoice.invoiceId}'),
                 child: const Text(AppStrings.viewDetails),
               ),
-              if (pending)
+              if (canProcessPayment)
                 FilledButton(
                   onPressed: () =>
                       context.push('/staff/payments/process', extra: invoice),
-                  child: const Text('Process payment'),
+                  child: const Text(AppStrings.processPayment),
                 ),
             ],
           ),
@@ -513,10 +521,24 @@ class PaymentProcessingScreen extends StatelessWidget {
   final InvoiceSummaryDto invoice;
   const PaymentProcessingScreen({super.key, required this.invoice});
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) => sl<StaffSalesBloc>(),
-    child: _PaymentProcessingView(invoice: invoice),
-  );
+  Widget build(BuildContext context) {
+    if (invoice.status == 'CANCELLED') {
+      return const StaffWorkspaceShell(
+        title: AppStrings.cancelledInvoicePaymentTitle,
+        subtitle: AppStrings.cancelledInvoicePaymentMessage,
+        section: StaffWorkspaceSection.payments,
+        child: _EmptyState(
+          icon: Icons.block_outlined,
+          message: AppStrings.cancelledInvoicePaymentMessage,
+        ),
+      );
+    }
+
+    return BlocProvider(
+      create: (_) => sl<StaffSalesBloc>(),
+      child: _PaymentProcessingView(invoice: invoice),
+    );
+  }
 }
 
 class _PaymentProcessingView extends StatefulWidget {
@@ -527,7 +549,7 @@ class _PaymentProcessingView extends StatefulWidget {
 }
 
 class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
-  String _method = 'CARD';
+  String _method = 'CASH';
   @override
   Widget build(
     BuildContext context,
@@ -549,7 +571,7 @@ class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
       section: StaffWorkspaceSection.payments,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final methods = ['CARD', 'CASH', 'QR'];
+          final methods = ['CASH', 'QR'];
           final selection = Card(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -576,16 +598,12 @@ class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
                             (method) => RadioListTile<String>(
                               value: method,
                               title: Text(
-                                method == 'CARD'
-                                    ? 'Credit / Debit card'
-                                    : method == 'CASH'
+                                method == 'CASH'
                                     ? 'Cash payment'
                                     : AppStrings.qrPayment,
                               ),
                               subtitle: Text(
-                                method == 'CARD'
-                                    ? 'Visa, Mastercard, Amex'
-                                    : method == 'CASH'
+                                method == 'CASH'
                                     ? 'Physical currency at terminal'
                                     : AppStrings.qrPaymentDescription,
                               ),
@@ -712,7 +730,7 @@ class PaymentTransactionsScreen extends StatelessWidget {
             ? Card(
                 child: ListView.separated(
                   itemCount: state.payments.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (_, index) {
                     final payment = state.payments[index];
                     return ListTile(

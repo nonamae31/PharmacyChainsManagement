@@ -129,6 +129,10 @@ class AppStrings {
   static const String invoiceDetailsDescription =
       'Review invoice information and itemized medicines.';
   static const String viewDetails = 'View details';
+  static const String processPayment = 'Process payment';
+  static const String cancelledInvoicePaymentTitle = 'Payment unavailable';
+  static const String cancelledInvoicePaymentMessage =
+      'This invoice has been cancelled and cannot be processed for payment.';
   static const String backToInvoices = 'Back to invoices';
   static const String invoiceCode = 'Invoice code';
   static const String invoiceDate = 'Invoice date';

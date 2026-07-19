@@ -81,7 +81,7 @@ class StaffSalesApiClient {
       error.response?.data is Map<String, dynamic>
       ? ((error.response?.data as Map<String, dynamic>)['detail'] ??
                 (error.response?.data as Map<String, dynamic>)['message'] ??
-                'Không thể hoàn tất yêu cầu.')
+                'Unable to complete the request.')
             .toString()
-      : 'Không thể kết nối máy chủ.';
+      : 'Unable to connect to the server.';
 }

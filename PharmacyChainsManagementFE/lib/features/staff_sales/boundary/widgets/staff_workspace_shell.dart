@@ -10,7 +10,6 @@ enum StaffWorkspaceSection {
   dashboard,
   medicines,
   invoices,
-  prescriptions,
   payments,
   attendance,
   profile,
@@ -51,12 +50,6 @@ class StaffWorkspaceShell extends StatelessWidget {
       'Invoices',
       Icons.receipt_long_outlined,
       '/staff/invoices',
-    ),
-    (
-      StaffWorkspaceSection.prescriptions,
-      'Prescriptions',
-      Icons.description_outlined,
-      '/staff/prescriptions',
     ),
     (
       StaffWorkspaceSection.payments,

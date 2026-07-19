@@ -164,7 +164,7 @@ class StaffSalesBloc extends Bloc<StaffSalesEvent, StaffSalesState> {
         emit(
           PaymentStatusRefreshFailure(
             event.payment,
-            'Đã có lỗi không xác định.',
+            'An unknown error occurred.',
           ),
         );
       }
@@ -214,7 +214,7 @@ class StaffSalesBloc extends Bloc<StaffSalesEvent, StaffSalesState> {
     } on AppException catch (error) {
       emit(StaffSalesLoadFailure(error.message));
     } catch (_) {
-      emit(const StaffSalesLoadFailure('Đã có lỗi không xác định.'));
+      emit(const StaffSalesLoadFailure('An unknown error occurred.'));
     }
   }
 }
