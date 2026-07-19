@@ -202,9 +202,11 @@ public class AuthService : IAuthService
                 var founderUser = await _userRepository.FindActiveByEmailAsync(email, cancellationToken)
                     ?? await _userRepository.FindByEmailAsync(email, cancellationToken);
 
+                var role = await _userRepository.GetRoleByCodeAsync("FOUNDER", cancellationToken);
+                short founderRoleId = role?.RoleId ?? 5;
+
                 if (founderUser == null)
                 {
-                    var role = await _userRepository.GetRoleByCodeAsync("BUSINESS_ADMIN", cancellationToken);
                     founderUser = new User
                     {
                         UserId = Guid.NewGuid(),
@@ -214,9 +216,14 @@ public class AuthService : IAuthService
                         Status = "ACTIVE",
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow,
-                        RoleId = role?.RoleId ?? 1
+                        RoleId = founderRoleId
                     };
                     await _userRepository.AddAsync(founderUser, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+                else if (founderUser.RoleId != founderRoleId)
+                {
+                    founderUser.RoleId = founderRoleId;
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
                 }
 
