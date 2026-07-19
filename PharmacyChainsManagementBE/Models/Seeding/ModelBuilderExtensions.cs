@@ -12,7 +12,8 @@ public static class ModelBuilderExtensions
             new Role { RoleId = 1, RoleCode = "BUSINESS_ADMIN", RoleName = "Business Admin", IsActive = true },
             new Role { RoleId = 2, RoleCode = "BRANCH_MANAGER", RoleName = "Branch Manager", IsActive = true },
             new Role { RoleId = 3, RoleCode = "STAFF", RoleName = "Staff", IsActive = true },
-            new Role { RoleId = 4, RoleCode = "INVENTORY_MANAGER", RoleName = "Inventory Manager", IsActive = true }
+            new Role { RoleId = 4, RoleCode = "INVENTORY_MANAGER", RoleName = "Inventory Manager", IsActive = true },
+            new Role { RoleId = 5, RoleCode = "FOUNDER", RoleName = "Founder", IsActive = true }
         );
 
         // Pre-generate one static hash to avoid migration noise

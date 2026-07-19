@@ -66,9 +66,9 @@ class _CashFlowViewState extends State<CashFlowView> {
     final now = DateTime.now();
     setState(() {
       _endDate = now;
-      if (preset == 'Tuần này') {
+      if (preset == 'This Week') {
         _startDate = now.subtract(Duration(days: now.weekday - 1));
-      } else if (preset == 'Tháng này') {
+      } else if (preset == 'This Month') {
         _startDate = DateTime(now.year, now.month, 1);
       } else if (preset == 'YTD') {
         _startDate = DateTime(now.year, 1, 1);
@@ -229,7 +229,7 @@ class _CashFlowViewState extends State<CashFlowView> {
     if (maxLogY == 0) {
       maxLogY = 1;
     } else {
-      maxLogY = maxLogY * 1.2; // 20% padding at the top
+      maxLogY = maxLogY * 1.5; // 50% padding at the top to prevent curve clipping
     }
 
     return Container(
@@ -424,7 +424,7 @@ class _CashFlowViewState extends State<CashFlowView> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: ['Tuần này', 'Tháng này', 'YTD'].map((preset) {
+                children: ['This Week', 'This Month', 'YTD'].map((preset) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ActionChip(

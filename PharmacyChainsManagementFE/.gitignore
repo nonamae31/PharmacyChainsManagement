@@ -52,3 +52,4 @@ app.*.map.json
 # Firebase secrets
 firebase_options.dart
 google-services.json
+macos/Flutter/GeneratedPluginRegistrant.swift
