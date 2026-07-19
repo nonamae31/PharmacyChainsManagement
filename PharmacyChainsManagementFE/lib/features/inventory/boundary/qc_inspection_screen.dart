@@ -394,8 +394,10 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 12,
+                        runSpacing: 8,
                         children: [
                           if (!status.contains('Rejected'))
                             OutlinedButton.icon(
@@ -404,7 +406,6 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                               label: const Text('Reject & Return (Từ chối & Hoàn trả)'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
                             ),
-                          const SizedBox(width: 12),
                           if (!status.contains('Passed'))
                             ElevatedButton.icon(
                               onPressed: () => _updateStatus(idx, 'Passed QC - Ready for Storage'),
@@ -427,10 +428,11 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
 
   Widget _buildCheckItem(String label, bool isPassed) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(isPassed ? Icons.check_circle : Icons.warning, color: isPassed ? AppColors.success : AppColors.error, size: 18),
         const SizedBox(width: 6),
-        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: isPassed ? AppColors.textPrimary : AppColors.error)),
+        Flexible(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: isPassed ? AppColors.textPrimary : AppColors.error))),
       ],
     );
   }

@@ -55,7 +55,8 @@ class InventorySummaryCard extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(item.medicineName),
+                      Expanded(child: Text(item.medicineName, overflow: TextOverflow.ellipsis)),
+                      const SizedBox(width: 8),
                       Text(
                         '${item.totalAvailableQuantity} left',
                         style: const TextStyle(

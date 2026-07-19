@@ -442,11 +442,13 @@ class _IssueStockScreenState extends State<IssueStockScreen> {
                                             const SizedBox(height: 6),
                                             Text('Lot FEFO: ${item.batchNo} • Expiry: ${item.expiryDate}', style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
                                             Text('Bin: ${item.wmsPickingBin}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
-                                            const SizedBox(height: 6),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            Wrap(
+                                              alignment: WrapAlignment.spaceBetween,
+                                              crossAxisAlignment: WrapCrossAlignment.center,
+                                              spacing: 8,
+                                              runSpacing: 4,
                                               children: [
-                                                Text('Yêu cầu: ${item.requestedQty} → Nhặt: ${item.pickedQty} ${item.unit}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF10B981))),
+                                                Flexible(child: Text('Yêu cầu: ${item.requestedQty} → Nhặt: ${item.pickedQty} ${item.unit}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF10B981)))),
                                                 ElevatedButton.icon(onPressed: () => _editPickQty(item), icon: const Icon(Icons.edit, size: 16), label: const Text('Sửa nhặt')),
                                               ],
                                             ),

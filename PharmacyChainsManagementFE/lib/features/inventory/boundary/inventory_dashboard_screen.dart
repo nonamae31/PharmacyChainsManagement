@@ -653,108 +653,122 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Interactive Search Box
-          Container(
-            width: 320,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Search SKU or Product...',
-                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                      border: InputBorder.none,
-                      isDense: true,
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? InkWell(
-                              onTap: () {
-                                _searchController.clear();
-                                setState(() {
-                                  _searchQuery = '';
-                                });
-                              },
-                              child: const Icon(Icons.clear, size: 16, color: Color(0xFF94A3B8)),
-                            )
-                          : null,
-                    ),
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
-                  ),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-              ],
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search SKU or Product...',
+                          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                          border: InputBorder.none,
+                          isDense: true,
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? InkWell(
+                                  onTap: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                  child: const Icon(Icons.clear, size: 16, color: Color(0xFF94A3B8)),
+                                )
+                              : null,
+                        ),
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
 
           Flexible(
-            child: const Text(
-              'Pharmacy Chains Management • WMS Portal',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-              overflow: TextOverflow.ellipsis,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Pharmacy Chains Management • WMS Portal',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
 
           // Right Controls & User Info
-          Row(
-            children: [
-              Stack(
+          Flexible(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined, color: Color(0xFF64748B)),
-                    onPressed: _showNotificationsDialog,
-                  ),
-                  Positioned(
-                    right: 12,
-                    top: 12,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              Container(height: 24, width: 1, color: const Color(0xFFE2E8F0)),
-              const SizedBox(width: 16),
-              InkWell(
-                onTap: _showUserProfileDialog,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
+                  Stack(
                     children: [
-                      Text(_userName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF334155))),
-                      const SizedBox(width: 12),
-                      const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Color(0xFF3B82F6),
-                        child: Icon(Icons.person, color: Colors.white, size: 20),
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, color: Color(0xFF64748B)),
+                        onPressed: _showNotificationsDialog,
+                      ),
+                      Positioned(
+                        right: 12,
+                        top: 12,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                        ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  Container(height: 24, width: 1, color: const Color(0xFFE2E8F0)),
+                  const SizedBox(width: 16),
+                  InkWell(
+                    onTap: _showUserProfileDialog,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_userName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF334155))),
+                          const SizedBox(width: 12),
+                          const CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Color(0xFF3B82F6),
+                            child: Icon(Icons.person, color: Colors.white, size: 20),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    key: const Key('desktopTopBarLogoutButton'),
+                    tooltip: 'Đăng xuất (Logout)',
+                    icon: const Icon(Icons.logout_outlined, color: Color(0xFFEF4444)),
+                    onPressed: _confirmAndLogout,
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                key: const Key('desktopTopBarLogoutButton'),
-                tooltip: 'Đăng xuất (Logout)',
-                icon: const Icon(Icons.logout_outlined, color: Color(0xFFEF4444)),
-                onPressed: _confirmAndLogout,
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -815,16 +829,21 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 16,
+          runSpacing: 12,
           children: [
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 Text(
                   _getMenuTitle(_selectedIndex),
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
-                const SizedBox(width: 12),
                 if (_statusFilter != 'All')
                   Chip(
                     label: Text('Filter: $_statusFilter', style: const TextStyle(fontSize: 12)),
@@ -834,7 +853,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   ),
               ],
             ),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 OutlinedButton.icon(
                   onPressed: _showFilterDialog,
@@ -845,7 +866,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     side: const BorderSide(color: Color(0xFFCBD5E1)),
                   ),
                 ),
-                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _showAddSkuDialog,
                   icon: const Icon(Icons.add, size: 18),
@@ -871,11 +891,16 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 12,
               children: [
                 Text('$selectedCount SKU(s) selected for batch action', style: const TextStyle(color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600)),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     ElevatedButton(
                       onPressed: () {
@@ -893,7 +918,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
                       child: const Text('Bulk Reorder (+200)'),
                     ),
-                    const SizedBox(width: 8),
                     OutlinedButton(
                       onPressed: () => setState(() {
                         for (var item in _inventoryList) {
@@ -1318,16 +1342,22 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 12,
+                          runSpacing: 8,
                           children: [
                             Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(item['proofImage'] != null ? Icons.verified : Icons.camera_alt, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF2563EB), size: 20),
+                                Icon(item['proofImage'] != null ? Icons.verified : Icons.photo_library, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF2563EB), size: 20),
                                 const SizedBox(width: 8),
-                                Text(
-                                  item['proofImage'] != null ? '📸 Ảnh minh chứng xác minh số liệu' : '📸 Gửi ảnh xác minh cho Business Admin',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF1E293B)),
+                                Flexible(
+                                  child: Text(
+                                    item['proofImage'] != null ? '🖼️ Ảnh minh chứng từ thư viện' : '🖼️ Gửi ảnh xác minh từ thư viện',
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF1E293B)),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1807,10 +1837,15 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFECACA))),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 12,
+                      runSpacing: 8,
                       children: [
-                        Text('🚨 [CRITICAL STOCK] ${item['name']} (${item['sku']}) - Only ${item['currentStock']} left! (ROP: ${item['reorderPt']})', style: const TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.w600)),
+                        Flexible(
+                          child: Text('🚨 [CRITICAL STOCK] ${item['name']} (${item['sku']}) - Only ${item['currentStock']} left! (ROP: ${item['reorderPt']})', style: const TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.w600)),
+                        ),
                         ElevatedButton(
                           onPressed: () => _showQuickOrderDialog(item),
                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),

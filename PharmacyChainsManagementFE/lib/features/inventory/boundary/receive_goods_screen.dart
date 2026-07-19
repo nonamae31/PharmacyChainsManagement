@@ -434,11 +434,12 @@ class _ReceiveGoodsScreenState extends State<ReceiveGoodsScreen> {
                                             Text('Batch: ${item.batchNo} • Expiry: ${item.expiryDate}', style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
                                             Text('Qty: ${item.quantity} ${item.unit} • WMS Bin: ${item.wmsLocation}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
                                             const SizedBox(height: 8),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.end,
+                                            Wrap(
+                                              alignment: WrapAlignment.end,
+                                              spacing: 8,
+                                              runSpacing: 8,
                                               children: [
-                                                OutlinedButton.icon(onPressed: () => _attachProof(item), icon: const Icon(Icons.camera_alt, size: 16), label: Text(item.proofImage != null ? '📸 Đã gửi 3 ảnh' : '📸 Gửi ảnh xác minh (3 ảnh)')),
-                                                const SizedBox(width: 8),
+                                                OutlinedButton.icon(onPressed: () => _attachProof(item), icon: const Icon(Icons.photo_library, size: 16), label: Text(item.proofImage != null ? '🖼️ Đã gửi 3 ảnh' : '🖼️ Gửi ảnh xác minh (3 ảnh)')),
                                                 ElevatedButton.icon(onPressed: () => _editItem(item), icon: const Icon(Icons.edit, size: 16), label: const Text('Sửa')),
                                               ],
                                             ),
