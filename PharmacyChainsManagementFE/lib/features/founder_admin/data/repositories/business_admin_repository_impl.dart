@@ -12,7 +12,9 @@ import '../models/business_admin_model.dart';
 class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
   static const String _cacheKey = 'BUSINESS_ADMINS_CACHE';
 
-  BusinessAdminRepositoryImpl();
+  final Dio? _dioOverride;
+
+  BusinessAdminRepositoryImpl({Dio? dioOverride}) : _dioOverride = dioOverride;
 
   @override
   Future<List<BusinessAdminEntity>> getBusinessAdmins({bool forceRefresh = false}) async {
@@ -31,7 +33,7 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
     }
 
     try {
-      final dio = ApiClient.createDio();
+      final dio = _dioOverride ?? ApiClient.createDio();
       final response = await dio.get('/api/v1/business-admin');
       
       if (response.statusCode == 200) {
@@ -52,7 +54,7 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
   @override
   Future<void> createBusinessAdmin(BusinessAdminRequestModel request) async {
     try {
-      final dio = ApiClient.createDio();
+      final dio = _dioOverride ?? ApiClient.createDio();
       final response = await dio.post('/api/v1/business-admin', data: {
         'fullName': request.fullName,
         'email': request.email,
@@ -75,7 +77,7 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
   @override
   Future<Either<Failure, void>> updateBusinessAdmin(String id, BusinessAdminRequestModel request) async {
     try {
-      final dio = ApiClient.createDio();
+      final dio = _dioOverride ?? ApiClient.createDio();
       final response = await dio.put('/api/v1/business-admin/$id', data: request.toJson());
 
       if (response.statusCode == 200 || response.statusCode == 204) {
@@ -96,7 +98,7 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
   @override
   Future<Either<Failure, void>> deactivateBusinessAdmin(String id, String reason) async {
     try {
-      final dio = ApiClient.createDio();
+      final dio = _dioOverride ?? ApiClient.createDio();
       final idempotencyKey = DateTime.now().millisecondsSinceEpoch.toString();
       final response = await dio.post(
         '/api/v1/business-admin/$id/deactivate',
@@ -124,7 +126,7 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
   @override
   Future<Either<Failure, void>> softDeleteBusinessAdmin(String id) async {
     try {
-      final dio = ApiClient.createDio();
+      final dio = _dioOverride ?? ApiClient.createDio();
       final response = await dio.delete('/api/v1/business-admin/$id');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
@@ -145,7 +147,7 @@ class BusinessAdminRepositoryImpl implements BusinessAdminRepository {
   @override
   Future<Either<Failure, void>> reactivateBusinessAdmin(String id) async {
     try {
-      final dio = ApiClient.createDio();
+      final dio = _dioOverride ?? ApiClient.createDio();
       final response = await dio.patch('/api/v1/business-admin/$id/reactivate');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
