@@ -16,6 +16,18 @@ class BusinessAdminBloc extends Bloc<BusinessAdminEvent, BusinessAdminState> {
     on<BranchesFetchRequested>(_onBranchesFetchRequested);
     on<BranchCreateSubmitted>(_onBranchCreateSubmitted);
     on<BranchUpdateSubmitted>(_onBranchUpdateSubmitted);
+    on<BranchManagerAccountCreateSubmitted>(
+      _onBranchManagerAccountCreateSubmitted,
+    );
+    on<BranchManagerAccountUpdateSubmitted>(
+      _onBranchManagerAccountUpdateSubmitted,
+    );
+    on<BranchManagerAccountPasswordResetRequested>(
+      _onBranchManagerAccountPasswordResetRequested,
+    );
+    on<BranchManagerAccountDeleteRequested>(
+      _onBranchManagerAccountDeleteRequested,
+    );
     on<MedicineStatisticsFetchRequested>(_onMedicineStatisticsFetchRequested);
     on<BusinessAnalysisReportFetchRequested>(
       _onBusinessAnalysisReportFetchRequested,
@@ -99,6 +111,67 @@ class BusinessAdminBloc extends Bloc<BusinessAdminEvent, BusinessAdminState> {
     emit(BusinessAdminLoading());
     await _guard(emit, () async {
       await businessAdminApiClient.updateBranch(event.branchId, event.request);
+      final branches = await businessAdminApiClient.fetchBranches();
+      emit(BranchesLoadSuccess(branches));
+    });
+  }
+
+  Future<void> _onBranchManagerAccountCreateSubmitted(
+    BranchManagerAccountCreateSubmitted event,
+    Emitter<BusinessAdminState> emit,
+  ) async {
+    emit(BusinessAdminLoading());
+    await _guard(emit, () async {
+      await businessAdminApiClient.createBranchManagerAccount(
+        event.branchId,
+        event.request,
+      );
+      final branches = await businessAdminApiClient.fetchBranches();
+      emit(BranchesLoadSuccess(branches));
+    });
+  }
+
+  Future<void> _onBranchManagerAccountUpdateSubmitted(
+    BranchManagerAccountUpdateSubmitted event,
+    Emitter<BusinessAdminState> emit,
+  ) async {
+    emit(BusinessAdminLoading());
+    await _guard(emit, () async {
+      await businessAdminApiClient.updateBranchManagerAccount(
+        event.branchId,
+        event.managerId,
+        event.request,
+      );
+      final branches = await businessAdminApiClient.fetchBranches();
+      emit(BranchesLoadSuccess(branches));
+    });
+  }
+
+  Future<void> _onBranchManagerAccountPasswordResetRequested(
+    BranchManagerAccountPasswordResetRequested event,
+    Emitter<BusinessAdminState> emit,
+  ) async {
+    emit(BusinessAdminLoading());
+    await _guard(emit, () async {
+      await businessAdminApiClient.resetBranchManagerPassword(
+        event.branchId,
+        event.managerId,
+      );
+      final branches = await businessAdminApiClient.fetchBranches();
+      emit(BranchesLoadSuccess(branches));
+    });
+  }
+
+  Future<void> _onBranchManagerAccountDeleteRequested(
+    BranchManagerAccountDeleteRequested event,
+    Emitter<BusinessAdminState> emit,
+  ) async {
+    emit(BusinessAdminLoading());
+    await _guard(emit, () async {
+      await businessAdminApiClient.deleteBranchManagerAccount(
+        event.branchId,
+        event.managerId,
+      );
       final branches = await businessAdminApiClient.fetchBranches();
       emit(BranchesLoadSuccess(branches));
     });

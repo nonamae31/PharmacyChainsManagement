@@ -8,8 +8,11 @@ class BranchDto extends Equatable {
   final double? latitude;
   final double? longitude;
   final String status;
+  final String? managerId;
   final String? managerName;
   final String? managerEmail;
+  final String? managerPhone;
+  final String? managerStatus;
   final DateTime? managerJoinedDate;
   final double? dailyRevenue;
   final int? staffCount;
@@ -21,11 +24,14 @@ class BranchDto extends Equatable {
     required this.branchName,
     required this.address,
     required this.status,
+    this.managerId,
     this.phone,
     this.latitude,
     this.longitude,
     this.managerName,
     this.managerEmail,
+    this.managerPhone,
+    this.managerStatus,
     this.managerJoinedDate,
     this.dailyRevenue,
     this.staffCount,
@@ -41,8 +47,11 @@ class BranchDto extends Equatable {
     latitude: (json['latitude'] as num?)?.toDouble(),
     longitude: (json['longitude'] as num?)?.toDouble(),
     status: json['status']?.toString() ?? '',
+    managerId: json['managerId']?.toString(),
     managerName: json['managerName']?.toString(),
     managerEmail: json['managerEmail']?.toString(),
+    managerPhone: json['managerPhone']?.toString(),
+    managerStatus: json['managerStatus']?.toString(),
     managerJoinedDate: DateTime.tryParse(
       json['managerJoinedDate']?.toString() ?? '',
     ),
@@ -60,8 +69,11 @@ class BranchDto extends Equatable {
     'latitude': latitude,
     'longitude': longitude,
     'status': status,
+    'managerId': managerId,
     'managerName': managerName,
     'managerEmail': managerEmail,
+    'managerPhone': managerPhone,
+    'managerStatus': managerStatus,
     'managerJoinedDate': managerJoinedDate?.toIso8601String(),
     'dailyRevenue': dailyRevenue,
     'staffCount': staffCount,
@@ -78,14 +90,41 @@ class BranchDto extends Equatable {
     latitude,
     longitude,
     status,
+    managerId,
     managerName,
     managerEmail,
+    managerPhone,
+    managerStatus,
     managerJoinedDate,
     dailyRevenue,
     staffCount,
     createdAt,
     updatedAt,
   ];
+}
+
+class BranchManagerAccountRequestDto extends Equatable {
+  final String fullName;
+  final String email;
+  final String? phone;
+  final String status;
+
+  const BranchManagerAccountRequestDto({
+    required this.fullName,
+    required this.email,
+    required this.status,
+    this.phone,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'fullName': fullName,
+    'email': email,
+    'phone': phone,
+    'status': status,
+  };
+
+  @override
+  List<Object?> get props => [fullName, email, phone, status];
 }
 
 class BranchRequestDto extends Equatable {

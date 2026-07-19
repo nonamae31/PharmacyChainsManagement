@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -26,15 +27,21 @@ public class BusinessAdminController : ControllerBase
     private readonly IBusinessAdminService _businessAdminService;
     private readonly MediatR.IMediator _mediator;
     private readonly PharmacyDbContext _context;
+    private readonly IPasswordHashingStrategy _passwordHashingStrategy;
+    private readonly IEmailAlertQueue _emailAlertQueue;
 
     public BusinessAdminController(
         IBusinessAdminService businessAdminService,
         MediatR.IMediator mediator,
-        PharmacyDbContext context)
+        PharmacyDbContext context,
+        IPasswordHashingStrategy passwordHashingStrategy,
+        IEmailAlertQueue emailAlertQueue)
     {
         _businessAdminService = businessAdminService;
         _mediator = mediator;
         _context = context;
+        _passwordHashingStrategy = passwordHashingStrategy;
+        _emailAlertQueue = emailAlertQueue;
     }
 
     [HttpGet("branches")]
@@ -84,9 +91,21 @@ public class BusinessAdminController : ControllerBase
                     .Where(user => !user.IsDeleted && user.Role.RoleCode == "BRANCH_MANAGER")
                     .Select(user => user.FullName)
                     .FirstOrDefault(),
+                ManagerId = branch.Users
+                    .Where(user => !user.IsDeleted && user.Role.RoleCode == "BRANCH_MANAGER")
+                    .Select(user => (Guid?)user.UserId)
+                    .FirstOrDefault(),
                 ManagerEmail = branch.Users
                     .Where(user => !user.IsDeleted && user.Role.RoleCode == "BRANCH_MANAGER")
                     .Select(user => user.Email)
+                    .FirstOrDefault(),
+                ManagerPhone = branch.Users
+                    .Where(user => !user.IsDeleted && user.Role.RoleCode == "BRANCH_MANAGER")
+                    .Select(user => user.Phone)
+                    .FirstOrDefault(),
+                ManagerStatus = branch.Users
+                    .Where(user => !user.IsDeleted && user.Role.RoleCode == "BRANCH_MANAGER")
+                    .Select(user => user.Status)
                     .FirstOrDefault(),
                 ManagerJoinedDate = branch.Users
                     .Where(user => !user.IsDeleted && user.Role.RoleCode == "BRANCH_MANAGER")
@@ -128,6 +147,181 @@ public class BusinessAdminController : ControllerBase
         };
 
         _context.Branches.Add(branch);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Ok(new { data = ToBranchResponse(branch) });
+    }
+
+    [HttpPost("branches/{branchId:guid}/manager-account")]
+    [Authorize(Roles = BusinessAdminDashboardRoles)]
+    public async Task<IActionResult> CreateBranchManagerAccount(
+        Guid branchId,
+        [FromBody] BranchManagerAccountUpsertRequest request,
+        CancellationToken cancellationToken)
+    {
+        var branch = await _context.Branches.FirstOrDefaultAsync(item => item.BranchId == branchId, cancellationToken);
+        if (branch == null)
+        {
+            return NotFound(new { message = "Branch not found." });
+        }
+
+        var validationMessage = ValidateBranchManagerAccount(request);
+        if (validationMessage != null)
+        {
+            return BadRequest(new { message = validationMessage });
+        }
+
+        var existingManager = await _context.Users
+            .Include(user => user.Role)
+            .FirstOrDefaultAsync(user => !user.IsDeleted
+                && user.BranchId == branchId
+                && user.Role.RoleCode == "BRANCH_MANAGER", cancellationToken);
+        if (existingManager != null)
+        {
+            return Conflict(new { message = "This branch already has a manager account." });
+        }
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var duplicateEmail = await _context.Users
+            .AnyAsync(user => !user.IsDeleted && user.Email == normalizedEmail, cancellationToken);
+        if (duplicateEmail)
+        {
+            return Conflict(new { message = "Email already exists in the system." });
+        }
+
+        var managerRole = await _context.Roles
+            .FirstOrDefaultAsync(role => role.RoleCode == "BRANCH_MANAGER" && role.IsActive, cancellationToken);
+        if (managerRole == null)
+        {
+            return BadRequest(new { message = "BRANCH_MANAGER role not found." });
+        }
+
+        var rawPassword = GenerateSecurePassword();
+        var now = DateTime.UtcNow;
+        var manager = new User
+        {
+            UserId = Guid.NewGuid(),
+            BranchId = branchId,
+            RoleId = managerRole.RoleId,
+            FullName = request.FullName.Trim(),
+            Email = normalizedEmail,
+            Phone = request.Phone?.Trim(),
+            PasswordHash = _passwordHashingStrategy.HashPassword(rawPassword),
+            Status = "ACTIVE",
+            CreatedAt = now,
+            UpdatedAt = now,
+            MustChangePassword = true
+        };
+
+        _context.Users.Add(manager);
+        await _context.SaveChangesAsync(cancellationToken);
+        await SendBranchManagerCredentialsAsync(manager, branch, rawPassword, cancellationToken);
+
+        return Ok(new { data = ToBranchResponse(branch, manager) });
+    }
+
+    [HttpPut("branches/{branchId:guid}/manager-account/{managerId:guid}")]
+    [Authorize(Roles = BusinessAdminDashboardRoles)]
+    public async Task<IActionResult> UpdateBranchManagerAccount(
+        Guid branchId,
+        Guid managerId,
+        [FromBody] BranchManagerAccountUpsertRequest request,
+        CancellationToken cancellationToken)
+    {
+        var manager = await _context.Users
+            .Include(user => user.Branch)
+            .Include(user => user.Role)
+            .FirstOrDefaultAsync(user => user.UserId == managerId
+                && user.BranchId == branchId
+                && !user.IsDeleted
+                && user.Role.RoleCode == "BRANCH_MANAGER", cancellationToken);
+        if (manager == null)
+        {
+            return NotFound(new { message = "Branch manager account not found." });
+        }
+
+        var validationMessage = ValidateBranchManagerAccount(request);
+        if (validationMessage != null)
+        {
+            return BadRequest(new { message = validationMessage });
+        }
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var duplicateEmail = await _context.Users
+            .AnyAsync(user => !user.IsDeleted
+                && user.UserId != managerId
+                && user.Email == normalizedEmail, cancellationToken);
+        if (duplicateEmail)
+        {
+            return Conflict(new { message = "Email already exists in the system." });
+        }
+
+        manager.FullName = request.FullName.Trim();
+        manager.Email = normalizedEmail;
+        manager.Phone = request.Phone?.Trim();
+        manager.Status = string.IsNullOrWhiteSpace(request.Status)
+            ? manager.Status
+            : request.Status.Trim().ToUpperInvariant();
+        manager.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Ok(new { data = ToBranchResponse(manager.Branch!, manager) });
+    }
+
+    [HttpPost("branches/{branchId:guid}/manager-account/{managerId:guid}/reset-password")]
+    [Authorize(Roles = BusinessAdminDashboardRoles)]
+    public async Task<IActionResult> ResetBranchManagerPassword(
+        Guid branchId,
+        Guid managerId,
+        CancellationToken cancellationToken)
+    {
+        var manager = await _context.Users
+            .Include(user => user.Branch)
+            .Include(user => user.Role)
+            .FirstOrDefaultAsync(user => user.UserId == managerId
+                && user.BranchId == branchId
+                && !user.IsDeleted
+                && user.Role.RoleCode == "BRANCH_MANAGER", cancellationToken);
+        if (manager == null)
+        {
+            return NotFound(new { message = "Branch manager account not found." });
+        }
+
+        var rawPassword = GenerateSecurePassword();
+        manager.PasswordHash = _passwordHashingStrategy.HashPassword(rawPassword);
+        manager.MustChangePassword = true;
+        manager.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+        await SendBranchManagerCredentialsAsync(manager, manager.Branch!, rawPassword, cancellationToken);
+
+        return Ok(new { data = ToBranchResponse(manager.Branch!, manager) });
+    }
+
+    [HttpDelete("branches/{branchId:guid}/manager-account/{managerId:guid}")]
+    [Authorize(Roles = BusinessAdminDashboardRoles)]
+    public async Task<IActionResult> DeleteBranchManagerAccount(
+        Guid branchId,
+        Guid managerId,
+        CancellationToken cancellationToken)
+    {
+        var manager = await _context.Users
+            .Include(user => user.Branch)
+            .Include(user => user.Role)
+            .FirstOrDefaultAsync(user => user.UserId == managerId
+                && user.BranchId == branchId
+                && !user.IsDeleted
+                && user.Role.RoleCode == "BRANCH_MANAGER", cancellationToken);
+        if (manager == null)
+        {
+            return NotFound(new { message = "Branch manager account not found." });
+        }
+
+        var branch = manager.Branch!;
+        manager.IsDeleted = true;
+        manager.Status = "DEACTIVATED";
+        manager.BranchId = null;
+        manager.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
 
         return Ok(new { data = ToBranchResponse(branch) });
@@ -586,11 +780,38 @@ public class BusinessAdminController : ControllerBase
             branch.Latitude,
             branch.Longitude,
             branch.Status,
+            ManagerId = (Guid?)null,
             ManagerName = (string?)null,
             ManagerEmail = (string?)null,
+            ManagerPhone = (string?)null,
+            ManagerStatus = (string?)null,
             ManagerJoinedDate = (DateTime?)null,
             DailyRevenue = 0m,
             StaffCount = 0,
+            branch.CreatedAt,
+            branch.UpdatedAt
+        };
+    }
+
+    private static object ToBranchResponse(Branch branch, User manager)
+    {
+        return new
+        {
+            branch.BranchId,
+            branch.BranchName,
+            branch.Address,
+            branch.Phone,
+            branch.Latitude,
+            branch.Longitude,
+            branch.Status,
+            ManagerId = manager.UserId,
+            ManagerName = manager.FullName,
+            ManagerEmail = manager.Email,
+            ManagerPhone = manager.Phone,
+            ManagerStatus = manager.Status,
+            ManagerJoinedDate = (DateTime?)manager.CreatedAt,
+            DailyRevenue = 0m,
+            StaffCount = branch.Users.Count(user => !user.IsDeleted),
             branch.CreatedAt,
             branch.UpdatedAt
         };
@@ -610,6 +831,64 @@ public class BusinessAdminController : ControllerBase
         decimal? Latitude,
         decimal? Longitude,
         string? Status);
+
+    public sealed record BranchManagerAccountUpsertRequest(
+        string FullName,
+        string Email,
+        string? Phone,
+        string? Status);
+
+    private static string? ValidateBranchManagerAccount(BranchManagerAccountUpsertRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            return "Manager name is required.";
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
+        {
+            return "Valid manager email is required.";
+        }
+
+        return null;
+    }
+
+    private static string GenerateSecurePassword(int length = 12)
+    {
+        const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
+        var result = new char[length];
+        using var rng = RandomNumberGenerator.Create();
+        var buffer = new byte[length];
+        rng.GetBytes(buffer);
+        for (var index = 0; index < length; index++)
+        {
+            result[index] = validChars[buffer[index] % validChars.Length];
+        }
+
+        return new string(result);
+    }
+
+    private async Task SendBranchManagerCredentialsAsync(
+        User manager,
+        Branch branch,
+        string rawPassword,
+        CancellationToken cancellationToken)
+    {
+        await _emailAlertQueue.EnqueueEmailAsync(new EmailMessage(
+            manager.Email,
+            "Branch Manager Account Created",
+            $"""
+            Hello {manager.FullName},
+
+            Your Branch Manager account for {branch.BranchName} has been created.
+
+            Login email: {manager.Email}
+            Temporary password: {rawPassword}
+
+            Please sign in and change your password after the first login.
+            """
+        ), cancellationToken);
+    }
 
     private sealed record MedicineInventoryResponse(
         Guid MedicineId,
