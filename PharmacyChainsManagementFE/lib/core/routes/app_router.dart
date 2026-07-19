@@ -12,6 +12,8 @@ import '../../features/business_admin/boundary/business_admin_shell_screen.dart'
 import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
 import '../../features/founder_admin/presentation/screens/founder_layout_screen.dart';
 import '../../features/inventory/boundary/inventory_dashboard_screen.dart';
+import '../../features/prescription/boundary/prescription_detail_screen.dart';
+import '../../features/prescription/boundary/prescription_list_screen.dart';
 import '../../features/staff_attendance/boundary/staff_attendance_screen.dart';
 import '../../features/staff_sales/boundary/invoice_detail_screen.dart';
 import '../../features/staff_sales/boundary/staff_sales_screens.dart';
@@ -29,10 +31,9 @@ class AppRouter {
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (BuildContext context, GoRouterState state) {
       final authState = authBloc.state;
-      final isLoggingIn = state.uri.toString() == '/login';
-      final isForgotPassword = state.uri.toString() == '/forgot-password';
+      final isLoggingIn = state.matchedLocation == '/login';
+      final isForgotPassword = state.matchedLocation == '/forgot-password';
       final isPublicAuthRoute = isLoggingIn || isForgotPassword;
-
       AppLogger.info(
         'AppRouter redirect triggered: '
         'route=${state.uri}, authState=$authState',
@@ -40,6 +41,10 @@ class AppRouter {
 
       if (authState is! AuthAuthenticated) {
         return isPublicAuthRoute ? null : '/login';
+      }
+
+      if (isLoggingIn) {
+        return null;
       }
 
       final role = authState.role.toUpperCase();
@@ -63,15 +68,14 @@ class AppRouter {
           break;
       }
 
-      if (isLoggingIn || isForgotPassword) {
+      if (isForgotPassword) {
         AppLogger.info('AppRouter navigating to home for role: $role');
         return targetPath;
       }
 
       final isStaffWorkspaceRoute =
           role == 'STAFF' && state.matchedLocation.startsWith('/staff/');
-      if (isPublicAuthRoute ||
-          (state.matchedLocation != targetPath && !isStaffWorkspaceRoute)) {
+      if (state.matchedLocation != targetPath && !isStaffWorkspaceRoute) {
         return targetPath;
       }
       return null;
@@ -127,6 +131,16 @@ class AppRouter {
         path: '/staff/invoices',
         pageBuilder: (context, state) =>
             _buildTransition(context, state, const InvoiceHistoryScreen()),
+      ),
+      GoRoute(
+        path: '/staff/prescriptions',
+        builder: (_, __) => const PrescriptionListScreen(),
+      ),
+      GoRoute(
+        path: '/staff/prescriptions/:prescriptionId',
+        builder: (_, state) => PrescriptionDetailScreen(
+          prescriptionId: state.pathParameters['prescriptionId']!,
+        ),
       ),
       GoRoute(
         path: '/staff/invoices/:invoiceId',

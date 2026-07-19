@@ -35,6 +35,8 @@ import 'features/staff_sales/network/staff_sales_api_client.dart';
 import 'features/staff_sales/control/staff_sales_bloc.dart';
 import 'features/staff_attendance/control/staff_attendance_bloc.dart';
 import 'features/staff_attendance/network/staff_attendance_api_client.dart';
+import 'features/prescription/control/prescription_bloc.dart';
+import 'features/prescription/network/prescription_api_client.dart';
 
 // Profile
 import 'features/profile/domain/repositories/founder_profile_repository.dart';
@@ -66,6 +68,7 @@ Future<void> init() async {
   );
   sl.registerFactory(() => StaffSalesBloc(apiClient: sl()));
   sl.registerFactory(() => StaffAttendanceBloc(apiClient: sl()));
+  sl.registerFactory(() => PrescriptionBloc(apiClient: sl()));
   sl.registerFactory(() => FounderProfileCubit(repository: sl()));
 
   // Bloc
@@ -102,6 +105,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<StaffAttendanceApiClient>(
     () => StaffAttendanceApiClient(sl()),
+  );
+  sl.registerLazySingleton<PrescriptionApiClient>(
+    () => PrescriptionApiClient(sl()),
   );
   sl.registerLazySingleton<FounderProfileRepository>(
     () => FounderProfileRepositoryImpl(dio: sl(), secureStorage: sl()),

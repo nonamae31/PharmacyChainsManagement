@@ -506,7 +506,7 @@ class _MetricGrid extends StatelessWidget {
         crossAxisCount: isDesktop ? 4 : 2,
         crossAxisSpacing: AppSpacing.md,
         mainAxisSpacing: AppSpacing.md,
-        mainAxisExtent: isDesktop ? 104 : 116,
+        mainAxisExtent: isDesktop ? 124 : 132,
       ),
       itemBuilder: (context, index) => _MetricCard(data: metrics[index]),
     );
@@ -546,7 +546,6 @@ class _MetricCard extends StatelessWidget {
     return _DashboardCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             data.label.toUpperCase(),
@@ -558,14 +557,20 @@ class _MetricCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              data.value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: const Color(0xFF0C3765),
-                fontWeight: FontWeight.w900,
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  data.value,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: const Color(0xFF0C3765),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
             ),
           ),

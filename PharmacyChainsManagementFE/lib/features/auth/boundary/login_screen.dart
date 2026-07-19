@@ -25,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
   bool _obscurePassword = true;
+  bool _loginRequested = false;
 
   void _submit() {
     FocusScope.of(context).unfocus();
@@ -38,12 +39,32 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
+    _loginRequested = true;
     context.read<AuthBloc>().add(LoginRequested(email, password));
   }
 
   void _onGoogleLogin() {
     FocusScope.of(context).unfocus();
+    _loginRequested = true;
     context.read<AuthBloc>().add(GoogleLoginRequested());
+  }
+
+  String _homePathForRole(String role) {
+    switch (role.toUpperCase()) {
+      case 'FOUNDER':
+        return '/founder_home';
+      case 'BUSINESS_ADMIN':
+        return '/business_admin_home';
+      case 'BRANCH_MANAGER':
+        return '/branch_manager_home';
+      case 'STAFF':
+        return '/staff_home';
+      case 'INVENTORY':
+      case 'INVENTORY_MANAGER':
+        return '/inventory_home';
+      default:
+        return '/login';
+    }
   }
 
   @override
@@ -52,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
+            _loginRequested = false;
             Fluttertoast.showToast(
               msg: state.message,
               toastLength: Toast.LENGTH_LONG,
@@ -60,28 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
               textColor: Colors.white,
               fontSize: 16,
             );
-          } else if (state is AuthAuthenticated) {
-            final role = state.role.toLowerCase();
-            switch (role) {
-              case 'founder':
-                context.go('/founder_home');
-                break;
-              case 'business_admin':
-                context.go('/business_admin_home');
-                break;
-              case 'branch_manager':
-                context.go('/branch_manager_home');
-                break;
-              case 'staff':
-                context.go('/staff_home');
-                break;
-              case 'inventory':
-              case 'inventory_manager':
-                context.go('/inventory_home');
-                break;
-              default:
-                context.go('/login');
-            }
+          } else if (state is AuthAuthenticated && _loginRequested) {
+            context.go(_homePathForRole(state.role));
           }
         },
         child: LayoutBuilder(

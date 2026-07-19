@@ -278,6 +278,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await SecureStorageService.clearAll();
       await FirebaseAuth.instance.signOut();
+      final googleSignIn = GoogleSignIn(
+        serverClientId:
+            '186467490377-boumjq0i8ms7uhkpqs4ejpbvpo2ol8fp.apps.googleusercontent.com',
+      );
+      try {
+        await googleSignIn.signOut();
+      } catch (e) {
+        AppLogger.error('Google sign-out skipped', e);
+      }
       AppLogger.info('Logout successful');
       emit(AuthInitial());
     } catch (e) {

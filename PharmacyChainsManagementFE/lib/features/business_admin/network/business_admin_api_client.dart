@@ -105,6 +105,57 @@ class BusinessAdminApiClient {
     return BranchDto.fromJson(_payload(response.data));
   }
 
+  Future<BranchDto> createBranchManagerAccount(
+    String branchId,
+    BranchManagerAccountRequestDto request,
+  ) async {
+    final response = await _request(
+      () => _dio.post(
+        '/api/v1/business-admin/branches/$branchId/manager-account',
+        data: request.toJson(),
+      ),
+    );
+    return BranchDto.fromJson(_payload(response.data));
+  }
+
+  Future<BranchDto> updateBranchManagerAccount(
+    String branchId,
+    String managerId,
+    BranchManagerAccountRequestDto request,
+  ) async {
+    final response = await _request(
+      () => _dio.put(
+        '/api/v1/business-admin/branches/$branchId/manager-account/$managerId',
+        data: request.toJson(),
+      ),
+    );
+    return BranchDto.fromJson(_payload(response.data));
+  }
+
+  Future<BranchDto> resetBranchManagerPassword(
+    String branchId,
+    String managerId,
+  ) async {
+    final response = await _request(
+      () => _dio.post(
+        '/api/v1/business-admin/branches/$branchId/manager-account/$managerId/reset-password',
+      ),
+    );
+    return BranchDto.fromJson(_payload(response.data));
+  }
+
+  Future<BranchDto> deleteBranchManagerAccount(
+    String branchId,
+    String managerId,
+  ) async {
+    final response = await _request(
+      () => _dio.delete(
+        '/api/v1/business-admin/branches/$branchId/manager-account/$managerId',
+      ),
+    );
+    return BranchDto.fromJson(_payload(response.data));
+  }
+
   Future<MedicineStatisticsDto> fetchMedicineStatistics(
     MedicineStatisticsFilterDto filter,
   ) async {

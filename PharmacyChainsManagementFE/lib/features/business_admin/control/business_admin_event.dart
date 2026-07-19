@@ -70,6 +70,61 @@ final class BranchUpdateSubmitted extends BusinessAdminEvent {
   List<Object?> get props => [branchId, request];
 }
 
+final class BranchManagerAccountCreateSubmitted extends BusinessAdminEvent {
+  final String branchId;
+  final BranchManagerAccountRequestDto request;
+
+  const BranchManagerAccountCreateSubmitted({
+    required this.branchId,
+    required this.request,
+  });
+
+  @override
+  List<Object?> get props => [branchId, request];
+}
+
+final class BranchManagerAccountUpdateSubmitted extends BusinessAdminEvent {
+  final String branchId;
+  final String managerId;
+  final BranchManagerAccountRequestDto request;
+
+  const BranchManagerAccountUpdateSubmitted({
+    required this.branchId,
+    required this.managerId,
+    required this.request,
+  });
+
+  @override
+  List<Object?> get props => [branchId, managerId, request];
+}
+
+final class BranchManagerAccountPasswordResetRequested
+    extends BusinessAdminEvent {
+  final String branchId;
+  final String managerId;
+
+  const BranchManagerAccountPasswordResetRequested({
+    required this.branchId,
+    required this.managerId,
+  });
+
+  @override
+  List<Object?> get props => [branchId, managerId];
+}
+
+final class BranchManagerAccountDeleteRequested extends BusinessAdminEvent {
+  final String branchId;
+  final String managerId;
+
+  const BranchManagerAccountDeleteRequested({
+    required this.branchId,
+    required this.managerId,
+  });
+
+  @override
+  List<Object?> get props => [branchId, managerId];
+}
+
 final class MedicineStatisticsFetchRequested extends BusinessAdminEvent {
   final MedicineStatisticsFilterDto filter;
 

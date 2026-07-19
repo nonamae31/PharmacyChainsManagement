@@ -69,6 +69,12 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
             onEditBranch: (branch) =>
                 _showBranchDialog(context, branch: branch),
             onAuthorizeBranch: (branch) => _authorizeBranch(context, branch),
+            onManageAccount: (branch) =>
+                _showBranchManagerAccountDialog(context, branch: branch),
+            onResetPassword: (branch) =>
+                _resetBranchManagerPassword(context, branch),
+            onDeleteAccount: (branch) =>
+                _deleteBranchManagerAccount(context, branch),
           );
         }
         return AppEmptyState(onRetry: _fetchBranches);
@@ -100,6 +106,54 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
     );
   }
 
+  void _resetBranchManagerPassword(BuildContext context, BranchDto branch) {
+    final managerId = branch.managerId;
+    if (managerId == null || managerId.isEmpty) return;
+    context.read<BusinessAdminBloc>().add(
+      BranchManagerAccountPasswordResetRequested(
+        branchId: branch.branchId,
+        managerId: managerId,
+      ),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Temporary password email requested.')),
+    );
+  }
+
+  Future<void> _deleteBranchManagerAccount(
+    BuildContext context,
+    BranchDto branch,
+  ) async {
+    final managerId = branch.managerId;
+    if (managerId == null || managerId.isEmpty) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete branch manager account'),
+        content: Text(
+          'Delete ${_managerName(branch)} from ${branch.branchName}? This account will be deactivated and removed from the branch.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    context.read<BusinessAdminBloc>().add(
+      BranchManagerAccountDeleteRequested(
+        branchId: branch.branchId,
+        managerId: managerId,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -119,6 +173,9 @@ class _BranchNetworkContent extends StatelessWidget {
   final VoidCallback onAddBranch;
   final ValueChanged<BranchDto> onEditBranch;
   final ValueChanged<BranchDto> onAuthorizeBranch;
+  final ValueChanged<BranchDto> onManageAccount;
+  final ValueChanged<BranchDto> onResetPassword;
+  final ValueChanged<BranchDto> onDeleteAccount;
 
   const _BranchNetworkContent({
     required this.branches,
@@ -132,6 +189,9 @@ class _BranchNetworkContent extends StatelessWidget {
     required this.onAddBranch,
     required this.onEditBranch,
     required this.onAuthorizeBranch,
+    required this.onManageAccount,
+    required this.onResetPassword,
+    required this.onDeleteAccount,
   });
 
   @override
@@ -166,6 +226,9 @@ class _BranchNetworkContent extends StatelessWidget {
                       viewMode: viewMode,
                       onBranchSelected: onBranchSelected,
                       onEditBranch: onEditBranch,
+                      onManageAccount: onManageAccount,
+                      onResetPassword: onResetPassword,
+                      onDeleteAccount: onDeleteAccount,
                       onOpenMaps: (branch) =>
                           _openBranchInGoogleMaps(context, branch),
                     ),
@@ -188,6 +251,9 @@ class _BranchNetworkContent extends StatelessWidget {
                 viewMode: viewMode,
                 onBranchSelected: onBranchSelected,
                 onEditBranch: onEditBranch,
+                onManageAccount: onManageAccount,
+                onResetPassword: onResetPassword,
+                onDeleteAccount: onDeleteAccount,
                 onOpenMaps: (branch) =>
                     _openBranchInGoogleMaps(context, branch),
               ),
@@ -203,6 +269,9 @@ class _BranchNetworkContent extends StatelessWidget {
               branches: branches,
               onAuthorizeBranch: onAuthorizeBranch,
               onEditBranch: onEditBranch,
+              onManageAccount: onManageAccount,
+              onResetPassword: onResetPassword,
+              onDeleteAccount: onDeleteAccount,
             ),
           ],
         );
@@ -332,6 +401,9 @@ class _BranchCanvas extends StatelessWidget {
   final _BranchViewMode viewMode;
   final ValueChanged<BranchDto> onBranchSelected;
   final ValueChanged<BranchDto> onEditBranch;
+  final ValueChanged<BranchDto> onManageAccount;
+  final ValueChanged<BranchDto> onResetPassword;
+  final ValueChanged<BranchDto> onDeleteAccount;
   final ValueChanged<BranchDto> onOpenMaps;
 
   const _BranchCanvas({
@@ -340,6 +412,9 @@ class _BranchCanvas extends StatelessWidget {
     required this.viewMode,
     required this.onBranchSelected,
     required this.onEditBranch,
+    required this.onManageAccount,
+    required this.onResetPassword,
+    required this.onDeleteAccount,
     required this.onOpenMaps,
   });
 
@@ -370,7 +445,7 @@ class _BranchCanvas extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: AppSpacing.md,
             mainAxisSpacing: AppSpacing.md,
-            childAspectRatio: crossAxisCount == 2 ? 1.65 : 2.25,
+            childAspectRatio: crossAxisCount == 2 ? 1.65 : 1.6,
           ),
           itemBuilder: (context, index) {
             final branch = branches[index];
@@ -379,6 +454,9 @@ class _BranchCanvas extends StatelessWidget {
               selected: branch.branchId == selectedBranch?.branchId,
               onTap: () => onBranchSelected(branch),
               onEdit: () => onEditBranch(branch),
+              onManageAccount: () => onManageAccount(branch),
+              onResetPassword: () => onResetPassword(branch),
+              onDeleteAccount: () => onDeleteAccount(branch),
             );
           },
         );
@@ -392,12 +470,18 @@ class _BranchCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback onEdit;
+  final VoidCallback onManageAccount;
+  final VoidCallback onResetPassword;
+  final VoidCallback onDeleteAccount;
 
   const _BranchCard({
     required this.branch,
     required this.selected,
     required this.onTap,
     required this.onEdit,
+    required this.onManageAccount,
+    required this.onResetPassword,
+    required this.onDeleteAccount,
   });
 
   @override
@@ -407,7 +491,7 @@ class _BranchCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFFEAF4FF) : Colors.white,
           border: Border.all(
@@ -433,7 +517,13 @@ class _BranchCard extends StatelessWidget {
                   ),
                 ),
                 _StatusPill(status: status),
-                _BranchMenu(branch: branch, onEdit: onEdit),
+                _BranchMenu(
+                  branch: branch,
+                  onEdit: onEdit,
+                  onManageAccount: onManageAccount,
+                  onResetPassword: onResetPassword,
+                  onDeleteAccount: onDeleteAccount,
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -441,21 +531,26 @@ class _BranchCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Text(
               '${_managerName(branch)} | ${branch.phone ?? AppStrings.notAvailable}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
             ),
-            const Spacer(),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                _BranchMetric(
-                  label: 'Daily Revenue',
-                  value: _money(branch.dailyRevenue ?? 0),
+                Expanded(
+                  child: _BranchMetric(
+                    label: 'Daily Revenue',
+                    value: _money(branch.dailyRevenue ?? 0),
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: AppSpacing.md),
                 _BranchMetric(
                   label: 'Staff',
                   value: (branch.staffCount ?? 0).toString(),
+                  alignEnd: true,
                 ),
               ],
             ),
@@ -601,11 +696,17 @@ class _ManagerDirectory extends StatelessWidget {
   final List<BranchDto> branches;
   final ValueChanged<BranchDto> onAuthorizeBranch;
   final ValueChanged<BranchDto> onEditBranch;
+  final ValueChanged<BranchDto> onManageAccount;
+  final ValueChanged<BranchDto> onResetPassword;
+  final ValueChanged<BranchDto> onDeleteAccount;
 
   const _ManagerDirectory({
     required this.branches,
     required this.onAuthorizeBranch,
     required this.onEditBranch,
+    required this.onManageAccount,
+    required this.onResetPassword,
+    required this.onDeleteAccount,
   });
 
   @override
@@ -658,6 +759,9 @@ class _ManagerDirectory extends StatelessWidget {
                             branch: branch,
                             onAuthorizeBranch: onAuthorizeBranch,
                             onEditBranch: onEditBranch,
+                            onManageAccount: onManageAccount,
+                            onResetPassword: onResetPassword,
+                            onDeleteAccount: onDeleteAccount,
                           ),
                         ),
                       ],
@@ -788,11 +892,17 @@ class _DirectoryActions extends StatelessWidget {
   final BranchDto branch;
   final ValueChanged<BranchDto> onAuthorizeBranch;
   final ValueChanged<BranchDto> onEditBranch;
+  final ValueChanged<BranchDto> onManageAccount;
+  final ValueChanged<BranchDto> onResetPassword;
+  final ValueChanged<BranchDto> onDeleteAccount;
 
   const _DirectoryActions({
     required this.branch,
     required this.onAuthorizeBranch,
     required this.onEditBranch,
+    required this.onManageAccount,
+    required this.onResetPassword,
+    required this.onDeleteAccount,
   });
 
   @override
@@ -803,15 +913,30 @@ class _DirectoryActions extends StatelessWidget {
         child: const Text('Approve'),
       );
     }
-    return _BranchMenu(branch: branch, onEdit: () => onEditBranch(branch));
+    return _BranchMenu(
+      branch: branch,
+      onEdit: () => onEditBranch(branch),
+      onManageAccount: () => onManageAccount(branch),
+      onResetPassword: () => onResetPassword(branch),
+      onDeleteAccount: () => onDeleteAccount(branch),
+    );
   }
 }
 
 class _BranchMenu extends StatelessWidget {
   final BranchDto branch;
   final VoidCallback onEdit;
+  final VoidCallback onManageAccount;
+  final VoidCallback onResetPassword;
+  final VoidCallback onDeleteAccount;
 
-  const _BranchMenu({required this.branch, required this.onEdit});
+  const _BranchMenu({
+    required this.branch,
+    required this.onEdit,
+    required this.onManageAccount,
+    required this.onResetPassword,
+    required this.onDeleteAccount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -819,6 +944,9 @@ class _BranchMenu extends StatelessWidget {
       tooltip: 'Branch actions',
       onSelected: (value) async {
         if (value == 'edit') onEdit();
+        if (value == 'account') onManageAccount();
+        if (value == 'reset') onResetPassword();
+        if (value == 'deleteAccount') onDeleteAccount();
         if (value == 'copy') {
           await Clipboard.setData(ClipboardData(text: branch.branchId));
           if (!context.mounted) return;
@@ -827,9 +955,27 @@ class _BranchMenu extends StatelessWidget {
           ).showSnackBar(const SnackBar(content: Text('Branch id copied')));
         }
       },
-      itemBuilder: (context) => const [
-        PopupMenuItem(value: 'edit', child: Text('Edit branch')),
-        PopupMenuItem(value: 'copy', child: Text('Copy branch id')),
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'edit', child: Text('Edit branch')),
+        PopupMenuItem(
+          value: 'account',
+          child: Text(
+            branch.managerId == null
+                ? 'Create manager account'
+                : 'Edit manager account',
+          ),
+        ),
+        if (branch.managerId != null)
+          const PopupMenuItem(
+            value: 'reset',
+            child: Text('Send password email'),
+          ),
+        if (branch.managerId != null)
+          const PopupMenuItem(
+            value: 'deleteAccount',
+            child: Text('Delete manager account'),
+          ),
+        const PopupMenuItem(value: 'copy', child: Text('Copy branch id')),
       ],
       icon: const Icon(Icons.more_vert),
     );
@@ -840,28 +986,47 @@ class _BranchMetric extends StatelessWidget {
   final String label;
   final String value;
   final String? accent;
+  final bool alignEnd;
 
-  const _BranchMetric({required this.label, required this.value, this.accent});
+  const _BranchMetric({
+    required this.label,
+    required this.value,
+    this.accent,
+    this.alignEnd = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: AppColors.textMuted,
             fontWeight: FontWeight.w800,
           ),
         ),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: alignEnd
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
             ),
             if (accent != null) ...[
               const SizedBox(width: AppSpacing.xs),
@@ -1149,4 +1314,199 @@ void _showBranchDialog(BuildContext context, {BranchDto? branch}) {
       ],
     ),
   );
+}
+
+void _showBranchManagerAccountDialog(
+  BuildContext context, {
+  required BranchDto branch,
+}) {
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => _BranchManagerAccountDialog(branch: branch),
+  );
+}
+
+class _BranchManagerAccountDialog extends StatefulWidget {
+  final BranchDto branch;
+
+  const _BranchManagerAccountDialog({required this.branch});
+
+  @override
+  State<_BranchManagerAccountDialog> createState() =>
+      _BranchManagerAccountDialogState();
+}
+
+class _BranchManagerAccountDialogState
+    extends State<_BranchManagerAccountDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+  late String _status;
+
+  BranchDto get branch => widget.branch;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: branch.managerName ?? '');
+    _emailController = TextEditingController(text: branch.managerEmail ?? '');
+    _phoneController = TextEditingController(text: branch.managerPhone ?? '');
+    _status = branch.managerStatus?.trim().isNotEmpty == true
+        ? branch.managerStatus!.toUpperCase()
+        : 'ACTIVE';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final managerId = branch.managerId;
+
+    return AlertDialog(
+      title: Text(
+        managerId == null
+            ? 'Create branch manager account'
+            : 'Edit branch manager account',
+      ),
+      content: SizedBox(
+        width: 460,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    branch.branchName,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full name',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Full name is required'
+                      : null,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    final email = value?.trim() ?? '';
+                    final valid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                    if (email.isEmpty) return 'Email is required';
+                    if (!valid.hasMatch(email)) return 'Email is invalid';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<String>(
+                  initialValue: _status,
+                  decoration: const InputDecoration(
+                    labelText: 'Status',
+                    prefixIcon: Icon(Icons.verified_user_outlined),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
+                    DropdownMenuItem(
+                      value: 'INACTIVE',
+                      child: Text('Inactive'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'DEACTIVATED',
+                      child: Text('Deactivated'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => _status = value);
+                  },
+                ),
+                if (managerId == null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'A temporary password will be generated and sent to this email.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: const Text(AppStrings.saveChanges),
+        ),
+      ],
+    );
+  }
+
+  void _save() {
+    if (_formKey.currentState?.validate() != true) return;
+    final managerId = branch.managerId;
+    final request = BranchManagerAccountRequestDto(
+      fullName: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      phone: _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim(),
+      status: _status,
+    );
+    final bloc = context.read<BusinessAdminBloc>();
+    if (managerId == null) {
+      bloc.add(
+        BranchManagerAccountCreateSubmitted(
+          branchId: branch.branchId,
+          request: request,
+        ),
+      );
+    } else {
+      bloc.add(
+        BranchManagerAccountUpdateSubmitted(
+          branchId: branch.branchId,
+          managerId: managerId,
+          request: request,
+        ),
+      );
+    }
+    Navigator.of(context).pop();
+  }
 }

@@ -52,6 +52,12 @@ class StaffWorkspaceShell extends StatelessWidget {
       '/staff/invoices',
     ),
     (
+      StaffWorkspaceSection.prescriptions,
+      'Prescriptions',
+      Icons.description_outlined,
+      '/staff/prescriptions',
+    ),
+    (
       StaffWorkspaceSection.payments,
       'Payments',
       Icons.payments_outlined,

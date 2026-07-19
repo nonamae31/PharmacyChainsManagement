@@ -284,6 +284,7 @@ class _ExportFormWidgetState extends State<ExportFormWidget> {
     Widget previewContent = _isComplete
         ? ReportPreviewCard(
             branchId: _branchId!,
+            branchName: _branches.firstWhere((b) => b['id'].toString() == (_branchId == '00000000-0000-0000-0000-000000000000' ? '' : _branchId), orElse: () => {'name': 'All Branches'})['name'].toString(),
             dateRange: _dateRange!,
             format: _format,
           )
@@ -320,12 +321,14 @@ class _ExportFormWidgetState extends State<ExportFormWidget> {
 
 class ReportPreviewCard extends StatefulWidget {
   final String branchId;
+  final String branchName;
   final DateTimeRange dateRange;
   final String format;
 
   const ReportPreviewCard({
     super.key,
     required this.branchId,
+    required this.branchName,
     required this.dateRange,
     required this.format,
   });
@@ -410,7 +413,7 @@ class _ReportPreviewCardState extends State<ReportPreviewCard> {
               ],
             ),
             const Divider(height: 24),
-            Text('Branch: ${widget.branchId == '00000000-0000-0000-0000-000000000000' ? 'All Branches' : widget.branchId}', style: const TextStyle(fontWeight: FontWeight.w500)),
+            Text('Branch: ${widget.branchName}', style: const TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Text(
               'Period: ${DateFormat('MMM dd').format(widget.dateRange.start)} - ${DateFormat('MMM dd, yyyy').format(widget.dateRange.end)}',
