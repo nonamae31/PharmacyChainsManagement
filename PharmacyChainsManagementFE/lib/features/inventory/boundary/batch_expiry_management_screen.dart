@@ -170,12 +170,15 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 12,
               children: [
                 const Text('Active Lot & Serialization Register (Danh mục Lô & Serial Đang Lưu Hành)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 Container(
-                  width: 380,
+                  constraints: const BoxConstraints(maxWidth: 380),
                   height: 42,
                   decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.border)),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -187,7 +190,7 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                         child: TextField(
                           controller: _searchController,
                           onChanged: (val) => setState(() => _searchQuery = val),
-                          decoration: const InputDecoration(hintText: 'Enter Lot No, SKU or Medicine Name (Nhập số Lot, SKU hoặc Tên thuốc)...', hintStyle: TextStyle(color: AppColors.textHint, fontSize: 12), border: InputBorder.none, isDense: true),
+                          decoration: const InputDecoration(hintText: 'Enter Lot No, SKU or Medicine Name...', hintStyle: TextStyle(color: AppColors.textHint, fontSize: 12), border: InputBorder.none, isDense: true),
                         ),
                       ),
                     ],
@@ -209,11 +212,14 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 12,
+                        runSpacing: 8,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -221,12 +227,14 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                                 child: Text(item['lotNo'], style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 14)),
                               ),
                               const SizedBox(width: 12),
-                              Text('${item['medicineName']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                              Flexible(
+                                child: Text('${item['medicineName']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                              ),
                             ],
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(color: isNearExp ? AppColors.error.withOpacity(0.1) : AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                            decoration: BoxDecoration(color: isNearExp ? AppColors.error.withValues(alpha: 0.1) : AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                             child: Text(item['recallStatus'], style: TextStyle(color: isNearExp ? AppColors.error : AppColors.success, fontWeight: FontWeight.bold, fontSize: 12)),
                           ),
                         ],
@@ -244,8 +252,11 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 16,
+                        runSpacing: 12,
                         children: [
                           Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
@@ -256,14 +267,15 @@ class _BatchExpiryManagementScreenState extends State<BatchExpiryManagementScree
                               Text('Warehouse Location: ${item['warehouseZone']}  |  COA: ${item['coaStatus']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                             ],
                           ),
-                          Row(
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
                               OutlinedButton.icon(
                                 onPressed: () => _showTraceabilityModal(item),
                                 icon: const Icon(Icons.account_tree_outlined, size: 16),
                                 label: const Text('Traceability Tree (Genealogy)'),
                               ),
-                              const SizedBox(width: 8),
                               if (!item['recallStatus'].toString().contains('QUARANTINED'))
                                 ElevatedButton.icon(
                                   onPressed: () => _triggerRecall(idx),

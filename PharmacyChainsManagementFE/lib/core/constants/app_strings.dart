@@ -86,6 +86,8 @@ class AppStrings {
   static const String bank = 'Bank';
   static const String accountName = 'Account name';
   static const String accountNumber = 'Account number';
+  static const String invoiceAmount = 'Invoice amount';
+  static const String exchangeRate = 'Exchange rate';
   static const String transferAmount = 'Transfer amount';
   static const String transferContent = 'Transfer content';
   static const String expiresIn = 'Expires in';

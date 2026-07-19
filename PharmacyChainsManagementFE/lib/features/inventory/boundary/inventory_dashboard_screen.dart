@@ -11,6 +11,7 @@ import '../control/stocktake_bloc.dart';
 import '../control/receive_goods_bloc.dart';
 import '../control/issue_stock_bloc.dart';
 import 'widgets/inventory_summary_card.dart';
+import 'widgets/verification_photos_modal.dart';
 import 'qc_inspection_screen.dart';
 import 'internal_transfer_approval_screen.dart';
 import 'stocktake_screen.dart';
@@ -652,108 +653,122 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Interactive Search Box
-          Container(
-            width: 320,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Search SKU or Product...',
-                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                      border: InputBorder.none,
-                      isDense: true,
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? InkWell(
-                              onTap: () {
-                                _searchController.clear();
-                                setState(() {
-                                  _searchQuery = '';
-                                });
-                              },
-                              child: const Icon(Icons.clear, size: 16, color: Color(0xFF94A3B8)),
-                            )
-                          : null,
-                    ),
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
-                  ),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-              ],
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search SKU or Product...',
+                          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                          border: InputBorder.none,
+                          isDense: true,
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? InkWell(
+                                  onTap: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                  child: const Icon(Icons.clear, size: 16, color: Color(0xFF94A3B8)),
+                                )
+                              : null,
+                        ),
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
 
           Flexible(
-            child: const Text(
-              'Pharmacy Chains Management • WMS Portal',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-              overflow: TextOverflow.ellipsis,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Pharmacy Chains Management • WMS Portal',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
 
           // Right Controls & User Info
-          Row(
-            children: [
-              Stack(
+          Flexible(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined, color: Color(0xFF64748B)),
-                    onPressed: _showNotificationsDialog,
-                  ),
-                  Positioned(
-                    right: 12,
-                    top: 12,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              Container(height: 24, width: 1, color: const Color(0xFFE2E8F0)),
-              const SizedBox(width: 16),
-              InkWell(
-                onTap: _showUserProfileDialog,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
+                  Stack(
                     children: [
-                      Text(_userName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF334155))),
-                      const SizedBox(width: 12),
-                      const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Color(0xFF3B82F6),
-                        child: Icon(Icons.person, color: Colors.white, size: 20),
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, color: Color(0xFF64748B)),
+                        onPressed: _showNotificationsDialog,
+                      ),
+                      Positioned(
+                        right: 12,
+                        top: 12,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                        ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  Container(height: 24, width: 1, color: const Color(0xFFE2E8F0)),
+                  const SizedBox(width: 16),
+                  InkWell(
+                    onTap: _showUserProfileDialog,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_userName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF334155))),
+                          const SizedBox(width: 12),
+                          const CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Color(0xFF3B82F6),
+                            child: Icon(Icons.person, color: Colors.white, size: 20),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    key: const Key('desktopTopBarLogoutButton'),
+                    tooltip: 'Đăng xuất (Logout)',
+                    icon: const Icon(Icons.logout_outlined, color: Color(0xFFEF4444)),
+                    onPressed: _confirmAndLogout,
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                key: const Key('desktopTopBarLogoutButton'),
-                tooltip: 'Đăng xuất (Logout)',
-                icon: const Icon(Icons.logout_outlined, color: Color(0xFFEF4444)),
-                onPressed: _confirmAndLogout,
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -814,16 +829,21 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 16,
+          runSpacing: 12,
           children: [
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 Text(
                   _getMenuTitle(_selectedIndex),
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
-                const SizedBox(width: 12),
                 if (_statusFilter != 'All')
                   Chip(
                     label: Text('Filter: $_statusFilter', style: const TextStyle(fontSize: 12)),
@@ -833,7 +853,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   ),
               ],
             ),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 OutlinedButton.icon(
                   onPressed: _showFilterDialog,
@@ -844,7 +866,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     side: const BorderSide(color: Color(0xFFCBD5E1)),
                   ),
                 ),
-                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _showAddSkuDialog,
                   icon: const Icon(Icons.add, size: 18),
@@ -870,11 +891,16 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 12,
               children: [
                 Text('$selectedCount SKU(s) selected for batch action', style: const TextStyle(color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600)),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     ElevatedButton(
                       onPressed: () {
@@ -892,7 +918,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
                       child: const Text('Bulk Reorder (+200)'),
                     ),
-                    const SizedBox(width: 8),
                     OutlinedButton(
                       onPressed: () => setState(() {
                         for (var item in _inventoryList) {
@@ -1213,72 +1238,25 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     );
   }
 
-    void _showProofImageSelectorModal(BuildContext parentCtx, Map<String, dynamic> item, StateSetter setDialogState) {
+  void _showProofImageSelectorModal(BuildContext parentCtx, Map<String, dynamic> item, StateSetter setDialogState) {
     showModalBottomSheet(
       context: parentCtx,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (selectorCtx) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.camera_alt, color: Color(0xFF2563EB), size: 24),
-                SizedBox(width: 10),
-                Text('📸 Chọn ảnh minh chứng gửi cho Business Admin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Text('Vui lòng chọn hình ảnh thực tế Phiếu giao hàng hoặc Kiện hàng để xác nhận số liệu nhập kho chuẩn xác:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.receipt_long_outlined, color: Color(0xFF2563EB)),
-              ),
-              title: const Text('📄 Phiếu giao hàng & Hóa đơn VAT nhà cung cấp', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('phieu_giao_hang_GSK_batch081.jpg • 1.2 MB', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                setDialogState(() => item['proofImage'] = 'phieu_giao_hang_GSK_batch081.jpg');
-                setState(() => item['proofImage'] = 'phieu_giao_hang_GSK_batch081.jpg');
-                Navigator.pop(selectorCtx);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF10B981)),
-              ),
-              title: const Text('📦 Kiện thuốc nguyên seal & Mã vạch GS1 DataMatrix', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('thung_panadol_inbound_box.jpg • 2.4 MB', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                setDialogState(() => item['proofImage'] = 'thung_panadol_inbound_box.jpg');
-                setState(() => item['proofImage'] = 'thung_panadol_inbound_box.jpg');
-                Navigator.pop(selectorCtx);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.verified_user_outlined, color: Color(0xFFEF4444)),
-              ),
-              title: const Text('🔬 Phiếu kiểm nghiệm chất lượng COA từ nhà máy', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('tem_kiem_dinh_COA_lab.jpg • 1.8 MB', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                setDialogState(() => item['proofImage'] = 'tem_kiem_dinh_COA_lab.jpg');
-                setState(() => item['proofImage'] = 'tem_kiem_dinh_COA_lab.jpg');
-                Navigator.pop(selectorCtx);
-              },
-            ),
-          ],
-        ),
+      builder: (selectorCtx) => VerificationPhotosModal(
+        medicineTitle: item['name']?.toString() ?? item['medicine']?.toString() ?? 'Sản phẩm kho GSP',
+        initialPhotos: item['verificationPhotos'] is Map ? Map<String, dynamic>.from(item['verificationPhotos'] as Map) : null,
+        onSubmitted: (photos) {
+          setDialogState(() {
+            item['verificationPhotos'] = photos;
+            item['proofImage'] = 'Đã gửi đủ 3 ảnh xác minh (Front, Back, Label)';
+          });
+          setState(() {
+            item['verificationPhotos'] = photos;
+            item['proofImage'] = 'Đã gửi đủ 3 ảnh xác minh (Front, Back, Label)';
+          });
+          _showToast('📸 Đã đính kèm 3 ảnh xác minh (Mặt trước, Mặt sau, Tem nhãn) cho Business Admin!');
+        },
       ),
     );
   }
@@ -1364,16 +1342,22 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 12,
+                          runSpacing: 8,
                           children: [
                             Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(item['proofImage'] != null ? Icons.verified : Icons.camera_alt, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF2563EB), size: 20),
+                                Icon(item['proofImage'] != null ? Icons.verified : Icons.photo_library, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF2563EB), size: 20),
                                 const SizedBox(width: 8),
-                                Text(
-                                  item['proofImage'] != null ? '📸 Ảnh minh chứng xác minh số liệu' : '📸 Gửi ảnh xác minh cho Business Admin',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF1E293B)),
+                                Flexible(
+                                  child: Text(
+                                    item['proofImage'] != null ? '🖼️ Ảnh minh chứng từ thư viện' : '🖼️ Gửi ảnh xác minh từ thư viện',
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: item['proofImage'] != null ? const Color(0xFF16A34A) : const Color(0xFF1E293B)),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1394,22 +1378,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         ),
                         const SizedBox(height: 12),
                         if (item['proofImage'] == null) ...[
-                          Row(
-                            children: [
-                              ElevatedButton.icon(
-                                onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
-                                icon: const Icon(Icons.camera_alt, size: 16),
-                                label: const Text('📷 Chụp ảnh thực tế'),
-                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
-                              ),
-                              const SizedBox(width: 10),
-                              OutlinedButton.icon(
-                                onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
-                                icon: const Icon(Icons.folder_open, size: 16),
-                                label: const Text('📁 Chọn Phiếu / COA'),
-                                style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
-                              ),
-                            ],
+                          ElevatedButton.icon(
+                            onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
+                            icon: const Icon(Icons.photo_library, size: 18),
+                            label: const Text('🖼️ Gửi ảnh xác minh (3 góc ảnh từ thư viện)', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
                           ),
                         ] else ...[
                           Container(
@@ -1864,10 +1837,15 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFECACA))),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 12,
+                      runSpacing: 8,
                       children: [
-                        Text('🚨 [CRITICAL STOCK] ${item['name']} (${item['sku']}) - Only ${item['currentStock']} left! (ROP: ${item['reorderPt']})', style: const TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.w600)),
+                        Flexible(
+                          child: Text('🚨 [CRITICAL STOCK] ${item['name']} (${item['sku']}) - Only ${item['currentStock']} left! (ROP: ${item['reorderPt']})', style: const TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.w600)),
+                        ),
                         ElevatedButton(
                           onPressed: () => _showQuickOrderDialog(item),
                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
@@ -2033,9 +2011,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           OutlinedButton.icon(
-                            onPressed: () => _showQuickOrderDialog(item),
-                            icon: Icon(item['proofImage'] != null ? Icons.photo_camera : Icons.add_a_photo_outlined, size: 16, color: const Color(0xFF2563EB)),
-                            label: Text(item['proofImage'] != null ? '📸 Đổi ảnh xác minh' : '📸 Gửi ảnh xác minh'),
+                            onPressed: () => _showProofImageSelectorModal(context, item, (fn) => setState(fn)),
+                            icon: Icon(item['proofImage'] != null ? Icons.photo_library : Icons.add_photo_alternate_outlined, size: 16, color: const Color(0xFF2563EB)),
+                            label: Text(item['proofImage'] != null ? '🖼️ Đổi ảnh xác minh' : '🖼️ Gửi ảnh xác minh'),
                             style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), side: const BorderSide(color: Color(0xFF2563EB))),
                           ),
                           ElevatedButton.icon(

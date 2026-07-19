@@ -689,9 +689,23 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnType("decimal(12, 2)")
                         .HasColumnName("amount");
 
+                    b.Property<string>("BaseCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("base_currency");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<decimal?>("ExchangeRate")
+                        .HasColumnType("decimal(18, 4)")
+                        .HasColumnName("exchange_rate");
+
+                    b.Property<decimal?>("ExpectedAmountVnd")
+                        .HasColumnType("decimal(18, 0)")
+                        .HasColumnName("expected_amount_vnd");
 
                     b.Property<short?>("GatewayId")
                         .HasColumnType("smallint")
@@ -721,6 +735,16 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("payment_status");
+
+                    b.Property<decimal?>("ReceivedAmountVnd")
+                        .HasColumnType("decimal(18, 0)")
+                        .HasColumnName("received_amount_vnd");
+
+                    b.Property<string>("SettlementCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("settlement_currency");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

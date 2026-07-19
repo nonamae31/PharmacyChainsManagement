@@ -1,0 +1,157 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram id="UC10_ClassDiagram" name="UC10_ClassDiagram">
+    <mxGraphModel dx="1582" dy="992" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- UI Screen Class -->
+        <mxCell id="screen" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryReportScreen&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;boundary&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="360" x="40" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_attr" parent="screen" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- selectedBranchId: String&lt;br&gt;- reportType: String (&quot;VALUATION&quot; | &quot;TURNOVER&quot; | &quot;GSP&quot;)&lt;br&gt;- exportFormat: String (&quot;CSV&quot; | &quot;EXCEL&quot;)" vertex="1">
+          <mxGeometry height="55" width="360" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_line" parent="screen" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_op" parent="screen" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ build(context: BuildContext): Widget&lt;br&gt;+ onSelectReportType(type: String): void&lt;br&gt;+ onExportReport(): void" vertex="1">
+          <mxGeometry height="52" width="360" y="108" as="geometry" />
+        </mxCell>
+
+        <!-- Bloc Class -->
+        <mxCell id="bloc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryDashboardBloc&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="360" x="460" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_attr" parent="bloc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- apiClient: InventoryApiClient&lt;br&gt;+ state: InventoryDashboardState" vertex="1">
+          <mxGeometry height="45" width="360" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_line" parent="bloc" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_op" parent="bloc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ add(event: InventoryDashboardEvent): void&lt;br&gt;+ loadValuationReport(branchId: String): Future&amp;lt;void&amp;gt;&lt;br&gt;+ exportReport(branchId: String, format: String): Future&amp;lt;void&amp;gt;" vertex="1">
+          <mxGeometry height="62" width="360" y="98" as="geometry" />
+        </mxCell>
+
+        <!-- API Client Class -->
+        <mxCell id="apiclient" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryApiClient&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="380" x="880" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_attr" parent="apiclient" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- dio: Dio&lt;br&gt;- baseUrl: String" vertex="1">
+          <mxGeometry height="45" width="380" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_line" parent="apiclient" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="380" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_op" parent="apiclient" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ getInventoryValuation(branchId: String): Future&amp;lt;ApiResponse&amp;lt;Dto&amp;gt;&amp;gt;&lt;br&gt;+ exportInventoryReport(branchId: String, format: String): Future&amp;lt;List&amp;lt;int&amp;gt;&amp;gt;" vertex="1">
+          <mxGeometry height="62" width="380" y="98" as="geometry" />
+        </mxCell>
+
+        <!-- API Controller Class -->
+        <mxCell id="ctrl" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryController&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="380" x="880" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_attr" parent="ctrl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- inventoryService: IInventoryService&lt;br&gt;- logger: ILogger&amp;lt;InventoryController&amp;gt;" vertex="1">
+          <mxGeometry height="45" width="380" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_line" parent="ctrl" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="380" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_op" parent="ctrl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ GetInventoryValuation(branchId: Guid): Task&amp;lt;IActionResult&amp;gt;&lt;br&gt;+ ExportReport(branchId: Guid, format: string): Task&amp;lt;IActionResult&amp;gt;" vertex="1">
+          <mxGeometry height="62" width="380" y="98" as="geometry" />
+        </mxCell>
+
+        <!-- Service Class -->
+        <mxCell id="svc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryService&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;service&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="380" x="460" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_attr" parent="svc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- context: PharmacyDbContext&lt;br&gt;- mapper: IMapper" vertex="1">
+          <mxGeometry height="45" width="380" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_line" parent="svc" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="380" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_op" parent="svc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ GetInventoryValuationAsync(branchId: Guid): Task&amp;lt;Result&amp;lt;ValuationDto&amp;gt;&amp;gt;&lt;br&gt;+ GenerateExportReportAsync(branchId: Guid, format: string): Task&amp;lt;byte[]&amp;gt;" vertex="1">
+          <mxGeometry height="62" width="380" y="98" as="geometry" />
+        </mxCell>
+
+        <!-- DbContext Class -->
+        <mxCell id="repo" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;PharmacyDbContext&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;repository&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="360" x="40" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_attr" parent="repo" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- database: DatabaseFacade&lt;br&gt;+ Inventories: DbSet&amp;lt;Inventory&amp;gt;&lt;br&gt;+ MedicineBatches: DbSet&amp;lt;MedicineBatch&amp;gt;" vertex="1">
+          <mxGeometry height="55" width="360" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_line" parent="repo" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_op" parent="repo" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ SaveChangesAsync(cancellationToken: CancellationToken): Task&amp;lt;int&amp;gt;&lt;br&gt;+ Set&amp;lt;T&amp;gt;(): DbSet&amp;lt;T&amp;gt;" vertex="1">
+          <mxGeometry height="52" width="360" y="108" as="geometry" />
+        </mxCell>
+
+        <!-- DTO Class -->
+        <mxCell id="dto" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryValuationResponseDto&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;dto&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="360" x="460" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_attr" parent="dto" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ TotalValuation: decimal&lt;br&gt;+ TurnoverRate: double&lt;br&gt;+ TotalSKUs: int&lt;br&gt;+ CategoryValuations: List&amp;lt;CategoryValuationDto&amp;gt;" vertex="1">
+          <mxGeometry height="70" width="360" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_line" parent="dto" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_op" parent="dto" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ FromEntity(inventories: List&amp;lt;Inventory&amp;gt;): InventoryValuationResponseDto" vertex="1">
+          <mxGeometry height="37" width="360" y="123" as="geometry" />
+        </mxCell>
+
+        <!-- Entity Class -->
+        <mxCell id="entity" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;Inventory&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;entity&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="360" x="40" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="entity_attr" parent="entity" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ InventoryId: Guid&lt;br&gt;+ BranchId: Guid&lt;br&gt;+ MedicineId: Guid&lt;br&gt;+ QuantityOnHand: int&lt;br&gt;+ UnitCost: decimal" vertex="1">
+          <mxGeometry height="85" width="360" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="entity_line" parent="entity" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="entity_op" parent="entity" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ CalculateTotalValue(): decimal" vertex="1">
+          <mxGeometry height="22" width="360" y="138" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 1: Composition (Screen ♦-> Bloc) -->
+        <mxCell id="e1" parent="1" source="screen" target="bloc" style="endArrow=diamondThin;endFill=1;endSize=12;html=1;rounded=0;strokeColor=#000000;strokeWidth=1.5;" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 2: Association (Bloc -> ApiClient) -->
+        <mxCell id="e2" parent="1" source="bloc" target="apiclient" style="endArrow=open;endSize=12;html=1;rounded=0;strokeColor=#000000;strokeWidth=1.5;" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 3: Dependency (ApiClient ..> Controller) -->
+        <mxCell id="e3" parent="1" source="apiclient" target="ctrl" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;strokeColor=#000000;strokeWidth=1.5;" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 4: Association (Controller -> Service) -->
+        <mxCell id="e4" parent="1" source="ctrl" target="svc" style="endArrow=open;endSize=12;html=1;rounded=0;strokeColor=#000000;strokeWidth=1.5;" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 5: Association (Service -> DbContext) -->
+        <mxCell id="e5" parent="1" source="svc" target="repo" style="endArrow=open;endSize=12;html=1;rounded=0;strokeColor=#000000;strokeWidth=1.5;" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 6: Dependency (Service ..> DTO) -->
+        <mxCell id="e6" parent="1" source="svc" target="dto" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;strokeColor=#000000;strokeWidth=1.5;" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 7: Dependency (DbContext ..> Entity) -->
+        <mxCell id="e7" parent="1" source="repo" target="entity" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;strokeColor=#000000;strokeWidth=1.5;" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

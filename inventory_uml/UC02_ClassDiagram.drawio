@@ -1,0 +1,181 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram id="UC02_ClassDiagram" name="UC02_ClassDiagram">
+    <mxGraphModel dx="857" dy="538" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="screen" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;ReceiveGoodsScreen&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;boundary&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="340" x="40" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_attr" parent="screen" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- poNumberController: TextEditingController&lt;br&gt;- supplierInvoiceController: TextEditingController&lt;br&gt;- receivedItems: List&amp;lt;Map&amp;gt;" vertex="1">
+          <mxGeometry height="55" width="340" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_line" parent="screen" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="340" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_op" parent="screen" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ build(context: BuildContext): Widget&lt;br&gt;+ submitReceipt(): void&lt;br&gt;+ showAddItemDialog(): void" vertex="1">
+          <mxGeometry height="52" width="340" y="108" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;ReceiveGoodsBloc&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="340" x="460" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_attr" parent="bloc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- apiClient: InventoryApiClient&lt;br&gt;+ state: ReceiveGoodsState" vertex="1">
+          <mxGeometry height="55" width="340" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_line" parent="bloc" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="340" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_op" parent="bloc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ on&amp;lt;SubmitReceiveGoods&amp;gt;(event, emit)&lt;br&gt;+ emit(ReceiveGoodsSuccess)" vertex="1">
+          <mxGeometry height="52" width="340" y="108" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryApiClient&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="160" width="360" x="360" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_attr" parent="apiclient" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- dio: Dio&lt;br&gt;- baseUrl: String" vertex="1">
+          <mxGeometry height="55" width="360" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_line" parent="apiclient" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_op" parent="apiclient" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ submitReceiveGoods(request: ReceiveGoodsRequestDto): Future&lt;br&gt;- shouldUseMock(e: DioException): bool" vertex="1">
+          <mxGeometry height="52" width="360" y="108" as="geometry" />
+        </mxCell>
+        <mxCell id="dto" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;ReceiveGoodsRequestDto&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;DTO&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="150" width="360" x="840" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_attr" parent="dto" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ poNumber: String&lt;br&gt;+ supplierInvoice: String&lt;br&gt;+ items: List&amp;lt;ReceiveGoodsItemDto&amp;gt;" vertex="1">
+          <mxGeometry height="65" width="360" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_line" parent="dto" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_op" parent="dto" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ toJson(): Map&amp;lt;String, dynamic&amp;gt;" vertex="1">
+          <mxGeometry height="32" width="360" y="118" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_item" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;ReceiveGoodsItemDto&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;DTO&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="150" width="280" x="1300" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_item_attr" parent="dto_item" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ medicineId: String&lt;br&gt;+ batchNumber: String&lt;br&gt;+ quantityReceived: int&lt;br&gt;+ unitPrice: double" vertex="1">
+          <mxGeometry height="65" width="280" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_item_line" parent="dto_item" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="280" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_item_op" parent="dto_item" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ toJson(): Map&amp;lt;String, dynamic&amp;gt;" vertex="1">
+          <mxGeometry height="32" width="280" y="118" as="geometry" />
+        </mxCell>
+        <mxCell id="controller" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryController&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="140" width="360" x="1090" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_attr" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- inventoryService: IInventoryService" vertex="1">
+          <mxGeometry height="40" width="360" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_line" parent="controller" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="85" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_op" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ ReceiveGoods(request: ReceiveGoodsRequest): Task&amp;lt;IActionResult&amp;gt;" vertex="1">
+          <mxGeometry height="47" width="360" y="93" as="geometry" />
+        </mxCell>
+        <mxCell id="iservice" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;IInventoryService&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;interface&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="140" width="340" x="460" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="iservice_attr" parent="iservice" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="340" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="iservice_line" parent="iservice" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="340" y="75" as="geometry" />
+        </mxCell>
+        <mxCell id="iservice_op" parent="iservice" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ ReceiveGoodsAsync(request: ReceiveGoodsRequest): Task&amp;lt;Result&amp;gt;" vertex="1">
+          <mxGeometry height="57" width="340" y="83" as="geometry" />
+        </mxCell>
+        <mxCell id="service" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;InventoryService&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;service&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="150" width="340" x="460" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="service_attr" parent="service" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="- dbContext: PharmacyDbContext" vertex="1">
+          <mxGeometry height="45" width="340" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="service_line" parent="service" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="340" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="service_op" parent="service" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ ReceiveGoodsAsync(request: ReceiveGoodsRequest): Task&amp;lt;Result&amp;gt;" vertex="1">
+          <mxGeometry height="52" width="340" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="repo" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;PharmacyDbContext&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;repository&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="150" width="340" x="40" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_attr" parent="repo" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ GoodsReceipts: DbSet&amp;lt;GoodsReceipt&amp;gt;&lt;br&gt;+ GoodsReceiptDetails: DbSet&amp;lt;GoodsReceiptDetail&amp;gt;" vertex="1">
+          <mxGeometry height="45" width="340" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_line" parent="repo" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="340" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_op" parent="repo" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ BeginTransactionAsync(): Task&lt;br&gt;+ SaveChangesAsync(token: CancellationToken): Task&amp;lt;int&amp;gt;" vertex="1">
+          <mxGeometry height="52" width="340" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="entity_gr" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;GoodsReceipt&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;entity&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="150" width="300" x="70" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="egr_attr" parent="entity_gr" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ ReceiptId: Guid&lt;br&gt;+ PoNumber: string&lt;br&gt;+ SupplierInvoice: string&lt;br&gt;+ ReceiptDate: DateTime" vertex="1">
+          <mxGeometry height="85" width="300" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="egr_line" parent="entity_gr" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="300" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="egr_op" parent="entity_gr" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="" vertex="1">
+          <mxGeometry height="12" width="300" y="138" as="geometry" />
+        </mxCell>
+        <mxCell id="entity_detail" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" value="&lt;b&gt;GoodsReceiptDetail&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;entity&amp;gt;&amp;gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="150" width="300" x="1260" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="edetail_attr" parent="entity_detail" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="+ ReceiptDetailId: Guid&lt;br&gt;+ ReceiptId: Guid&lt;br&gt;+ MedicineId: Guid&lt;br&gt;+ BatchNumber: string&lt;br&gt;+ QuantityReceived: int" vertex="1">
+          <mxGeometry height="85" width="300" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edetail_line" parent="entity_detail" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="8" width="300" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="edetail_op" parent="entity_detail" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" value="" vertex="1">
+          <mxGeometry height="12" width="300" y="138" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="screen" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" target="bloc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="bloc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" target="apiclient">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="apiclient" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;dashed=1;strokeColor=#000000;fontColor=#000000;" target="dto">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1020" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="dto" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=0;startSize=14;endArrow=none;strokeColor=#000000;fontColor=#000000;" target="dto_item">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="apiclient" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" target="controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="controller" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" target="iservice">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="service" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;dashed=1;endFill=0;endSize=14;strokeColor=#000000;fontColor=#000000;" target="iservice">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="service" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" target="repo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="repo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;startSize=14;endArrow=none;strokeColor=#000000;fontColor=#000000;" target="entity_gr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="repo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;startSize=14;endArrow=none;strokeColor=#000000;fontColor=#000000;" target="entity_detail">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="210" y="960" />
+              <mxPoint x="1410" y="960" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

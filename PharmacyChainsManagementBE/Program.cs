@@ -64,6 +64,7 @@ try
     builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
     builder.Services.Configure<QrPaymentSettings>(builder.Configuration.GetSection(QrPaymentSettings.SectionName));
     builder.Services.Configure<SePayWebhookSettings>(builder.Configuration.GetSection(SePayWebhookSettings.SectionName));
+    builder.Services.Configure<CurrencyConversionSettings>(builder.Configuration.GetSection(CurrencyConversionSettings.SectionName));
     builder.Services.AddMemoryCache();
 
     builder.Services.AddRateLimiter(options =>
