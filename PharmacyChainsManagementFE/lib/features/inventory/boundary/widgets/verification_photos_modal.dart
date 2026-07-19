@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 
@@ -19,8 +23,12 @@ class VerificationPhotosModal extends StatefulWidget {
 }
 
 class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
-  // Map storing our 3 required photos: 'front', 'back', 'label'
+  // Map storing path or file name: 'front', 'back', 'label'
   final Map<String, String> _photos = {};
+  // Map storing binary data for immediate high-res preview
+  final Map<String, Uint8List> _photoBytes = {};
+
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -65,10 +73,10 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                   child: const Icon(Icons.camera_alt, color: AppColors.primary),
                 ),
                 title: const Text('📷 Chụp ảnh trực tiếp từ Camera', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Kích hoạt Camera để chụp hình thực tế ngay tại kho'),
+                subtitle: const Text('Kích hoạt Camera thiết bị để chụp hình thực tế ngay tại kho'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _simulateCaptureWithEffect(key, title, isCamera: true);
+                  _pickFromCamera(key, title);
                 },
               ),
               const SizedBox(height: 8),
@@ -79,24 +87,10 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                   child: const Icon(Icons.photo_library, color: AppColors.secondary),
                 ),
                 title: const Text('🖼️ Chọn ảnh từ thư viện thiết bị', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Tải lên tệp hình ảnh có sẵn (JPG, PNG, WEBP)'),
+                subtitle: const Text('Tải lên tệp hình ảnh thực tế từ máy (JPG, PNG, WEBP)'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _simulateCaptureWithEffect(key, title, isCamera: false);
-                },
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.verified, color: AppColors.success),
-                ),
-                title: const Text('⚡ Sử dụng ảnh mẫu xác minh GSP chuẩn', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Tự động điền hình ảnh kiểm định mẫu từ hệ thống để kiểm thử'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _setSamplePhoto(key);
+                  _pickFromGallery(key, title);
                 },
               ),
             ],
@@ -106,58 +100,114 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
     );
   }
 
-  void _simulateCaptureWithEffect(String key, String title, {required bool isCamera}) {
-    // Show a quick visual loading/capturing effect
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Center(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(color: AppColors.primary),
-              const SizedBox(height: 16),
-              Text(
-                isCamera ? '📸 Đang chụp ảnh $title...' : '🖼️ Đang tải ảnh $title lên...',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _pickFromCamera(String key, String title) async {
+    try {
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 88,
+      );
 
-    Future.delayed(const Duration(milliseconds: 700), () {
+      if (photo != null) {
+        final bytes = await photo.readAsBytes();
+        setState(() {
+          _photos[key] = photo.path.isNotEmpty ? photo.path : photo.name;
+          _photoBytes[key] = bytes;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('📸 Đã chụp ảnh cho ô ${key.toUpperCase()} thành công!'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // close dialog
-        _setSamplePhoto(key);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ Không thể mở Camera hoặc thiết bị không có Webcam: ${e.toString().replaceAll("Exception: ", "")}. Đang chuyển sang thư viện ảnh...'),
+            backgroundColor: AppColors.warning,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        _pickFromGallery(key, title);
       }
-    });
+    }
   }
 
-  void _setSamplePhoto(String key) {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    setState(() {
-      if (key == 'front') {
-        _photos['front'] = 'IMG_${timestamp}_FrontBox.jpg';
-      } else if (key == 'back') {
-        _photos['back'] = 'IMG_${timestamp}_BackBox_Dosage.jpg';
-      } else if (key == 'label') {
-        _photos['label'] = 'IMG_${timestamp}_Label_Batch_GS1.jpg';
-      }
-    });
+  Future<void> _pickFromGallery(String key, String title) async {
+    try {
+      // First try file_picker for robust multi-platform PC / Mobile image picking
+      final FilePickerResult? result = await FilePicker.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ Đã đính kèm hình ảnh cho ô ${key.toUpperCase()}!'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        Uint8List? bytes = file.bytes;
+        if (bytes == null && file.path != null && !kIsWeb) {
+          bytes = await File(file.path!).readAsBytes();
+        }
+
+        setState(() {
+          _photos[key] = file.path ?? file.name;
+          if (bytes != null) {
+            _photoBytes[key] = bytes;
+          }
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🖼️ Đã chọn ảnh "${file.name}" cho ô ${key.toUpperCase()}!'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // If file_picker fails, fallback to image_picker gallery
+      try {
+        final XFile? photo = await _imagePicker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 88,
+        );
+        if (photo != null) {
+          final bytes = await photo.readAsBytes();
+          setState(() {
+            _photos[key] = photo.path.isNotEmpty ? photo.path : photo.name;
+            _photoBytes[key] = bytes;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('🖼️ Đã chọn ảnh cho ô ${key.toUpperCase()} thành công!'),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('⚠️ Lỗi chọn ảnh: ${err.toString().replaceAll("Exception: ", "")}'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
   }
 
   bool get _isComplete => _photos.length == 3 && _photos.containsKey('front') && _photos.containsKey('back') && _photos.containsKey('label');
@@ -344,7 +394,8 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
     required IconData icon,
   }) {
     final hasPhoto = _photos.containsKey(keyName) && _photos[keyName]!.isNotEmpty;
-    final fileName = hasPhoto ? _photos[keyName]! : null;
+    final fileName = hasPhoto ? _photos[keyName]!.split(Platform.pathSeparator).last : null;
+    final bytes = _photoBytes[keyName];
 
     return Container(
       decoration: BoxDecoration(
@@ -405,6 +456,7 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                       onTap: () {
                         setState(() {
                           _photos.remove(keyName);
+                          _photoBytes.remove(keyName);
                         });
                       },
                       child: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
@@ -450,13 +502,19 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                   ? Row(
                       children: [
                         Container(
-                          width: 46,
-                          height: 46,
+                          width: 52,
+                          height: 52,
                           decoration: BoxDecoration(
                             color: const Color(0xFFDCFCE7),
                             borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF86EFAC)),
                           ),
-                          child: const Icon(Icons.image_rounded, color: Color(0xFF16A34A), size: 26),
+                          clipBehavior: Clip.antiAlias,
+                          child: bytes != null
+                              ? Image.memory(bytes, fit: BoxFit.cover, errorBuilder: (ctx, err, stack) => const Icon(Icons.image_rounded, color: Color(0xFF16A34A), size: 26))
+                              : (!kIsWeb && _photos[keyName] != null && File(_photos[keyName]!).existsSync())
+                                  ? Image.file(File(_photos[keyName]!), fit: BoxFit.cover, errorBuilder: (ctx, err, stack) => const Icon(Icons.image_rounded, color: Color(0xFF16A34A), size: 26))
+                                  : const Icon(Icons.image_rounded, color: Color(0xFF16A34A), size: 26),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -464,13 +522,13 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                fileName ?? 'IMG_Verification.jpg',
+                                fileName ?? _photos[keyName] ?? 'IMG_Verification.jpg',
                                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1E293B)),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 3),
-                              const Text('Đạt chuẩn GSP • High Resolution (2.1 MB)', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              const Text('Đã chọn hình ảnh thực tế từ thiết bị', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                             ],
                           ),
                         ),
