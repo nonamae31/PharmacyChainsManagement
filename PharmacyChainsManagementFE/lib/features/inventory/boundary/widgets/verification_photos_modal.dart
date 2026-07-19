@@ -41,112 +41,7 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
   }
 
   void _captureOrSelectPhoto(String key, String title) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.photo_camera, color: AppColors.primary, size: 24),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Tải ảnh / Chụp ảnh: $title',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.camera_alt, color: AppColors.primary),
-                ),
-                title: const Text('📷 Chụp ảnh trực tiếp từ Camera', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Kích hoạt Camera thiết bị để chụp hình thực tế ngay tại kho'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _pickFromCamera(key, title);
-                },
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppColors.secondary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.photo_library, color: AppColors.secondary),
-                ),
-                title: const Text('🖼️ Chọn ảnh từ thư viện thiết bị', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Tải lên tệp hình ảnh thực tế từ máy (JPG, PNG, WEBP)'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _pickFromGallery(key, title);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickFromCamera(String key, String title) async {
-    try {
-      final XFile? photo = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 88,
-      );
-
-      if (photo != null) {
-        final bytes = await photo.readAsBytes();
-        setState(() {
-          _photos[key] = photo.path.isNotEmpty ? photo.path : photo.name;
-          _photoBytes[key] = bytes;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('📸 Đã chụp ảnh cho ô ${key.toUpperCase()} thành công!'),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      final errorStr = e.toString();
-      if (errorStr.contains('MissingPluginException')) {
-        _showMissingPluginWarning();
-        return;
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              Platform.isWindows || Platform.isLinux || Platform.isMacOS
-                  ? '🖥️ Chế độ Camera trực tiếp không khả dụng trên PC. Đang tự động mở thư viện file tệp máy tính...'
-                  : '⚠️ Không thể mở Camera ($errorStr). Đang mở thư viện ảnh...',
-            ),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        _pickFromGallery(key, title);
-      }
-    }
+    _pickFromGallery(key, title);
   }
 
   Future<void> _pickFromGallery(String key, String title) async {
@@ -245,10 +140,10 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
           ],
         ),
         content: const Text(
-          'Do hệ thống vừa cài đặt thêm thư viện gốc (C++/Native plugin) để truy cập Camera và File Explorer máy tính:\n\n'
+          'Do hệ thống vừa cài đặt thêm thư viện gốc (C++/Native plugin) để truy cập Thư viện ảnh / File Explorer máy tính:\n\n'
           '👉 Hot Reload (r) hay Hot Restart (R) sẽ không tải được plugin gốc và báo lỗi MissingPluginException.\n\n'
           '⚠️ Vui lòng dừng hẳn ứng dụng (tắt terminal) và chạy lại lệnh:\n'
-          'flutter run -d windows\n(hoặc flutter run trên thiết bị của bạn) để sử dụng Camera & File Picker thật nhé!',
+          'flutter run -d windows\n(hoặc flutter run trên thiết bị của bạn) để chọn ảnh thật từ máy nhé!',
           style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textPrimary),
         ),
         actions: [
@@ -282,14 +177,14 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.camera_alt, color: AppColors.primary, size: 24),
+                    child: const Icon(Icons.photo_library, color: AppColors.primary, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        '📸 Gửi ảnh xác minh',
+                        '🖼️ Tải ảnh xác minh từ thiết bị',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
                       Text(
@@ -323,7 +218,7 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                     text: const TextSpan(
                       style: TextStyle(fontSize: 12.5, color: Color(0xFF1E293B), height: 1.4),
                       children: [
-                        TextSpan(text: 'Theo quy chuẩn GSP, vui lòng chụp/tải lên '),
+                        TextSpan(text: 'Theo quy chuẩn GSP, vui lòng tải lên '),
                         TextSpan(text: 'đầy đủ 3 ảnh bắt buộc', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
                         TextSpan(text: ' bên dưới để Business Admin kiểm duyệt lô hàng.'),
                       ],
@@ -416,7 +311,7 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                   : () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('⚠️ Vui lòng chụp/tải lên đầy đủ 3 ảnh (Medicine front, back, và label photo) trước khi gửi!'),
+                          content: Text('⚠️ Vui lòng tải lên đầy đủ 3 ảnh (Medicine front, back, và label photo) trước khi gửi!'),
                           backgroundColor: AppColors.error,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -601,10 +496,10 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.add_a_photo_outlined, color: Color(0xFF2563EB), size: 22),
+                        const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF2563EB), size: 22),
                         const SizedBox(width: 10),
                         Text(
-                          'Chụp/Tải lên $title',
+                          'Chọn ảnh từ thư viện: $title',
                           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: Color(0xFF2563EB)),
                         ),
                       ],

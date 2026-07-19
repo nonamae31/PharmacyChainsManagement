@@ -500,8 +500,8 @@ class _ReceiveGoodsScreenState extends State<ReceiveGoodsScreen> {
                                                     mainAxisAlignment: MainAxisAlignment.end,
                                                     children: [
                                                       IconButton(
-                                                        icon: Icon(item.proofImage != null ? Icons.verified : Icons.camera_alt_outlined, color: item.proofImage != null ? AppColors.success : AppColors.primary, size: 20),
-                                                        tooltip: item.proofImage != null ? 'Minh chứng: ${item.proofImage}' : 'Đính kèm ảnh / COA',
+                                                        icon: Icon(item.proofImage != null ? Icons.verified : Icons.photo_library_outlined, color: item.proofImage != null ? AppColors.success : AppColors.primary, size: 20),
+                                                        tooltip: item.proofImage != null ? 'Minh chứng: ${item.proofImage}' : 'Đính kèm ảnh từ thư viện',
                                                         onPressed: () => _attachProof(item),
                                                       ),
                                                       IconButton(

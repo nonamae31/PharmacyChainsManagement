@@ -1350,8 +1350,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         if (item['proofImage'] == null) ...[
                           ElevatedButton.icon(
                             onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
-                            icon: const Icon(Icons.camera_alt, size: 18),
-                            label: const Text('📸 Gửi ảnh xác minh (3 góc chụp bắt buộc)', style: TextStyle(fontWeight: FontWeight.bold)),
+                            icon: const Icon(Icons.photo_library, size: 18),
+                            label: const Text('🖼️ Gửi ảnh xác minh (3 góc ảnh từ thư viện)', style: TextStyle(fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
                           ),
                         ] else ...[
@@ -1977,8 +1977,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         children: [
                           OutlinedButton.icon(
                             onPressed: () => _showProofImageSelectorModal(context, item, (fn) => setState(fn)),
-                            icon: Icon(item['proofImage'] != null ? Icons.photo_camera : Icons.add_a_photo_outlined, size: 16, color: const Color(0xFF2563EB)),
-                            label: Text(item['proofImage'] != null ? '📸 Đổi ảnh xác minh' : '📸 Gửi ảnh xác minh'),
+                            icon: Icon(item['proofImage'] != null ? Icons.photo_library : Icons.add_photo_alternate_outlined, size: 16, color: const Color(0xFF2563EB)),
+                            label: Text(item['proofImage'] != null ? '🖼️ Đổi ảnh xác minh' : '🖼️ Gửi ảnh xác minh'),
                             style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), side: const BorderSide(color: Color(0xFF2563EB))),
                           ),
                           ElevatedButton.icon(
