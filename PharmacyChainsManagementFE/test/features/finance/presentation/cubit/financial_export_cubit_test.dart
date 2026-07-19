@@ -3,11 +3,11 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:PharmacyChainsManagementFE/core/error/failures.dart';
-import 'package:PharmacyChainsManagementFE/features/finance/data/models/export_criteria_model.dart';
-import 'package:PharmacyChainsManagementFE/features/finance/domain/usecases/export_financial_report_usecase.dart';
-import 'package:PharmacyChainsManagementFE/features/finance/presentation/cubit/financial_export_cubit.dart';
-import 'package:PharmacyChainsManagementFE/features/finance/presentation/cubit/financial_export_state.dart';
+import 'package:pharmacy_chains_management_fe/core/error/failures.dart';
+import 'package:pharmacy_chains_management_fe/features/finance/data/models/export_criteria_model.dart';
+import 'package:pharmacy_chains_management_fe/features/finance/domain/usecases/export_financial_report_usecase.dart';
+import 'package:pharmacy_chains_management_fe/features/finance/presentation/cubit/financial_export_cubit.dart';
+import 'package:pharmacy_chains_management_fe/features/finance/presentation/cubit/financial_export_state.dart';
 
 class MockExportFinancialReportUseCase extends Mock implements ExportFinancialReportUseCase {}
 
