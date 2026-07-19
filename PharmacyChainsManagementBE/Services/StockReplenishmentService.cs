@@ -208,8 +208,12 @@ public sealed class StockReplenishmentService : IStockReplenishmentService
                 && inventory.Branch.Status.ToUpper() == "ACTIVE"
                 && medicineIds.Contains(inventory.MedicineId)
                 && inventory.QuantityOnHand > 0
-                && inventory.Status.ToUpper() == "ACTIVE"
-                && inventory.Batch.Status.ToUpper() == "SELLABLE"
+                && (inventory.Status.ToUpper() == "ACTIVE"
+                    || inventory.Status.ToUpper() == "INSTOCK")
+                && (inventory.Batch.Status.ToUpper() == "SELLABLE"
+                    || (inventory.Batch.Status.ToUpper() == "ACTIVE"
+                        && (inventory.Batch.QcStatus.ToUpper() == "PASS"
+                            || inventory.Batch.QcStatus.ToUpper() == "PASSED")))
                 && inventory.Batch.ExpiryDate >= today)
             .Select(inventory => new
             {
@@ -286,8 +290,12 @@ public sealed class StockReplenishmentService : IStockReplenishmentService
                 .Where(inventory => inventory.BranchId == request.SourceBranchId
                     && medicineIds.Contains(inventory.MedicineId)
                     && inventory.QuantityOnHand > 0
-                    && inventory.Status.ToUpper() == "ACTIVE"
-                    && inventory.Batch.Status.ToUpper() == "SELLABLE"
+                    && (inventory.Status.ToUpper() == "ACTIVE"
+                        || inventory.Status.ToUpper() == "INSTOCK")
+                    && (inventory.Batch.Status.ToUpper() == "SELLABLE"
+                        || (inventory.Batch.Status.ToUpper() == "ACTIVE"
+                            && (inventory.Batch.QcStatus.ToUpper() == "PASS"
+                                || inventory.Batch.QcStatus.ToUpper() == "PASSED")))
                     && inventory.Batch.ExpiryDate >= today)
                 .OrderBy(inventory => inventory.Batch.ExpiryDate)
                 .ThenBy(inventory => inventory.Batch.BatchNumber)
@@ -308,6 +316,14 @@ public sealed class StockReplenishmentService : IStockReplenishmentService
             }
 
             var now = DateTime.UtcNow;
+            var sourceBatchIds = sourceInventories
+                .Select(inventory => inventory.BatchId)
+                .Distinct()
+                .ToList();
+            var destinationInventories = await _dbContext.Inventories
+                .Where(inventory => inventory.BranchId == entity.BranchId
+                    && sourceBatchIds.Contains(inventory.BatchId))
+                .ToDictionaryAsync(inventory => inventory.BatchId, cancellationToken);
             var transfer = new StockTransfer
             {
                 TransferId = Guid.NewGuid(),
@@ -315,7 +331,7 @@ public sealed class StockReplenishmentService : IStockReplenishmentService
                 ToBranchId = entity.BranchId,
                 RequestedBy = entity.RequestedBy,
                 ApprovedBy = inventoryManagerId,
-                TransferStatus = "SHIPPED",
+                TransferStatus = "RECEIVED",
                 RequestDate = entity.RequestDate,
                 ApprovedDate = today,
                 Notes = $"Replenishment request {entity.RequestNo}",
@@ -337,6 +353,33 @@ public sealed class StockReplenishmentService : IStockReplenishmentService
                     var dispatchedQuantity = Math.Min(remaining, inventory.QuantityOnHand);
                     inventory.QuantityOnHand -= dispatchedQuantity;
                     inventory.UpdatedAt = now;
+                    if (destinationInventories.TryGetValue(
+                        inventory.BatchId,
+                        out var destinationInventory))
+                    {
+                        destinationInventory.QuantityOnHand += dispatchedQuantity;
+                        destinationInventory.Status = "ACTIVE";
+                        destinationInventory.UpdatedAt = now;
+                    }
+                    else
+                    {
+                        destinationInventory = new Inventory
+                        {
+                            InventoryId = Guid.NewGuid(),
+                            BranchId = entity.BranchId,
+                            MedicineId = requestedItem.MedicineId,
+                            BatchId = inventory.BatchId,
+                            QuantityOnHand = dispatchedQuantity,
+                            SafetyStockLevel = 0,
+                            Status = "ACTIVE",
+                            CreatedAt = now,
+                            UpdatedAt = now
+                        };
+                        destinationInventories.Add(
+                            inventory.BatchId,
+                            destinationInventory);
+                        _dbContext.Inventories.Add(destinationInventory);
+                    }
                     transfer.StockTransferDetails.Add(new StockTransferDetail
                     {
                         TransferDetailId = Guid.NewGuid(),
@@ -350,13 +393,14 @@ public sealed class StockReplenishmentService : IStockReplenishmentService
 
             entity.Transfer = transfer;
             entity.TransferId = transfer.TransferId;
-            entity.Status = "SHIPPED";
+            entity.Status = "FULFILLED";
             entity.InventoryNote = string.IsNullOrWhiteSpace(request.InventoryNote)
                 ? entity.InventoryNote
                 : request.InventoryNote.Trim();
             entity.ProcessedBy = inventoryManagerId;
             entity.ProcessedAt = now;
             entity.DispatchedAt = now;
+            entity.ReceivedAt = now;
             entity.UpdatedAt = now;
 
             _dbContext.StockTransfers.Add(transfer);
@@ -379,95 +423,6 @@ public sealed class StockReplenishmentService : IStockReplenishmentService
             return Result.Failure<StockReplenishmentRequestDto>(Error.Failure(
                 "StockReplenishment.DispatchFailed",
                 "The medicines could not be dispatched."));
-        }
-    }
-
-    public async Task<Result<StockReplenishmentRequestDto>> ConfirmReceivedAsync(
-        Guid requestId,
-        Guid managerId,
-        Guid branchId,
-        CancellationToken cancellationToken)
-    {
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
-            System.Data.IsolationLevel.Serializable,
-            cancellationToken);
-        try
-        {
-            var entity = await BuildRequestQuery(tracking: true)
-                .SingleOrDefaultAsync(item => item.RequestId == requestId
-                    && item.BranchId == branchId, cancellationToken);
-            if (entity is null)
-            {
-                return Result.Failure<StockReplenishmentRequestDto>(Error.NotFound(
-                    "StockReplenishment.NotFound",
-                    "The replenishment request was not found for the assigned branch."));
-            }
-            if (entity.Status != "SHIPPED" || entity.Transfer is null)
-            {
-                return Result.Failure<StockReplenishmentRequestDto>(Error.Conflict(
-                    "StockReplenishment.NotShipped",
-                    "Only a dispatched request can be confirmed as received."));
-            }
-
-            var batchIds = entity.Transfer.StockTransferDetails
-                .Select(detail => detail.BatchId)
-                .Distinct()
-                .ToList();
-            var destinationInventories = await _dbContext.Inventories
-                .Where(inventory => inventory.BranchId == branchId
-                    && batchIds.Contains(inventory.BatchId))
-                .ToDictionaryAsync(inventory => inventory.BatchId, cancellationToken);
-            var now = DateTime.UtcNow;
-
-            foreach (var detail in entity.Transfer.StockTransferDetails)
-            {
-                if (destinationInventories.TryGetValue(detail.BatchId, out var inventory))
-                {
-                    inventory.QuantityOnHand += detail.Quantity;
-                    inventory.Status = "ACTIVE";
-                    inventory.UpdatedAt = now;
-                    continue;
-                }
-
-                inventory = new Inventory
-                {
-                    InventoryId = Guid.NewGuid(),
-                    BranchId = branchId,
-                    MedicineId = detail.MedicineId,
-                    BatchId = detail.BatchId,
-                    QuantityOnHand = detail.Quantity,
-                    SafetyStockLevel = 0,
-                    Status = "ACTIVE",
-                    CreatedAt = now,
-                    UpdatedAt = now
-                };
-                destinationInventories.Add(detail.BatchId, inventory);
-                _dbContext.Inventories.Add(inventory);
-            }
-
-            entity.Transfer.TransferStatus = "RECEIVED";
-            entity.Transfer.UpdatedAt = now;
-            entity.Status = "FULFILLED";
-            entity.ReceivedBy = managerId;
-            entity.ReceivedAt = now;
-            entity.UpdatedAt = now;
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return Result.Success(Map(entity));
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            return Result.Failure<StockReplenishmentRequestDto>(Error.Conflict(
-                "StockReplenishment.ConcurrentReceive",
-                "Stock changed while receiving. Please refresh and try again."));
-        }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            return Result.Failure<StockReplenishmentRequestDto>(Error.Failure(
-                "StockReplenishment.ReceiveFailed",
-                "The medicines could not be added to the branch inventory."));
         }
     }
 

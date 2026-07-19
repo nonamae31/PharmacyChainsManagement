@@ -757,38 +757,6 @@ public sealed class BranchManagerController : ControllerBase
             : BadRequest(new { message = result.Error.Message });
     }
 
-    [HttpPost("inventory/replenishment-requests/{requestId:guid}/confirm-received")]
-    [ProducesResponseType(typeof(StockReplenishmentRequestDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ConfirmStockReplenishmentReceived(
-        Guid requestId,
-        CancellationToken cancellationToken)
-    {
-        var access = await ResolveAccessAsync(cancellationToken);
-        if (access is null)
-        {
-            return Forbid();
-        }
-
-        var result = await _stockReplenishmentService.ConfirmReceivedAsync(
-            requestId,
-            access.Value.ManagerId,
-            access.Value.BranchId,
-            cancellationToken);
-        if (result.IsSuccess)
-        {
-            return Ok(result.Value);
-        }
-
-        return result.Error.Type switch
-        {
-            PharmacyChainsManagementBE.Common.ErrorType.NotFound =>
-                NotFound(new { message = result.Error.Message }),
-            PharmacyChainsManagementBE.Common.ErrorType.Conflict =>
-                Conflict(new { message = result.Error.Message }),
-            _ => BadRequest(new { message = result.Error.Message })
-        };
-    }
-
     [HttpPost("daily-revenue/confirm")]
     [ProducesResponseType(typeof(DailyRevenueConfirmationDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ConfirmDailyRevenue(

@@ -43,13 +43,7 @@ abstract final class StockReplenishmentAppStrings {
   static const noDispatchSource =
       'No source branch has enough sellable, non-expired stock for this request.';
   static const dispatchCompleted =
-      'Medicines were dispatched. Waiting for the branch to receive them.';
-  static const confirmReceived = 'Confirm received';
-  static const confirmReceivedTitle = 'Confirm medicine receipt';
-  static const confirmReceivedMessage =
-      'Confirm that all dispatched medicines were received. Stock will be added immediately.';
-  static const receiptConfirmed =
-      'Receipt confirmed. Branch inventory was updated.';
+      'Medicines were dispatched and branch inventory was updated.';
   static const sourceLabel = 'From';
   static const dispatchedOn = 'Dispatched on';
   static const receivedOn = 'Received on';

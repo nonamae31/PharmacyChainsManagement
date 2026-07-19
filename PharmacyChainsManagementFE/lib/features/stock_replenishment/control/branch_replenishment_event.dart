@@ -21,13 +21,3 @@ final class BranchReplenishmentSubmitted extends BranchReplenishmentEvent {
   @override
   List<Object?> get props => [request];
 }
-
-final class BranchReplenishmentReceiptConfirmed
-    extends BranchReplenishmentEvent {
-  final String requestId;
-
-  const BranchReplenishmentReceiptConfirmed(this.requestId);
-
-  @override
-  List<Object?> get props => [requestId];
-}

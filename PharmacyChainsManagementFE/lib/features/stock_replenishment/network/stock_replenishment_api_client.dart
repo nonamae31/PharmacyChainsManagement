@@ -121,22 +121,6 @@ class StockReplenishmentApiClient {
     }
   }
 
-  Future<StockReplenishmentRequestDto> confirmBranchReceived(
-    String requestId,
-  ) async {
-    try {
-      final response = await _dio.post(
-        '/api/v1/branch-manager/inventory/replenishment-requests/'
-        '$requestId/confirm-received',
-      );
-      return StockReplenishmentRequestDto.fromJson(
-        response.data as Map<String, dynamic>,
-      );
-    } on DioException catch (error) {
-      throw _mapException(error);
-    }
-  }
-
   List<StockReplenishmentRequestDto> _parseRequests(dynamic data) {
     return (data as List<dynamic>)
         .map(

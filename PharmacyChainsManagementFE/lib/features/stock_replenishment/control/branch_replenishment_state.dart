@@ -21,22 +21,15 @@ class BranchReplenishmentLoadSuccess extends BranchReplenishmentState {
   final List<StockReplenishmentOptionDto> options;
   final List<StockReplenishmentRequestDto> requests;
   final bool submitting;
-  final String? receivingRequestId;
 
   const BranchReplenishmentLoadSuccess({
     required this.options,
     required this.requests,
     this.submitting = false,
-    this.receivingRequestId,
   });
 
   @override
-  List<Object?> get props => [
-    options,
-    requests,
-    submitting,
-    receivingRequestId,
-  ];
+  List<Object?> get props => [options, requests, submitting];
 }
 
 final class BranchReplenishmentSubmitSuccess
@@ -58,28 +51,6 @@ final class BranchReplenishmentSubmitFailure
   final String message;
 
   const BranchReplenishmentSubmitFailure({
-    required super.options,
-    required super.requests,
-    required this.message,
-  });
-
-  @override
-  List<Object?> get props => [...super.props, message];
-}
-
-final class BranchReplenishmentReceiptSuccess
-    extends BranchReplenishmentLoadSuccess {
-  const BranchReplenishmentReceiptSuccess({
-    required super.options,
-    required super.requests,
-  });
-}
-
-final class BranchReplenishmentReceiptFailure
-    extends BranchReplenishmentLoadSuccess {
-  final String message;
-
-  const BranchReplenishmentReceiptFailure({
     required super.options,
     required super.requests,
     required this.message,

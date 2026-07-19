@@ -14,7 +14,7 @@ void main() {
   late _MockStockReplenishmentApiClient apiClient;
   final pending = _request(status: 'PENDING');
   final processing = _request(status: 'PROCESSING');
-  final shipped = _request(status: 'SHIPPED');
+  final fulfilled = _request(status: 'FULFILLED');
   const update = UpdateStockReplenishmentStatusDto(
     status: 'PROCESSING',
     inventoryNote: null,
@@ -115,14 +115,14 @@ void main() {
   );
 
   blocTest<InventoryReplenishmentBloc, InventoryReplenishmentState>(
-    'dispatches stock and refreshes the live queue',
+    'dispatches stock, updates branch inventory, and refreshes the queue',
     setUp: () {
       when(
         () => apiClient.dispatchInventoryRequest(any(), any()),
-      ).thenAnswer((_) async => shipped);
+      ).thenAnswer((_) async => fulfilled);
       when(
         () => apiClient.fetchInventoryQueue(status: 'ALL'),
-      ).thenAnswer((_) async => [shipped]);
+      ).thenAnswer((_) async => [fulfilled]);
     },
     seed: () => InventoryReplenishmentLoadSuccess(
       requests: [processing],
@@ -141,7 +141,10 @@ void main() {
         status: 'ALL',
         updating: true,
       ),
-      InventoryReplenishmentDispatchSuccess(requests: [shipped], status: 'ALL'),
+      InventoryReplenishmentDispatchSuccess(
+        requests: [fulfilled],
+        status: 'ALL',
+      ),
     ],
   );
 }

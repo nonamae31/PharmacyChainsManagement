@@ -39,9 +39,4 @@ public interface IStockReplenishmentService
         DispatchStockReplenishmentDto request,
         CancellationToken cancellationToken);
 
-    Task<Result<StockReplenishmentRequestDto>> ConfirmReceivedAsync(
-        Guid requestId,
-        Guid managerId,
-        Guid branchId,
-        CancellationToken cancellationToken);
 }

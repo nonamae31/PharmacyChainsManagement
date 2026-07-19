@@ -10,7 +10,6 @@ import '../../../shared/shared_components/app_loading_indicator.dart';
 import '../control/branch_replenishment_bloc.dart';
 import '../control/branch_replenishment_event.dart';
 import '../control/branch_replenishment_state.dart';
-import '../entity/stock_replenishment_dto.dart';
 import 'widgets/branch_replenishment_form_dialog.dart';
 import 'widgets/stock_replenishment_request_card.dart';
 
@@ -70,23 +69,8 @@ class _BranchReplenishmentScreenState extends State<BranchReplenishmentScreen> {
                 itemCount: requests.length,
                 separatorBuilder: (_, _) =>
                     const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (_, index) {
-                  final request = requests[index];
-                  return StockReplenishmentRequestCard(
-                    request: request,
-                    actions: request.status == 'SHIPPED'
-                        ? FilledButton.icon(
-                            onPressed: state.receivingRequestId == null
-                                ? () => _confirmReceipt(request)
-                                : null,
-                            icon: const Icon(Icons.inventory_2_outlined),
-                            label: const Text(
-                              StockReplenishmentAppStrings.confirmReceived,
-                            ),
-                          )
-                        : null,
-                  );
-                },
+                itemBuilder: (_, index) =>
+                    StockReplenishmentRequestCard(request: requests[index]),
               ),
     };
   }
@@ -101,43 +85,7 @@ class _BranchReplenishmentScreenState extends State<BranchReplenishmentScreen> {
       );
     } else if (state is BranchReplenishmentSubmitFailure) {
       showAppErrorDialog(context, message: state.message);
-    } else if (state is BranchReplenishmentReceiptSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(StockReplenishmentAppStrings.receiptConfirmed),
-        ),
-      );
-    } else if (state is BranchReplenishmentReceiptFailure) {
-      showAppErrorDialog(context, message: state.message);
     }
-  }
-
-  Future<void> _confirmReceipt(StockReplenishmentRequestDto request) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(StockReplenishmentAppStrings.confirmReceivedTitle),
-        content: const Text(
-          StockReplenishmentAppStrings.confirmReceivedMessage,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(StockReplenishmentAppStrings.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(StockReplenishmentAppStrings.confirmReceived),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || confirmed != true) {
-      return;
-    }
-    context.read<BranchReplenishmentBloc>().add(
-      BranchReplenishmentReceiptConfirmed(request.requestId),
-    );
   }
 
   void _openCreateDialog(BranchReplenishmentLoadSuccess state) {

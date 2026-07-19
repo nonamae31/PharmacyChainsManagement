@@ -14,7 +14,6 @@ class BranchReplenishmentBloc
     : super(const BranchReplenishmentInitial()) {
     on<BranchReplenishmentFetchRequested>(_onFetchRequested);
     on<BranchReplenishmentSubmitted>(_onSubmitted);
-    on<BranchReplenishmentReceiptConfirmed>(_onReceiptConfirmed);
   }
 
   Future<void> _onFetchRequested(
@@ -76,50 +75,6 @@ class BranchReplenishmentBloc
     } catch (_) {
       emit(
         BranchReplenishmentSubmitFailure(
-          options: current.options,
-          requests: current.requests,
-          message: StockReplenishmentAppStrings.dataCannotLoad,
-        ),
-      );
-    }
-  }
-
-  Future<void> _onReceiptConfirmed(
-    BranchReplenishmentReceiptConfirmed event,
-    Emitter<BranchReplenishmentState> emit,
-  ) async {
-    final current = state;
-    if (current is! BranchReplenishmentLoadSuccess ||
-        current.receivingRequestId != null) {
-      return;
-    }
-
-    emit(
-      BranchReplenishmentLoadSuccess(
-        options: current.options,
-        requests: current.requests,
-        receivingRequestId: event.requestId,
-      ),
-    );
-    try {
-      await _apiClient.confirmBranchReceived(event.requestId);
-      emit(
-        BranchReplenishmentReceiptSuccess(
-          options: await _apiClient.fetchBranchOptions(),
-          requests: await _apiClient.fetchBranchRequests(),
-        ),
-      );
-    } on AppException catch (error) {
-      emit(
-        BranchReplenishmentReceiptFailure(
-          options: current.options,
-          requests: current.requests,
-          message: error.message,
-        ),
-      );
-    } catch (_) {
-      emit(
-        BranchReplenishmentReceiptFailure(
           options: current.options,
           requests: current.requests,
           message: StockReplenishmentAppStrings.dataCannotLoad,

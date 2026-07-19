@@ -45,45 +45,6 @@ void main() {
       ),
     ],
   );
-  final shippedRequest = StockReplenishmentRequestDto(
-    requestId: 'request-1',
-    requestNo: 'REQ-20260719-ABC123',
-    branchId: 'branch-1',
-    branchName: 'Branch 1',
-    requestedBy: 'manager-1',
-    requestedByName: 'Manager',
-    priority: 'URGENT',
-    status: 'SHIPPED',
-    notes: null,
-    inventoryNote: null,
-    requestDate: DateTime(2026, 7, 19),
-    processedAt: DateTime.utc(2026, 7, 19),
-    transferId: 'transfer-1',
-    sourceBranchName: 'Central Warehouse',
-    dispatchedAt: DateTime.utc(2026, 7, 19),
-    createdAt: DateTime.utc(2026, 7, 19),
-    items: request.items,
-  );
-  final fulfilledRequest = StockReplenishmentRequestDto(
-    requestId: shippedRequest.requestId,
-    requestNo: shippedRequest.requestNo,
-    branchId: shippedRequest.branchId,
-    branchName: shippedRequest.branchName,
-    requestedBy: shippedRequest.requestedBy,
-    requestedByName: shippedRequest.requestedByName,
-    priority: shippedRequest.priority,
-    status: 'FULFILLED',
-    notes: null,
-    inventoryNote: null,
-    requestDate: shippedRequest.requestDate,
-    processedAt: shippedRequest.processedAt,
-    transferId: shippedRequest.transferId,
-    sourceBranchName: shippedRequest.sourceBranchName,
-    dispatchedAt: shippedRequest.dispatchedAt,
-    receivedAt: DateTime.utc(2026, 7, 19, 1),
-    createdAt: shippedRequest.createdAt,
-    items: shippedRequest.items,
-  );
   const createRequest = CreateStockReplenishmentRequestDto(
     priority: 'URGENT',
     notes: null,
@@ -164,37 +125,6 @@ void main() {
         options: [option],
         requests: [],
         message: 'An open request already exists.',
-      ),
-    ],
-  );
-
-  blocTest<BranchReplenishmentBloc, BranchReplenishmentState>(
-    'confirms receipt then refreshes stock options and request history',
-    setUp: () {
-      when(
-        () => apiClient.confirmBranchReceived('request-1'),
-      ).thenAnswer((_) async => fulfilledRequest);
-      when(apiClient.fetchBranchOptions).thenAnswer((_) async => [option]);
-      when(
-        apiClient.fetchBranchRequests,
-      ).thenAnswer((_) async => [fulfilledRequest]);
-    },
-    seed: () => BranchReplenishmentLoadSuccess(
-      options: const [option],
-      requests: [shippedRequest],
-    ),
-    build: () => BranchReplenishmentBloc(apiClient),
-    act: (bloc) =>
-        bloc.add(const BranchReplenishmentReceiptConfirmed('request-1')),
-    expect: () => [
-      BranchReplenishmentLoadSuccess(
-        options: const [option],
-        requests: [shippedRequest],
-        receivingRequestId: 'request-1',
-      ),
-      BranchReplenishmentReceiptSuccess(
-        options: const [option],
-        requests: [fulfilledRequest],
       ),
     ],
   );
