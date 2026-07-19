@@ -126,6 +126,50 @@ class AuthApiClient {
     }
   }
 
+  Future<void> forgotPassword(String email) async {
+    try {
+      await _dio.post(
+        '/api/v1/auth/forgot-password',
+        data: {'email': email},
+      );
+    } catch (e) {
+      AppLogger.error('Forgot password error', e);
+      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+        final data = e.response!.data as Map;
+        if (data.containsKey('message') && data['message'] != null) {
+          throw ServerException(data['message'].toString());
+        } else if (data.containsKey('title') && data['title'] != null) {
+          throw ServerException(data['title'].toString());
+        }
+      }
+      throw const ServerException('Không thể gửi yêu cầu khôi phục mật khẩu. Vui lòng thử lại.');
+    }
+  }
+
+  Future<void> resetPassword(String email, String token, String newPassword) async {
+    try {
+      await _dio.post(
+        '/api/v1/auth/reset-password',
+        data: {
+          'email': email,
+          'token': token,
+          'newPassword': newPassword,
+        },
+      );
+    } catch (e) {
+      AppLogger.error('Reset password error', e);
+      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+        final data = e.response!.data as Map;
+        if (data.containsKey('message') && data['message'] != null) {
+          throw ServerException(data['message'].toString());
+        } else if (data.containsKey('title') && data['title'] != null) {
+          throw ServerException(data['title'].toString());
+        }
+      }
+      throw const ServerException('Mã OTP không hợp lệ hoặc đã hết hạn.');
+    }
+  }
+
   Future<bool> _refreshToken() async {
     try {
       final refreshToken = await SecureStorageService.readRefreshToken();

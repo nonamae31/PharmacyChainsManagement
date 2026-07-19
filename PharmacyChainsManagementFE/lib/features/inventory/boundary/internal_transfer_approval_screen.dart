@@ -121,7 +121,7 @@ class _InternalTransferApprovalScreenState extends State<InternalTransferApprova
                       maxLines: 3,
                       decoration: const InputDecoration(
                         hintText: 'Nhập hướng dẫn xử lý hoặc ngày dự kiến có thể xuất hàng tiếp theo...',
-                        border: const OutlineInputBorder(),
+                        border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.all(12),
                       ),
                     ),
@@ -277,14 +277,20 @@ class _InternalTransferApprovalScreenState extends State<InternalTransferApprova
                           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                           margin: const EdgeInsets.only(bottom: 6),
                           decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(6)),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          child: Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 12,
+                            runSpacing: 4,
                             children: [
                               Text('${subItem['name']} (${subItem['sku']})', style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('Requested (Yêu cầu): $requested ${subItem['unit']}  |  Available Stock (Tồn kho): $available ${subItem['unit']}',
-                                      style: TextStyle(color: enoughStock ? AppColors.textPrimary : AppColors.error, fontWeight: enoughStock ? FontWeight.normal : FontWeight.bold)),
+                                  Flexible(
+                                    child: Text('Requested (Yêu cầu): $requested ${subItem['unit']}  |  Available Stock (Tồn kho): $available ${subItem['unit']}',
+                                        style: TextStyle(color: enoughStock ? AppColors.textPrimary : AppColors.error, fontWeight: enoughStock ? FontWeight.normal : FontWeight.bold)),
+                                  ),
                                   const SizedBox(width: 8),
                                   Icon(enoughStock ? Icons.check_circle : Icons.error, color: enoughStock ? AppColors.success : AppColors.error, size: 16),
                                 ],

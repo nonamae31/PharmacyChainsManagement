@@ -32,7 +32,7 @@ IF NOT EXISTS (SELECT 1 FROM [USER] WHERE email = 'staff@pharmacy.com')
     INSERT INTO [USER] (user_id, role_id, full_name, email, password_hash, status, created_at, updated_at)
     VALUES (NEWID(), @staff_id, 'Staff', 'staff@pharmacy.com', @hash, 'ACTIVE', GETUTCDATE(), GETUTCDATE());
 
-IF NOT EXISTS (SELECT 1 FROM [USER] WHERE email = 'inventory@pharmacy.com')
+IF NOT EXISTS (SELECT 1 FROM [USER] WHERE email = 'phanmanh14122000@gmail.com')
     INSERT INTO [USER] (user_id, role_id, full_name, email, password_hash, status, created_at, updated_at)
-    VALUES (NEWID(), @inventory_id, 'Inventory Manager', 'inventory@pharmacy.com', @hash, 'ACTIVE', GETUTCDATE(), GETUTCDATE());
+    VALUES (NEWID(), @inventory_id, 'Inventory Manager', 'phanmanh14122000@gmail.com', @hash, 'ACTIVE', GETUTCDATE(), GETUTCDATE());
 GO

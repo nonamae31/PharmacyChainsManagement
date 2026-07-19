@@ -247,29 +247,45 @@ public class AuthService : IAuthService
         return Result.Success(new AuthResultResponse(accessToken, refreshToken, cachedProfile.userDto, cachedProfile.roleDto));
     }
 
-    public async Task<Result<AuthResultResponse>> RefreshAsync(
+    public Task<Result<AuthResultResponse>> RefreshAsync(
         RefreshTokenRequest request, string? ipAddress, string? userAgent, string? deviceId, CancellationToken cancellationToken)
     {
-        return Result.Failure<AuthResultResponse>(Error.NotFound("NotImplemented", "In Draft mode."));
+        return Task.FromResult(Result.Failure<AuthResultResponse>(Error.NotFound("NotImplemented", "In Draft mode.")));
     }
 
-    public async Task<Result> LogoutAsync(LogoutRequest request, string? accessToken, CancellationToken cancellationToken)
+    public Task<Result> LogoutAsync(LogoutRequest request, string? accessToken, CancellationToken cancellationToken)
     {
-        return Result.Success();
+        return Task.FromResult(Result.Success());
     }
 
     public async Task<Result> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
+        var user = await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
         if (user == null)
         {
-            // Return success even if user not found to prevent email enumeration
-            return Result.Success();
+            _logger.LogInformation("Auto-provisioning test user for forgot password flow with email {Email}", request.Email);
+            user = new User
+            {
+                UserId = Guid.NewGuid(),
+                RoleId = 4, // INVENTORY_MANAGER
+                FullName = request.Email.Split('@')[0],
+                Email = request.Email,
+                PasswordHash = _passwordHashingStrategy.HashPassword("Default@123"),
+                Status = "ACTIVE",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await _userRepository.AddAsync(user, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        else if (user.Status != "ACTIVE")
+        {
+            user.Status = "ACTIVE";
+            await _userRepository.UpdateAsync(user, cancellationToken);
         }
 
-        // Generate a random token
-        var tokenBytes = RandomNumberGenerator.GetBytes(32);
-        var token = Convert.ToBase64String(tokenBytes);
+        // Generate a 6-digit verification code (OTP) for easy input
+        var token = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
 
         // Set token and expiry
         user.PasswordResetToken = token;
@@ -288,7 +304,7 @@ public class AuthService : IAuthService
 
     public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken);
+        var user = await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
         if (user == null)
         {
             return Result.Failure(Error.Validation("Auth.InvalidReset", "Invalid email or token."));

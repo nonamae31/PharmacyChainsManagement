@@ -6,6 +6,10 @@ import 'package:fluttertoast/fluttertoast.dart';
 import '../control/auth_bloc.dart';
 import '../control/auth_event.dart';
 import '../control/auth_state.dart';
+import '../../../core/constants/app_strings.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -86,6 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
               case 'staff':
                 context.go('/staff_home');
                 break;
+              case 'inventory':
               case 'inventory_manager':
                 context.go('/inventory_home');
                 break;
@@ -165,6 +170,22 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
     _passwordController.text = '';
   }
 
+  Future<void> _showForgotPasswordModal() async {
+    final resultEmail = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.borderRadiusXl)),
+      ),
+      builder: (context) => const ForgotPasswordScreen(),
+    );
+    if (resultEmail != null && resultEmail.isNotEmpty) {
+      setState(() {
+        _emailController.text = resultEmail;
+      });
+    }
+  }
+
   void _submit() {
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
@@ -237,7 +258,26 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
                     if (!isLoading) _submit();
                   },
                 ),
-                const SizedBox(height: 24),
+                if (isLogin) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _showForgotPasswordModal,
+                      child: const Text(
+                        AppStrings.forgotPasswordTitle,
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ] else ...[
+                  const SizedBox(height: 24),
+                ],
 
                 SizedBox(
                   width: double.infinity,

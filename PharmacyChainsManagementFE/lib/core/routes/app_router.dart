@@ -38,6 +38,7 @@ class AppRouter {
             return '/branch_manager_home';
           case 'staff':
             return '/staff_home';
+          case 'inventory':
           case 'inventory_manager':
             return '/inventory_home';
           default:
