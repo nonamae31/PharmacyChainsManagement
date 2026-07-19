@@ -13,6 +13,8 @@ import '../../control/staff_performance_bloc.dart';
 import '../../control/staff_performance_event.dart';
 import '../../entity/staff_management_dto.dart';
 import '../../entity/staff_performance_dto.dart';
+import '../../entity/staff_payroll_dto.dart';
+import 'staff_payroll_panel.dart';
 import 'staff_shift_roster_panel.dart';
 
 class StaffPerformanceContent extends StatelessWidget {
@@ -20,6 +22,7 @@ class StaffPerformanceContent extends StatelessWidget {
   final List<StaffShiftDto> shifts;
   final DateTime shiftDate;
   final ValueChanged<DateTime> onShiftDateSelected;
+  final StaffPayrollSummaryDto payroll;
 
   const StaffPerformanceContent({
     super.key,
@@ -27,6 +30,7 @@ class StaffPerformanceContent extends StatelessWidget {
     required this.shifts,
     required this.shiftDate,
     required this.onShiftDateSelected,
+    required this.payroll,
   });
 
   @override
@@ -60,10 +64,13 @@ class StaffPerformanceContent extends StatelessWidget {
           _StaffMatrix(performance: performance),
           const SizedBox(height: AppSpacing.md),
           StaffShiftRosterPanel(
+            staff: performance.staff,
             shifts: shifts,
             selectedDate: shiftDate,
             onDateSelected: onShiftDateSelected,
           ),
+          const SizedBox(height: AppSpacing.md),
+          StaffPayrollPanel(payroll: payroll),
           const SizedBox(height: AppSpacing.md),
           _FeedbackPanel(performance: performance),
         ],

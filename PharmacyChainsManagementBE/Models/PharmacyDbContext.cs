@@ -60,7 +60,13 @@ public partial class PharmacyDbContext : DbContext
 
     public virtual DbSet<StaffShift> StaffShifts { get; set; }
 
+    public virtual DbSet<StaffWeeklySchedule> StaffWeeklySchedules { get; set; }
+
     public virtual DbSet<StaffAttendance> StaffAttendances { get; set; }
+
+    public virtual DbSet<StaffPayRate> StaffPayRates { get; set; }
+
+    public virtual DbSet<StaffPayroll> StaffPayrolls { get; set; }
 
     public virtual DbSet<Supplier> Suppliers { get; set; }
 
@@ -375,6 +381,66 @@ public partial class PharmacyDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.StaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<StaffWeeklySchedule>(entity =>
+        {
+            entity.Property(e => e.WeeklyScheduleId).ValueGeneratedNever();
+
+            entity.HasOne<Branch>()
+                .WithMany()
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.StaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<StaffPayRate>(entity =>
+        {
+            entity.Property(e => e.PayRateId).ValueGeneratedNever();
+
+            entity.HasOne<Branch>()
+                .WithMany()
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.StaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<StaffPayroll>(entity =>
+        {
+            entity.Property(e => e.PayrollId).ValueGeneratedNever();
+
+            entity.HasOne<Branch>()
+                .WithMany()
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.StaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.CalculatedBy)
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 

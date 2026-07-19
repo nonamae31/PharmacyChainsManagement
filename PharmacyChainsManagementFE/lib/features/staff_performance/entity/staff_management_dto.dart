@@ -46,6 +46,7 @@ class UpsertStaffShiftRequestDto extends Equatable {
   final TimeOfDayValue endTime;
   final String status;
   final String? notes;
+  final bool applyToWeeklySchedule;
 
   const UpsertStaffShiftRequestDto({
     required this.staffId,
@@ -54,6 +55,7 @@ class UpsertStaffShiftRequestDto extends Equatable {
     required this.endTime,
     required this.status,
     this.notes,
+    this.applyToWeeklySchedule = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -63,6 +65,7 @@ class UpsertStaffShiftRequestDto extends Equatable {
     'endTime': endTime.asApiValue,
     'status': status,
     if (notes != null && notes!.isNotEmpty) 'notes': notes,
+    'applyToWeeklySchedule': applyToWeeklySchedule,
   };
 
   static String _date(DateTime value) =>
@@ -76,6 +79,7 @@ class UpsertStaffShiftRequestDto extends Equatable {
     endTime,
     status,
     notes,
+    applyToWeeklySchedule,
   ];
 }
 
@@ -107,6 +111,7 @@ class StaffShiftDto extends Equatable {
   final String status;
   final String? notes;
   final DateTime updatedAt;
+  final bool isRecurring;
 
   const StaffShiftDto({
     required this.shiftId,
@@ -118,6 +123,7 @@ class StaffShiftDto extends Equatable {
     required this.status,
     required this.notes,
     required this.updatedAt,
+    required this.isRecurring,
   });
 
   factory StaffShiftDto.fromJson(Map<String, dynamic> json) => StaffShiftDto(
@@ -130,6 +136,7 @@ class StaffShiftDto extends Equatable {
     status: json['status'].toString(),
     notes: json['notes'] as String?,
     updatedAt: DateTime.parse(json['updatedAt'].toString()),
+    isRecurring: json['isRecurring'] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -142,6 +149,7 @@ class StaffShiftDto extends Equatable {
     'status': status,
     'notes': notes,
     'updatedAt': updatedAt.toIso8601String(),
+    'isRecurring': isRecurring,
   };
 
   @override
@@ -155,6 +163,7 @@ class StaffShiftDto extends Equatable {
     status,
     notes,
     updatedAt,
+    isRecurring,
   ];
 }
 

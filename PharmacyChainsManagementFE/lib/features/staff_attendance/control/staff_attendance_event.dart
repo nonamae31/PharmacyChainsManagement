@@ -45,3 +45,7 @@ final class StaffAttendancePeriodChanged extends StaffAttendanceEvent {
 final class StaffAttendanceCheckInSubmitted extends StaffAttendanceEvent {
   const StaffAttendanceCheckInSubmitted();
 }
+
+final class StaffAttendanceCheckOutSubmitted extends StaffAttendanceEvent {
+  const StaffAttendanceCheckOutSubmitted();
+}

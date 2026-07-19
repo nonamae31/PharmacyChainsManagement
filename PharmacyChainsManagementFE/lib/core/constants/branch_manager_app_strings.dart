@@ -5,6 +5,7 @@ abstract final class AppStrings {
   static const revenue = 'Revenue';
   static const staff = 'Staff';
   static const inventory = 'Inventory';
+  static const profile = 'Profile';
   static const logOut = 'Log Out';
   static const retry = 'Retry';
   static const noData = 'No matching records found.';
@@ -105,9 +106,20 @@ abstract final class AppStrings {
   static const staffPerformanceMatrix = 'Staff Performance Matrix';
   static const shiftRosterTitle = 'Staff Shift Roster';
   static const shiftRosterSubtitle =
-      'View staff schedules for the selected date.';
-  static const selectShiftDate = 'Select shift date';
-  static const noShiftsForDate = 'No staff shifts are scheduled for this date.';
+      'Fixed weekly schedule: Monday to Saturday, with Sunday off.';
+  static const selectShiftDate = 'Select schedule week';
+  static const noShiftsForDate = 'No weekly schedule has been assigned.';
+  static const previousWeek = 'Previous week';
+  static const nextWeek = 'Next week';
+  static const mondayShort = 'MON';
+  static const tuesdayShort = 'TUE';
+  static const wednesdayShort = 'WED';
+  static const thursdayShort = 'THU';
+  static const fridayShort = 'FRI';
+  static const saturdayShort = 'SAT';
+  static const sundayShort = 'SUN';
+  static const weeklySchedule = 'Weekly schedule';
+  static const notAssigned = 'Not assigned';
   static const shiftTime = 'SHIFT TIME';
   static const shiftStatus = 'SHIFT STATUS';
   static const teamMember = 'TEAM MEMBER';
@@ -221,7 +233,59 @@ abstract final class AppStrings {
   static const invalidShiftTime = 'End time must be later than start time.';
   static const shiftTooLong = 'A shift cannot exceed 12 hours.';
   static const inactiveShiftTimeHelp =
-      'The existing shift time is retained when marking a staff member off or cancelling the shift.';
+      'The existing shift time is retained when marking the shift off or cancelled.';
+  static const applyToWeeklySchedule =
+      'Use this shift every Monday to Saturday';
+  static const weeklyScheduleHelp =
+      'When enabled, this becomes the employee’s fixed weekly shift. Turn it off for a one-day replacement.';
+  static const sundayDayOffHelp =
+      'Sunday is the fixed weekly day off and cannot be scheduled.';
+  static const staffPayrollTitle = 'Staff Payroll';
+  static const staffPayrollSubtitle =
+      'Hourly rate × recorded attendance hours + bonus − deduction.';
+  static const hourlyRate = 'HOURLY RATE';
+  static const recordedWorkHours = 'RECORDED WORK HOURS';
+  static const attendanceDays = 'ATTENDANCE DAYS';
+  static const lateDays = 'LATE DAYS';
+  static const lateTime = 'LATE TIME';
+  static const latePayReduction = 'LATE PAY REDUCTION';
+  static const totalLatePayReduction = 'TOTAL LATE PAY REDUCTION';
+  static const latePayReductionHelp =
+      'Late minutes are excluded from recorded work hours automatically.';
+  static const attendanceDetails = 'Attendance details';
+  static const viewAttendanceDetails = 'View attendance details';
+  static const attendanceDate = 'DATE';
+  static const checkIn = 'CHECK-IN';
+  static const checkOut = 'CHECK-OUT';
+  static const scheduledShift = 'SCHEDULED SHIFT';
+  static const payableHours = 'PAYABLE HOURS';
+  static const notCheckedOut = 'Not checked out';
+  static const noShiftAssigned = 'No shift assigned';
+  static const lateStatus = 'LATE';
+  static const presentStatus = 'PRESENT';
+  static const basePay = 'BASE PAY';
+  static const bonus = 'BONUS';
+  static const deduction = 'DEDUCTION';
+  static const netPay = 'NET PAY';
+  static const totalBonus = 'TOTAL BONUS';
+  static const totalDeduction = 'TOTAL DEDUCTION';
+  static const totalNetPay = 'TOTAL NET PAY';
+  static const payrollActions = 'ACTIONS';
+  static const setHourlyRate = 'Set hourly rate';
+  static const calculatePayroll = 'Calculate payroll';
+  static const effectiveFrom = 'Effective from';
+  static const payRateNotSet = 'Hourly rate has not been set';
+  static const attendanceHoursMissing =
+      'No payable hours from staff attendance have been recorded.';
+  static const draft = 'Draft';
+  static const confirmed = 'Confirmed';
+  static const payRateSaved = 'Hourly pay rate saved successfully.';
+  static const payrollSaved = 'Payroll draft saved successfully.';
+  static const payrollConfirmed = 'Payroll confirmed successfully.';
+  static const confirmPayrollWarning =
+      'After confirmation, this payroll can no longer be changed.';
+  static const deductionTooHigh =
+      'Deduction cannot exceed base pay plus bonus.';
   static const differenceReasonRequired =
       'Enter a reason when received revenue differs from system revenue.';
 }

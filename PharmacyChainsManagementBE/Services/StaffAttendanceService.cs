@@ -77,7 +77,33 @@ public sealed class StaffAttendanceService : IStaffAttendanceService
                         item.BranchId == user.BranchId.Value &&
                         item.ShiftDate == request.AttendanceDate,
                 cancellationToken);
-        var status = shift is not null && localTime > shift.StartTime.ToTimeSpan()
+        TimeOnly scheduledStart;
+        if (request.AttendanceDate.DayOfWeek == DayOfWeek.Sunday)
+        {
+            throw new InvalidOperationException("Sunday is the fixed weekly day off.");
+        }
+        if (shift is not null)
+        {
+            if (!string.Equals(shift.Status, "SCHEDULED", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("This date is marked as a day off or a cancelled shift.");
+            }
+            scheduledStart = shift.StartTime;
+        }
+        else
+        {
+            var weeklySchedule = await _dbContext.StaffWeeklySchedules
+                .AsNoTracking()
+                .SingleOrDefaultAsync(
+                    item => item.StaffId == staffId
+                        && item.BranchId == user.BranchId.Value,
+                    cancellationToken)
+                ?? throw new InvalidOperationException(
+                    "No weekly work schedule has been assigned. Contact the branch manager.");
+            scheduledStart = weeklySchedule.StartTime;
+        }
+
+        var status = localTime > scheduledStart.ToTimeSpan()
             ? "LATE"
             : "PRESENT";
 
@@ -94,6 +120,40 @@ public sealed class StaffAttendanceService : IStaffAttendanceService
         };
 
         _dbContext.StaffAttendances.Add(attendance);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return ToDto(attendance);
+    }
+
+    public async Task<StaffAttendanceResponseDto> CheckOutAsync(
+        Guid staffId,
+        StaffAttendanceCheckOutRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        if (request.AttendanceDate != today)
+        {
+            throw new InvalidOperationException("Check-out is only available for today.");
+        }
+
+        var attendance = await _dbContext.StaffAttendances
+            .SingleOrDefaultAsync(
+                item => item.StaffId == staffId &&
+                        item.AttendanceDate == request.AttendanceDate,
+                cancellationToken)
+            ?? throw new InvalidOperationException("Check in before checking out.");
+        if (attendance.CheckOutTime.HasValue)
+        {
+            return ToDto(attendance);
+        }
+
+        var now = DateTime.UtcNow;
+        if (now <= attendance.CheckInTime)
+        {
+            throw new InvalidOperationException("Check-out time must be after check-in time.");
+        }
+
+        attendance.CheckOutTime = now;
+        attendance.UpdatedAt = now;
         await _dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(attendance);
     }

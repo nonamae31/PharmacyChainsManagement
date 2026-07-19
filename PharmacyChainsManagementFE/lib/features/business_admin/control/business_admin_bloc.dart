@@ -11,6 +11,8 @@ class BusinessAdminBloc extends Bloc<BusinessAdminEvent, BusinessAdminState> {
     : super(BusinessAdminInitial()) {
     on<BusinessAdminProfileFetchRequested>(_onProfileFetchRequested);
     on<BusinessAdminProfileUpdateSubmitted>(_onProfileUpdateSubmitted);
+    on<BusinessAdminProfileAvatarSubmitted>(_onProfileAvatarSubmitted);
+    on<BusinessAdminPasswordChangeSubmitted>(_onPasswordChangeSubmitted);
     on<BusinessAdminForgotPasswordRequested>(_onForgotPasswordRequested);
     on<BusinessAdminPasswordResetSubmitted>(_onPasswordResetSubmitted);
     on<BranchesFetchRequested>(_onBranchesFetchRequested);
@@ -42,6 +44,47 @@ class BusinessAdminBloc extends Bloc<BusinessAdminEvent, BusinessAdminState> {
     await _guard(emit, () async {
       final profile = await businessAdminApiClient.fetchProfile();
       emit(BusinessAdminProfileLoadSuccess(profile));
+    });
+  }
+
+  Future<void> _onProfileAvatarSubmitted(
+    BusinessAdminProfileAvatarSubmitted event,
+    Emitter<BusinessAdminState> emit,
+  ) async {
+    emit(BusinessAdminLoading());
+    await _guard(emit, () async {
+      final profile = await businessAdminApiClient.uploadProfileAvatar(
+        event.bytes,
+        event.fileName,
+      );
+      emit(
+        BusinessAdminProfileOperationSuccess(
+          profile,
+          'Profile photo updated successfully.',
+        ),
+      );
+    });
+  }
+
+  Future<void> _onPasswordChangeSubmitted(
+    BusinessAdminPasswordChangeSubmitted event,
+    Emitter<BusinessAdminState> emit,
+  ) async {
+    final current = state;
+    final profile = current is BusinessAdminProfileLoadSuccess
+        ? current.profile
+        : null;
+    emit(BusinessAdminLoading());
+    await _guard(emit, () async {
+      await businessAdminApiClient.changePassword(event.request);
+      final refreshedProfile =
+          profile ?? await businessAdminApiClient.fetchProfile();
+      emit(
+        BusinessAdminProfileOperationSuccess(
+          refreshedProfile,
+          'Password changed successfully.',
+        ),
+      );
     });
   }
 

@@ -15,7 +15,9 @@ import 'widgets/staff_performance_content.dart';
 import 'widgets/staff_management_dialogs.dart';
 
 class StaffPerformanceScreen extends StatefulWidget {
-  const StaffPerformanceScreen({super.key});
+  final VoidCallback? onProfileTap;
+
+  const StaffPerformanceScreen({super.key, this.onProfileTap});
 
   @override
   State<StaffPerformanceScreen> createState() => _StaffPerformanceScreenState();
@@ -59,6 +61,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                 AppPageHeader(
                   title: AppStrings.staffPerformanceTitle,
                   subtitle: AppStrings.staffPerformanceSubtitle,
+                  onProfileTap: widget.onProfileTap,
                   searchHint: AppStrings.searchStaff,
                   onSearchChanged: (value) => _search(state, value),
                   actions: [
@@ -112,6 +115,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
           performance: performance,
           shifts: state.shifts,
           shiftDate: state.shiftDate,
+          payroll: state.payroll,
           onShiftDateSelected: (date) => context
               .read<StaffPerformanceBloc>()
               .add(StaffShiftDateSelected(date)),

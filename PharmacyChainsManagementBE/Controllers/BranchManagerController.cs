@@ -229,25 +229,6 @@ public sealed class BranchManagerController : ControllerBase
         }
 
         var normalizedStatus = request.Status.Trim().ToUpperInvariant();
-        if (normalizedStatus == "INACTIVE")
-        {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var hasScheduledShift = await _dbContext.StaffShifts
-                .AsNoTracking()
-                .AnyAsync(shift => shift.BranchId == access.Value.BranchId
-                    && shift.StaffId == staffId
-                    && shift.ShiftDate >= today
-                    && shift.Status == "SCHEDULED",
-                    cancellationToken);
-            if (hasScheduledShift)
-            {
-                return Conflict(new
-                {
-                    message = "Cancel the staff member's current and future scheduled shifts before deactivation."
-                });
-            }
-        }
-
         var staff = await BranchManagerDataService.UpdateStaffStatusAsync(
             _dbContext,
             access.Value.BranchId,
@@ -263,6 +244,8 @@ public sealed class BranchManagerController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<StaffShiftDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStaffShifts(
         [FromQuery] DateOnly? date = null,
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
         CancellationToken cancellationToken = default)
     {
         var access = await ResolveAccessAsync(cancellationToken);
@@ -271,10 +254,19 @@ public sealed class BranchManagerController : ControllerBase
             return Forbid();
         }
 
+        var selectedDate = date ?? BranchManagerDataService.GetVietnamToday();
+        var rangeStart = fromDate ?? selectedDate;
+        var rangeEnd = toDate ?? selectedDate;
+        if (rangeStart > rangeEnd || rangeEnd.DayNumber - rangeStart.DayNumber > 6)
+        {
+            return BadRequest(new { message = "The staff shift range must contain no more than seven days." });
+        }
+
         return Ok(await BranchManagerDataService.GetStaffShiftsAsync(
             _dbContext,
             access.Value.BranchId,
-            date ?? DateOnly.FromDateTime(DateTime.UtcNow),
+            rangeStart,
+            rangeEnd,
             cancellationToken));
     }
 
@@ -285,12 +277,23 @@ public sealed class BranchManagerController : ControllerBase
         CancellationToken cancellationToken)
     {
         var normalizedStatus = request.Status.Trim().ToUpperInvariant();
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        if (request.ShiftDate == default || request.ShiftDate < today)
+        var today = BranchManagerDataService.GetVietnamToday();
+        if (request.ShiftDate == default)
+        {
+            ModelState.AddModelError(nameof(request.ShiftDate), "Shift date is required.");
+        }
+        else if (normalizedStatus == "SCHEDULED" && request.ShiftDate < today)
         {
             ModelState.AddModelError(
                 nameof(request.ShiftDate),
-                "Shift date cannot be in the past.");
+                "A scheduled shift cannot be created in the past.");
+        }
+        if (normalizedStatus == "SCHEDULED"
+            && request.ShiftDate.DayOfWeek == DayOfWeek.Sunday)
+        {
+            ModelState.AddModelError(
+                nameof(request.ShiftDate),
+                "Sunday is the fixed weekly day off and cannot contain a scheduled shift.");
         }
         if (normalizedStatus == "SCHEDULED" && request.StartTime >= request.EndTime)
         {
@@ -332,11 +335,34 @@ public sealed class BranchManagerController : ControllerBase
                 && shift.StaffId == request.StaffId
                 && shift.ShiftDate == request.ShiftDate,
                 cancellationToken);
-        if (normalizedStatus != "SCHEDULED" && existingShift is null)
+        var hasWeeklySchedule = await _dbContext.StaffWeeklySchedules
+            .AsNoTracking()
+            .AnyAsync(schedule => schedule.BranchId == access.Value.BranchId
+                && schedule.StaffId == request.StaffId,
+                cancellationToken);
+        if (normalizedStatus != "SCHEDULED"
+            && existingShift is null
+            && !hasWeeklySchedule)
         {
             return BadRequest(new
             {
                 message = "This staff member has no scheduled shift on the selected date to mark as off or cancelled."
+            });
+        }
+
+        var isCoveredByConfirmedPayroll = await _dbContext.StaffPayrolls
+            .AsNoTracking()
+            .AnyAsync(payroll => payroll.BranchId == access.Value.BranchId
+                && payroll.StaffId == request.StaffId
+                && payroll.Status == "CONFIRMED"
+                && payroll.PeriodStart <= request.ShiftDate
+                && payroll.PeriodEnd >= request.ShiftDate,
+                cancellationToken);
+        if (isCoveredByConfirmedPayroll)
+        {
+            return Conflict(new
+            {
+                message = "This shift belongs to a confirmed payroll period and can no longer be changed."
             });
         }
 
@@ -371,6 +397,40 @@ public sealed class BranchManagerController : ControllerBase
                     message = $"This time slot is already assigned to {conflictingShift.StaffName} ({start} - {end}). Mark the existing shift as OFF or CANCELLED before assigning a replacement."
                 });
             }
+
+            var recurringConflict = await _dbContext.StaffWeeklySchedules
+                .AsNoTracking()
+                .Where(schedule => schedule.BranchId == access.Value.BranchId
+                    && schedule.StaffId != request.StaffId
+                    && schedule.StartTime < request.EndTime
+                    && request.StartTime < schedule.EndTime
+                    && (request.ApplyToWeeklySchedule
+                        || !_dbContext.StaffShifts.Any(shift =>
+                            shift.BranchId == access.Value.BranchId
+                            && shift.StaffId == schedule.StaffId
+                            && shift.ShiftDate == request.ShiftDate
+                            && shift.Status.ToUpper() != "SCHEDULED")))
+                .Join(
+                    _dbContext.Users.AsNoTracking(),
+                    schedule => schedule.StaffId,
+                    staff => staff.UserId,
+                    (schedule, staff) => new
+                    {
+                        StaffName = staff.FullName,
+                        schedule.StartTime,
+                        schedule.EndTime
+                    })
+                .OrderBy(item => item.StartTime)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (recurringConflict is not null)
+            {
+                var start = recurringConflict.StartTime.ToString("HH:mm", CultureInfo.InvariantCulture);
+                var end = recurringConflict.EndTime.ToString("HH:mm", CultureInfo.InvariantCulture);
+                return Conflict(new
+                {
+                    message = $"This recurring time slot belongs to {recurringConflict.StaffName} ({start} - {end}). Mark that employee off for this date or change the weekly schedule first."
+                });
+            }
         }
 
         var shift = await BranchManagerDataService.UpsertStaffShiftAsync(
@@ -382,6 +442,116 @@ public sealed class BranchManagerController : ControllerBase
         return shift is null
             ? BadRequest(new { message = "The selected staff member does not belong to this branch or is inactive." })
             : Ok(shift);
+    }
+
+    [HttpGet("staff-payroll")]
+    [ProducesResponseType(typeof(StaffPayrollSummaryDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStaffPayroll(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        var today = BranchManagerDataService.GetVietnamToday();
+        var periodStart = fromDate ?? new DateOnly(today.Year, today.Month, 1);
+        var periodEnd = toDate ?? today;
+        if (periodStart > periodEnd
+            || periodEnd.DayNumber - periodStart.DayNumber + 1 > MaximumReportDays)
+        {
+            return BadRequest(new { message = "The payroll period is invalid or exceeds 366 days." });
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        return Ok(await BranchManagerDataService.GetStaffPayrollAsync(
+            _dbContext,
+            access.Value.BranchId,
+            periodStart,
+            periodEnd,
+            cancellationToken));
+    }
+
+    [HttpPut("staff-pay-rates")]
+    [ProducesResponseType(typeof(StaffPayRateDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpsertStaffPayRate(
+        [FromBody] UpdateStaffPayRateRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var today = BranchManagerDataService.GetVietnamToday();
+        if (request.EffectiveFrom == default || request.EffectiveFrom > today)
+        {
+            ModelState.AddModelError(
+                nameof(request.EffectiveFrom),
+                "Effective date is required and cannot be in the future.");
+        }
+        if (!HasAtMostTwoDecimalPlaces(request.HourlyRate))
+        {
+            ModelState.AddModelError(nameof(request.HourlyRate), "Hourly rate cannot have more than two decimal places.");
+        }
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var payRate = await BranchManagerDataService.UpsertStaffPayRateAsync(
+            _dbContext,
+            access.Value.ManagerId,
+            access.Value.BranchId,
+            request,
+            cancellationToken);
+        return payRate is null
+            ? BadRequest(new { message = "The selected staff member does not belong to this branch." })
+            : Ok(payRate);
+    }
+
+    [HttpPost("staff-payroll")]
+    [ProducesResponseType(typeof(StaffPayrollRowDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpsertStaffPayroll(
+        [FromBody] UpsertStaffPayrollRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var today = BranchManagerDataService.GetVietnamToday();
+        if (request.PeriodStart == default || request.PeriodEnd == default
+            || request.PeriodStart > request.PeriodEnd
+            || request.PeriodEnd > today
+            || request.PeriodEnd.DayNumber - request.PeriodStart.DayNumber + 1 > MaximumReportDays)
+        {
+            ModelState.AddModelError(nameof(request.PeriodEnd), "Payroll period must be valid, not in the future, and no longer than 366 days.");
+        }
+        if (!HasAtMostTwoDecimalPlaces(request.Bonus)
+            || !HasAtMostTwoDecimalPlaces(request.Deduction))
+        {
+            ModelState.AddModelError(nameof(request.Bonus), "Bonus and deduction cannot have more than two decimal places.");
+        }
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var result = await BranchManagerDataService.UpsertStaffPayrollAsync(
+            _dbContext,
+            access.Value.ManagerId,
+            access.Value.BranchId,
+            request,
+            cancellationToken);
+        return result.Payroll is null
+            ? BadRequest(new { message = result.ErrorMessage })
+            : Ok(result.Payroll);
     }
 
     [HttpPost("staff-assessments")]

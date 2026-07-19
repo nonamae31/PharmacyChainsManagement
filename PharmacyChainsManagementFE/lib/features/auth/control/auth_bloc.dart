@@ -1,12 +1,14 @@
 import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:local_auth/local_auth.dart';
+
+import '../../../core/app_logger.dart';
 import '../entity/login_request_dto.dart';
 import '../network/auth_api_client.dart';
 import '../network/secure_storage_service.dart';
-import '../../../core/app_logger.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 

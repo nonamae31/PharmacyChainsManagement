@@ -13,7 +13,9 @@ import '../control/branch_inventory_state.dart';
 import 'widgets/branch_inventory_content.dart';
 
 class BranchInventoryScreen extends StatefulWidget {
-  const BranchInventoryScreen({super.key});
+  final VoidCallback? onProfileTap;
+
+  const BranchInventoryScreen({super.key, this.onProfileTap});
 
   @override
   State<BranchInventoryScreen> createState() => _BranchInventoryScreenState();
@@ -51,6 +53,7 @@ class _BranchInventoryScreenState extends State<BranchInventoryScreen> {
                 AppPageHeader(
                   title: AppStrings.inventoryTitle,
                   subtitle: AppStrings.inventorySubtitle,
+                  onProfileTap: widget.onProfileTap,
                   searchHint: AppStrings.searchInventory,
                   onSearchChanged: (value) => _search(state, value),
                   actions: [

@@ -48,6 +48,11 @@ class AttendanceDetailDialog extends StatelessWidget {
                     onCheckIn: () => context
                         .read<StaffAttendanceBloc>()
                         .add(const StaffAttendanceCheckInSubmitted()),
+                    canCheckOut: state.canCheckOut,
+                    checkOutInProgress: state.checkOutInProgress,
+                    onCheckOut: () => context.read<StaffAttendanceBloc>().add(
+                      const StaffAttendanceCheckOutSubmitted(),
+                    ),
                   ),
                 ),
               ],

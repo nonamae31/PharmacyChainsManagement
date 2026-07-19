@@ -18,6 +18,9 @@ class StaffPerformanceBloc
     on<StaffShiftUpsertRequested>(_onUpsertShift);
     on<StaffAssessmentCreateRequested>(_onCreateAssessment);
     on<StaffStatusUpdateRequested>(_onUpdateStatus);
+    on<StaffPayrollPeriodSelected>(_onPayrollPeriodSelected);
+    on<StaffPayRateUpsertRequested>(_onUpsertPayRate);
+    on<StaffPayrollUpsertRequested>(_onUpsertPayroll);
   }
 
   Future<void> _onFetchRequested(
@@ -26,13 +29,21 @@ class StaffPerformanceBloc
   ) async {
     emit(const StaffPerformanceLoading());
     try {
-      final shiftDate = _dateOnly(event.shiftDate ?? DateTime.now());
+      final shiftDate = _startOfWeek(event.shiftDate ?? DateTime.now());
       final performance = await _apiClient.fetchStaffPerformance(
         search: event.search,
         status: event.status,
         sort: event.sort,
       );
-      final shifts = await _apiClient.fetchStaffShifts(shiftDate);
+      final shifts = await _apiClient.fetchStaffShifts(
+        shiftDate,
+        shiftDate.add(const Duration(days: 6)),
+      );
+      final now = _dateOnly(DateTime.now());
+      final payroll = await _apiClient.fetchStaffPayroll(
+        DateTime(now.year, now.month),
+        now,
+      );
       emit(
         StaffPerformanceLoadSuccess(
           performance,
@@ -41,6 +52,7 @@ class StaffPerformanceBloc
           sort: event.sort,
           shifts: shifts,
           shiftDate: shiftDate,
+          payroll: payroll,
         ),
       );
     } on BranchManagerAppException catch (error) {
@@ -57,8 +69,11 @@ class StaffPerformanceBloc
     final current = state;
     if (current is! StaffPerformanceLoadSuccess) return;
     try {
-      final shiftDate = _dateOnly(event.date);
-      final shifts = await _apiClient.fetchStaffShifts(shiftDate);
+      final shiftDate = _startOfWeek(event.date);
+      final shifts = await _apiClient.fetchStaffShifts(
+        shiftDate,
+        shiftDate.add(const Duration(days: 6)),
+      );
       emit(
         StaffPerformanceLoadSuccess(
           current.performance,
@@ -67,6 +82,7 @@ class StaffPerformanceBloc
           sort: current.sort,
           shifts: shifts,
           shiftDate: shiftDate,
+          payroll: current.payroll,
         ),
       );
     } on BranchManagerAppException catch (error) {
@@ -78,6 +94,7 @@ class StaffPerformanceBloc
           sort: current.sort,
           shifts: current.shifts,
           shiftDate: current.shiftDate,
+          payroll: current.payroll,
           message: error.message,
         ),
       );
@@ -90,6 +107,7 @@ class StaffPerformanceBloc
           sort: current.sort,
           shifts: current.shifts,
           shiftDate: current.shiftDate,
+          payroll: current.payroll,
           message: AppStrings.dataCannotLoad,
         ),
       );
@@ -143,6 +161,59 @@ class StaffPerformanceBloc
     );
   }
 
+  Future<void> _onPayrollPeriodSelected(
+    StaffPayrollPeriodSelected event,
+    Emitter<StaffPerformanceState> emit,
+  ) async {
+    final current = state;
+    if (current is! StaffPerformanceLoadSuccess) return;
+    try {
+      final payroll = await _apiClient.fetchStaffPayroll(
+        _dateOnly(event.fromDate),
+        _dateOnly(event.toDate),
+      );
+      emit(
+        StaffPerformanceLoadSuccess(
+          current.performance,
+          search: current.search,
+          status: current.status,
+          sort: current.sort,
+          shifts: current.shifts,
+          shiftDate: current.shiftDate,
+          payroll: payroll,
+        ),
+      );
+    } on BranchManagerAppException catch (error) {
+      emit(_operationFailure(current, error.message));
+    } catch (_) {
+      emit(_operationFailure(current, AppStrings.dataCannotLoad));
+    }
+  }
+
+  Future<void> _onUpsertPayRate(
+    StaffPayRateUpsertRequested event,
+    Emitter<StaffPerformanceState> emit,
+  ) async {
+    await _runOperation(
+      emit,
+      () => _apiClient.updateStaffPayRate(event.request),
+      AppStrings.payRateSaved,
+    );
+  }
+
+  Future<void> _onUpsertPayroll(
+    StaffPayrollUpsertRequested event,
+    Emitter<StaffPerformanceState> emit,
+  ) async {
+    await _runOperation(
+      emit,
+      () => _apiClient.upsertStaffPayroll(event.request),
+      event.request.status == 'CONFIRMED'
+          ? AppStrings.payrollConfirmed
+          : AppStrings.payrollSaved,
+    );
+  }
+
   Future<void> _runOperation(
     Emitter<StaffPerformanceState> emit,
     Future<void> Function() operation,
@@ -160,16 +231,26 @@ class StaffPerformanceBloc
           sort: current.sort,
           shifts: current.shifts,
           shiftDate: current.shiftDate,
+          payroll: current.payroll,
         ),
       );
       await operation();
-      final effectiveShiftDate = _dateOnly(shiftDate ?? current.shiftDate);
+      final effectiveShiftDate = _startOfWeek(
+        shiftDate ?? current.shiftDate,
+      );
       final performance = await _apiClient.fetchStaffPerformance(
         search: current.search,
         status: current.status,
         sort: current.sort,
       );
-      final shifts = await _apiClient.fetchStaffShifts(effectiveShiftDate);
+      final shifts = await _apiClient.fetchStaffShifts(
+        effectiveShiftDate,
+        effectiveShiftDate.add(const Duration(days: 6)),
+      );
+      final payroll = await _apiClient.fetchStaffPayroll(
+        current.payroll.periodStart,
+        current.payroll.periodEnd,
+      );
       emit(
         StaffPerformanceOperationSuccess(
           performance,
@@ -178,6 +259,7 @@ class StaffPerformanceBloc
           sort: current.sort,
           shifts: shifts,
           shiftDate: effectiveShiftDate,
+          payroll: payroll,
           message: successMessage,
         ),
       );
@@ -190,6 +272,7 @@ class StaffPerformanceBloc
           sort: current.sort,
           shifts: current.shifts,
           shiftDate: current.shiftDate,
+          payroll: current.payroll,
           message: error.message,
         ),
       );
@@ -202,6 +285,7 @@ class StaffPerformanceBloc
           sort: current.sort,
           shifts: current.shifts,
           shiftDate: current.shiftDate,
+          payroll: current.payroll,
           message: AppStrings.dataCannotLoad,
         ),
       );
@@ -210,4 +294,23 @@ class StaffPerformanceBloc
 
   DateTime _dateOnly(DateTime value) =>
       DateTime(value.year, value.month, value.day);
+
+  DateTime _startOfWeek(DateTime value) {
+    final date = _dateOnly(value);
+    return date.subtract(Duration(days: date.weekday - DateTime.monday));
+  }
+
+  StaffPerformanceOperationFailure _operationFailure(
+    StaffPerformanceLoadSuccess current,
+    String message,
+  ) => StaffPerformanceOperationFailure(
+    current.performance,
+    search: current.search,
+    status: current.status,
+    sort: current.sort,
+    shifts: current.shifts,
+    shiftDate: current.shiftDate,
+    payroll: current.payroll,
+    message: message,
+  );
 }

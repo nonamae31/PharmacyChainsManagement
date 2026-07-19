@@ -20,6 +20,7 @@ final class StaffAttendanceLoadSuccess extends StaffAttendanceState {
   final List<DateTime> visibleDates;
   final List<AttendanceRecordDto> records;
   final bool checkInInProgress;
+  final bool checkOutInProgress;
   final bool detailRequested;
   final String? operationMessage;
 
@@ -30,6 +31,7 @@ final class StaffAttendanceLoadSuccess extends StaffAttendanceState {
     required this.visibleDates,
     required this.records,
     this.checkInInProgress = false,
+    this.checkOutInProgress = false,
     this.detailRequested = false,
     this.operationMessage,
   });
@@ -46,10 +48,18 @@ final class StaffAttendanceLoadSuccess extends StaffAttendanceState {
     return _sameDay(selectedDate, now) && selectedRecord == null;
   }
 
+  bool get canCheckOut {
+    final now = DateTime.now();
+    return _sameDay(selectedDate, now) &&
+        selectedRecord != null &&
+        selectedRecord!.checkOutTime == null;
+  }
+
   StaffAttendanceLoadSuccess copyWith({
     DateTime? selectedDate,
     List<AttendanceRecordDto>? records,
     bool? checkInInProgress,
+    bool? checkOutInProgress,
     bool? detailRequested,
     String? operationMessage,
     bool clearOperationMessage = false,
@@ -60,6 +70,7 @@ final class StaffAttendanceLoadSuccess extends StaffAttendanceState {
     visibleDates: visibleDates,
     records: records ?? this.records,
     checkInInProgress: checkInInProgress ?? this.checkInInProgress,
+    checkOutInProgress: checkOutInProgress ?? this.checkOutInProgress,
     detailRequested: detailRequested ?? this.detailRequested,
     operationMessage: clearOperationMessage
         ? null
@@ -79,6 +90,7 @@ final class StaffAttendanceLoadSuccess extends StaffAttendanceState {
     visibleDates,
     records,
     checkInInProgress,
+    checkOutInProgress,
     detailRequested,
     operationMessage,
   ];

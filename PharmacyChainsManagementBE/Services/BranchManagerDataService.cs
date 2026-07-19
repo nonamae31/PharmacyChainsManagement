@@ -10,6 +10,10 @@ using PharmacyChainsManagementBE.Models;
 
 namespace PharmacyChainsManagementBE.Services;
 
+public sealed record StaffPayrollOperationResult(
+    StaffPayrollRowDto? Payroll,
+    string? ErrorMessage);
+
 public static class BranchManagerDataService
 {
     private const string ActiveStatus = "ACTIVE";
@@ -22,6 +26,10 @@ public static class BranchManagerDataService
     private const string DailyRevenueAction = "DAILY_REVENUE_CONFIRMED";
     private const string DailyRevenueEntity = "BRANCH_DAILY_REVENUE";
     private const string ScheduledShiftStatus = "SCHEDULED";
+    private const string CompletedShiftStatus = "COMPLETED";
+    private const string PresentAttendanceStatus = "PRESENT";
+    private const string LateAttendanceStatus = "LATE";
+    private const string ConfirmedPayrollStatus = "CONFIRMED";
     private static readonly TimeZoneInfo VietnamTimeZone = ResolveVietnamTimeZone();
     private static readonly JsonSerializerOptions AuditJsonOptions = new()
     {
@@ -419,9 +427,32 @@ public static class BranchManagerDataService
             return null;
         }
 
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            cancellationToken);
+        var now = DateTime.UtcNow;
+        if (status == "INACTIVE")
+        {
+            await dbContext.StaffWeeklySchedules
+                .Where(schedule => schedule.BranchId == branchId
+                    && schedule.StaffId == staffId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var today = GetVietnamToday();
+            await dbContext.StaffShifts
+                .Where(shift => shift.BranchId == branchId
+                    && shift.StaffId == staffId
+                    && shift.ShiftDate >= today
+                    && shift.Status == ScheduledShiftStatus)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(shift => shift.Status, CancelledStatus)
+                        .SetProperty(shift => shift.UpdatedAt, now),
+                    cancellationToken);
+        }
+
         staff.Status = status;
-        staff.UpdatedAt = DateTime.UtcNow;
+        staff.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return new BranchStaffDto(staff.UserId, staff.FullName, staff.Email, staff.Phone, staff.Status, staff.UpdatedAt);
     }
@@ -432,27 +463,103 @@ public static class BranchManagerDataService
         DateOnly date,
         CancellationToken cancellationToken)
     {
+        return await GetStaffShiftsAsync(
+            dbContext,
+            branchId,
+            date,
+            date,
+            cancellationToken);
+    }
+
+    public static async Task<IReadOnlyList<StaffShiftDto>> GetStaffShiftsAsync(
+        PharmacyDbContext dbContext,
+        Guid branchId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        CancellationToken cancellationToken)
+    {
         var staffNames = await dbContext.Users
             .AsNoTracking()
-            .Where(user => user.BranchId == branchId && user.Role.RoleCode == StaffRoleCode)
+            .Where(user => user.BranchId == branchId
+                && user.Role.RoleCode == StaffRoleCode
+                && user.Status == ActiveStatus)
             .ToDictionaryAsync(user => user.UserId, user => user.FullName, cancellationToken);
         var staffIds = staffNames.Keys.ToList();
         var shifts = await dbContext.StaffShifts
             .AsNoTracking()
-            .Where(shift => shift.BranchId == branchId && shift.ShiftDate == date && staffIds.Contains(shift.StaffId))
-            .OrderBy(shift => shift.StartTime)
+            .Where(shift => shift.BranchId == branchId
+                && shift.ShiftDate >= fromDate
+                && shift.ShiftDate <= toDate
+                && staffIds.Contains(shift.StaffId))
             .ToListAsync(cancellationToken);
+        var exactShifts = shifts.ToDictionary(
+            shift => (shift.StaffId, shift.ShiftDate));
+        var weeklySchedules = await dbContext.StaffWeeklySchedules
+            .AsNoTracking()
+            .Where(schedule => schedule.BranchId == branchId
+                && staffIds.Contains(schedule.StaffId))
+            .ToDictionaryAsync(schedule => schedule.StaffId, cancellationToken);
+        var result = new List<StaffShiftDto>();
 
-        return shifts.Select(shift => new StaffShiftDto(
-            shift.ShiftId,
-            shift.StaffId,
-            staffNames.GetValueOrDefault(shift.StaffId, string.Empty),
-            shift.ShiftDate,
-            shift.StartTime,
-            shift.EndTime,
-            shift.Status,
-            shift.Notes,
-            shift.UpdatedAt)).ToList();
+        for (var date = fromDate; date <= toDate; date = date.AddDays(1))
+        {
+            foreach (var staff in staffNames)
+            {
+                weeklySchedules.TryGetValue(staff.Key, out var weeklySchedule);
+                if (date.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    result.Add(new StaffShiftDto(
+                        Guid.Empty,
+                        staff.Key,
+                        staff.Value,
+                        date,
+                        weeklySchedule?.StartTime ?? TimeOnly.MinValue,
+                        weeklySchedule?.EndTime ?? TimeOnly.MinValue,
+                        "OFF",
+                        null,
+                        weeklySchedule?.UpdatedAt ?? DateTime.MinValue,
+                        true));
+                    continue;
+                }
+
+                if (exactShifts.TryGetValue((staff.Key, date), out var exactShift))
+                {
+                    result.Add(new StaffShiftDto(
+                        exactShift.ShiftId,
+                        exactShift.StaffId,
+                        staff.Value,
+                        exactShift.ShiftDate,
+                        exactShift.StartTime,
+                        exactShift.EndTime,
+                        exactShift.Status,
+                        exactShift.Notes,
+                        exactShift.UpdatedAt,
+                        false));
+                    continue;
+                }
+
+                if (weeklySchedule is not null)
+                {
+                    result.Add(new StaffShiftDto(
+                        Guid.Empty,
+                        staff.Key,
+                        staff.Value,
+                        date,
+                        weeklySchedule.StartTime,
+                        weeklySchedule.EndTime,
+                        ScheduledShiftStatus,
+                        null,
+                        weeklySchedule.UpdatedAt,
+                        true));
+                }
+            }
+        }
+
+        return result
+            .OrderBy(shift => shift.ShiftDate)
+            .ThenBy(shift => shift.StartTime)
+            .ThenBy(shift => shift.StaffName)
+            .ToList();
     }
 
     public static async Task<StaffShiftDto?> UpsertStaffShiftAsync(
@@ -482,7 +589,13 @@ public static class BranchManagerDataService
                 && item.StaffId == request.StaffId
                 && item.ShiftDate == request.ShiftDate,
             cancellationToken);
-        if (shift is null && normalizedStatus != ScheduledShiftStatus)
+        var weeklySchedule = await dbContext.StaffWeeklySchedules
+            .SingleOrDefaultAsync(item => item.BranchId == branchId
+                && item.StaffId == request.StaffId,
+                cancellationToken);
+        if (shift is null
+            && normalizedStatus != ScheduledShiftStatus
+            && weeklySchedule is null)
         {
             return null;
         }
@@ -498,6 +611,12 @@ public static class BranchManagerDataService
                 CreatedBy = managerId,
                 CreatedAt = now
             };
+            if (normalizedStatus != ScheduledShiftStatus
+                && weeklySchedule is not null)
+            {
+                shift.StartTime = weeklySchedule.StartTime;
+                shift.EndTime = weeklySchedule.EndTime;
+            }
             dbContext.StaffShifts.Add(shift);
         }
 
@@ -509,6 +628,28 @@ public static class BranchManagerDataService
         shift.Status = normalizedStatus;
         shift.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
         shift.UpdatedAt = now;
+
+        if (request.ApplyToWeeklySchedule
+            && normalizedStatus == ScheduledShiftStatus)
+        {
+            if (weeklySchedule is null)
+            {
+                weeklySchedule = new StaffWeeklySchedule
+                {
+                    WeeklyScheduleId = Guid.NewGuid(),
+                    BranchId = branchId,
+                    StaffId = request.StaffId,
+                    CreatedAt = now
+                };
+                dbContext.StaffWeeklySchedules.Add(weeklySchedule);
+            }
+
+            weeklySchedule.StartTime = request.StartTime;
+            weeklySchedule.EndTime = request.EndTime;
+            weeklySchedule.UpdatedBy = managerId;
+            weeklySchedule.UpdatedAt = now;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new StaffShiftDto(
@@ -520,7 +661,259 @@ public static class BranchManagerDataService
             shift.EndTime,
             shift.Status,
             shift.Notes,
-            shift.UpdatedAt);
+            shift.UpdatedAt,
+            false);
+    }
+
+    public static async Task<StaffPayRateDto?> UpsertStaffPayRateAsync(
+        PharmacyDbContext dbContext,
+        Guid managerId,
+        Guid branchId,
+        UpdateStaffPayRateRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var isBranchStaff = await dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(user => user.UserId == request.StaffId
+                && user.BranchId == branchId
+                && user.Role.RoleCode == StaffRoleCode,
+                cancellationToken);
+        if (!isBranchStaff)
+        {
+            return null;
+        }
+
+        var now = DateTime.UtcNow;
+        var payRate = await dbContext.StaffPayRates.SingleOrDefaultAsync(
+            item => item.BranchId == branchId && item.StaffId == request.StaffId,
+            cancellationToken);
+        if (payRate is null)
+        {
+            payRate = new StaffPayRate
+            {
+                PayRateId = Guid.NewGuid(),
+                BranchId = branchId,
+                StaffId = request.StaffId,
+                CreatedAt = now
+            };
+            dbContext.StaffPayRates.Add(payRate);
+        }
+
+        payRate.HourlyRate = request.HourlyRate;
+        payRate.EffectiveFrom = request.EffectiveFrom;
+        payRate.UpdatedBy = managerId;
+        payRate.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new StaffPayRateDto(
+            payRate.StaffId,
+            payRate.HourlyRate,
+            payRate.EffectiveFrom,
+            payRate.UpdatedAt);
+    }
+
+    public static async Task<StaffPayrollSummaryDto> GetStaffPayrollAsync(
+        PharmacyDbContext dbContext,
+        Guid branchId,
+        DateOnly periodStart,
+        DateOnly periodEnd,
+        CancellationToken cancellationToken)
+    {
+        var staff = await dbContext.Users
+            .AsNoTracking()
+            .Where(user => user.BranchId == branchId && user.Role.RoleCode == StaffRoleCode)
+            .OrderBy(user => user.FullName)
+            .Select(user => new { user.UserId, user.FullName })
+            .ToListAsync(cancellationToken);
+        var staffIds = staff.Select(item => item.UserId).ToList();
+        var payRates = await dbContext.StaffPayRates
+            .AsNoTracking()
+            .Where(item => item.BranchId == branchId && staffIds.Contains(item.StaffId))
+            .ToDictionaryAsync(item => item.StaffId, cancellationToken);
+        var payrolls = await dbContext.StaffPayrolls
+            .AsNoTracking()
+            .Where(item => item.BranchId == branchId
+                && item.PeriodStart == periodStart
+                && item.PeriodEnd == periodEnd
+                && staffIds.Contains(item.StaffId))
+            .ToDictionaryAsync(item => item.StaffId, cancellationToken);
+        var attendanceMetrics = await GetRecordedAttendanceMetricsAsync(
+            dbContext,
+            branchId,
+            staffIds,
+            periodStart,
+            periodEnd,
+            cancellationToken);
+        var periodDays = periodEnd.DayNumber - periodStart.DayNumber + 1;
+
+        var rows = staff.Select(item =>
+        {
+            payrolls.TryGetValue(item.UserId, out var payroll);
+            payRates.TryGetValue(item.UserId, out var payRate);
+            var metrics = attendanceMetrics.GetValueOrDefault(
+                item.UserId,
+                StaffAttendancePayrollMetrics.Empty);
+            if (payroll?.Status == ConfirmedPayrollStatus)
+            {
+                return MapPayroll(payroll, item.FullName, metrics, periodDays);
+            }
+
+            var hours = metrics.Hours;
+            var hourlyRate = payRate is not null && payRate.EffectiveFrom <= periodStart
+                ? payRate.HourlyRate
+                : (decimal?)null;
+            var basePay = CalculateBasePay(hours, hourlyRate ?? 0m);
+            var latePayReduction = CalculateBasePay(
+                metrics.LateMinutes / 60m,
+                hourlyRate ?? 0m);
+            var bonus = payroll?.Bonus ?? 0m;
+            var deduction = payroll?.Deduction ?? 0m;
+            var netPay = Math.Max(0m, basePay + bonus - deduction);
+            return new StaffPayrollRowDto(
+                payroll?.PayrollId,
+                item.UserId,
+                item.FullName,
+                hourlyRate,
+                hours,
+                metrics.AttendanceDays,
+                periodDays,
+                metrics.LateDays,
+                metrics.LateMinutes,
+                latePayReduction,
+                metrics.Records,
+                basePay,
+                bonus,
+                deduction,
+                netPay,
+                payroll?.Status ?? "NOT_CALCULATED",
+                payroll?.Notes,
+                payroll?.UpdatedAt);
+        }).ToList();
+
+        return new StaffPayrollSummaryDto(
+            branchId,
+            periodStart,
+            periodEnd,
+            rows.Sum(item => item.CompletedHours),
+            rows.Sum(item => item.LateMinutes),
+            rows.Sum(item => item.LatePayReduction),
+            rows.Sum(item => item.BasePay),
+            rows.Sum(item => item.Bonus),
+            rows.Sum(item => item.Deduction),
+            rows.Sum(item => item.NetPay),
+            rows);
+    }
+
+    public static async Task<StaffPayrollOperationResult> UpsertStaffPayrollAsync(
+        PharmacyDbContext dbContext,
+        Guid managerId,
+        Guid branchId,
+        UpsertStaffPayrollRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var staff = await dbContext.Users
+            .AsNoTracking()
+            .Where(user => user.UserId == request.StaffId
+                && user.BranchId == branchId
+                && user.Role.RoleCode == StaffRoleCode)
+            .Select(user => new { user.UserId, user.FullName })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (staff is null)
+        {
+            return new StaffPayrollOperationResult(null, "The selected staff member does not belong to this branch.");
+        }
+
+        var payRate = await dbContext.StaffPayRates
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.BranchId == branchId
+                && item.StaffId == request.StaffId
+                && item.EffectiveFrom <= request.PeriodStart,
+                cancellationToken);
+        if (payRate is null)
+        {
+            return new StaffPayrollOperationResult(null, "Set an hourly pay rate for this staff member before calculating payroll.");
+        }
+
+        var payroll = await dbContext.StaffPayrolls.SingleOrDefaultAsync(
+            item => item.BranchId == branchId
+                && item.StaffId == request.StaffId
+                && item.PeriodStart == request.PeriodStart
+                && item.PeriodEnd == request.PeriodEnd,
+            cancellationToken);
+        if (payroll?.Status == ConfirmedPayrollStatus)
+        {
+            return new StaffPayrollOperationResult(null, "This payroll period has already been confirmed and cannot be changed.");
+        }
+
+        var overlapsConfirmedPayroll = await dbContext.StaffPayrolls
+            .AsNoTracking()
+            .AnyAsync(item => item.BranchId == branchId
+                && item.StaffId == request.StaffId
+                && item.Status == ConfirmedPayrollStatus
+                && item.PeriodStart <= request.PeriodEnd
+                && request.PeriodStart <= item.PeriodEnd,
+                cancellationToken);
+        if (overlapsConfirmedPayroll)
+        {
+            return new StaffPayrollOperationResult(
+                null,
+                "The selected period overlaps a confirmed payroll period for this staff member.");
+        }
+
+        var attendanceMetrics = await GetRecordedAttendanceMetricsAsync(
+            dbContext,
+            branchId,
+            new[] { request.StaffId },
+            request.PeriodStart,
+            request.PeriodEnd,
+            cancellationToken);
+        var metrics = attendanceMetrics.GetValueOrDefault(
+            request.StaffId,
+            StaffAttendancePayrollMetrics.Empty);
+        var hours = metrics.Hours;
+        if (hours <= 0)
+        {
+            return new StaffPayrollOperationResult(
+                null,
+                "No staff attendance hours have been recorded for this payroll period.");
+        }
+        var basePay = CalculateBasePay(hours, payRate.HourlyRate);
+        if (request.Deduction > basePay + request.Bonus)
+        {
+            return new StaffPayrollOperationResult(null, "Deduction cannot exceed base pay plus bonus.");
+        }
+
+        var now = DateTime.UtcNow;
+        if (payroll is null)
+        {
+            payroll = new StaffPayroll
+            {
+                PayrollId = Guid.NewGuid(),
+                BranchId = branchId,
+                StaffId = request.StaffId,
+                PeriodStart = request.PeriodStart,
+                PeriodEnd = request.PeriodEnd
+            };
+            dbContext.StaffPayrolls.Add(payroll);
+        }
+
+        payroll.HourlyRate = payRate.HourlyRate;
+        payroll.CompletedHours = hours;
+        payroll.BasePay = basePay;
+        payroll.Bonus = request.Bonus;
+        payroll.Deduction = request.Deduction;
+        payroll.NetPay = basePay + request.Bonus - request.Deduction;
+        payroll.Status = request.Status.Trim().ToUpperInvariant();
+        payroll.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+        payroll.CalculatedBy = managerId;
+        payroll.CalculatedAt = now;
+        payroll.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var periodDays = request.PeriodEnd.DayNumber - request.PeriodStart.DayNumber + 1;
+        return new StaffPayrollOperationResult(
+            MapPayroll(payroll, staff.FullName, metrics, periodDays),
+            null);
     }
 
     public static async Task<StaffAssessmentDto?> CreateStaffAssessmentAsync(
@@ -889,6 +1282,223 @@ public static class BranchManagerDataService
         return "In Stock";
     }
 
+    private static StaffPayrollRowDto MapPayroll(
+        StaffPayroll payroll,
+        string staffName,
+        StaffAttendancePayrollMetrics attendance,
+        int periodDays)
+    {
+        return new StaffPayrollRowDto(
+            payroll.PayrollId,
+            payroll.StaffId,
+            staffName,
+            payroll.HourlyRate,
+            payroll.CompletedHours,
+            attendance.AttendanceDays,
+            periodDays,
+            attendance.LateDays,
+            attendance.LateMinutes,
+            CalculateBasePay(attendance.LateMinutes / 60m, payroll.HourlyRate),
+            attendance.Records,
+            payroll.BasePay,
+            payroll.Bonus,
+            payroll.Deduction,
+            payroll.NetPay,
+            payroll.Status,
+            payroll.Notes,
+            payroll.UpdatedAt);
+    }
+
+    private static decimal CalculateBasePay(decimal completedHours, decimal hourlyRate)
+    {
+        return Math.Round(
+            completedHours * hourlyRate,
+            2,
+            MidpointRounding.AwayFromZero);
+    }
+
+    private static async Task<Dictionary<Guid, StaffAttendancePayrollMetrics>>
+        GetRecordedAttendanceMetricsAsync(
+        PharmacyDbContext dbContext,
+        Guid branchId,
+        IReadOnlyCollection<Guid> staffIds,
+        DateOnly periodStart,
+        DateOnly periodEnd,
+        CancellationToken cancellationToken)
+    {
+        if (staffIds.Count == 0)
+        {
+            return new Dictionary<Guid, StaffAttendancePayrollMetrics>();
+        }
+
+        var attendances = await dbContext.StaffAttendances
+            .AsNoTracking()
+            .Where(item => item.BranchId == branchId
+                && staffIds.Contains(item.StaffId)
+                && item.AttendanceDate >= periodStart
+                && item.AttendanceDate <= periodEnd
+                && (item.Status == PresentAttendanceStatus
+                    || item.Status == LateAttendanceStatus))
+            .ToListAsync(cancellationToken);
+        if (attendances.Count == 0)
+        {
+            return new Dictionary<Guid, StaffAttendancePayrollMetrics>();
+        }
+
+        var shifts = await dbContext.StaffShifts
+            .AsNoTracking()
+            .Where(shift => shift.BranchId == branchId
+                && staffIds.Contains(shift.StaffId)
+                && shift.ShiftDate >= periodStart
+                && shift.ShiftDate <= periodEnd)
+            .ToListAsync(cancellationToken);
+        var shiftsByStaffDate = shifts.ToDictionary(
+            shift => (shift.StaffId, shift.ShiftDate));
+        var weeklySchedules = await dbContext.StaffWeeklySchedules
+            .AsNoTracking()
+            .Where(schedule => schedule.BranchId == branchId
+                && staffIds.Contains(schedule.StaffId))
+            .ToDictionaryAsync(schedule => schedule.StaffId, cancellationToken);
+        var vietnamNow = ConvertToVietnamTime(DateTime.UtcNow);
+        var recordsByStaff = new Dictionary<Guid, List<StaffPayrollAttendanceDayDto>>();
+
+        foreach (var attendance in attendances.OrderBy(item => item.AttendanceDate))
+        {
+            var hasDateOverride = shiftsByStaffDate.TryGetValue(
+                (attendance.StaffId, attendance.AttendanceDate),
+                out var shift);
+            if (hasDateOverride
+                && shift is not null
+                && shift.Status != ScheduledShiftStatus
+                && shift.Status != CompletedShiftStatus)
+            {
+                shift = null;
+            }
+            else if (!hasDateOverride
+                && attendance.AttendanceDate.DayOfWeek != DayOfWeek.Sunday
+                && weeklySchedules.TryGetValue(attendance.StaffId, out var weeklySchedule))
+            {
+                shift = new StaffShift
+                {
+                    StaffId = attendance.StaffId,
+                    BranchId = branchId,
+                    ShiftDate = attendance.AttendanceDate,
+                    StartTime = weeklySchedule.StartTime,
+                    EndTime = weeklySchedule.EndTime,
+                    Status = ScheduledShiftStatus
+                };
+            }
+            var payableHours = shift is null
+                ? 0m
+                : CalculateRecordedAttendanceHours(attendance, shift, vietnamNow);
+            var lateMinutes = shift is null
+                ? 0
+                : CalculateLateMinutes(attendance, shift);
+            if (!recordsByStaff.TryGetValue(attendance.StaffId, out var records))
+            {
+                records = new List<StaffPayrollAttendanceDayDto>();
+                recordsByStaff[attendance.StaffId] = records;
+            }
+
+            records.Add(new StaffPayrollAttendanceDayDto(
+                attendance.AttendanceDate,
+                attendance.CheckInTime,
+                attendance.CheckOutTime,
+                attendance.Status,
+                shift?.StartTime,
+                shift?.EndTime,
+                lateMinutes,
+                Math.Round(payableHours, 2, MidpointRounding.AwayFromZero)));
+        }
+
+        return recordsByStaff.ToDictionary(
+            item => item.Key,
+            item => new StaffAttendancePayrollMetrics(
+                Math.Round(
+                    item.Value.Sum(record => record.PayableHours),
+                    2,
+                    MidpointRounding.AwayFromZero),
+                item.Value));
+    }
+
+    private sealed record StaffAttendancePayrollMetrics(
+        decimal Hours,
+        IReadOnlyList<StaffPayrollAttendanceDayDto> Records)
+    {
+        public static StaffAttendancePayrollMetrics Empty { get; } =
+            new(0m, Array.Empty<StaffPayrollAttendanceDayDto>());
+
+        public int AttendanceDays => Records.Count;
+
+        public int LateDays => Records.Count(record =>
+            string.Equals(
+                record.Status,
+                LateAttendanceStatus,
+                StringComparison.OrdinalIgnoreCase));
+
+        public int LateMinutes => Records.Sum(record => record.LateMinutes);
+    }
+
+    private static int CalculateLateMinutes(
+        StaffAttendance attendance,
+        StaffShift shift)
+    {
+        var scheduledStart = attendance.AttendanceDate.ToDateTime(shift.StartTime);
+        var scheduledEnd = attendance.AttendanceDate.ToDateTime(shift.EndTime);
+        var checkedInAt = ConvertToVietnamTime(attendance.CheckInTime);
+        if (checkedInAt <= scheduledStart)
+        {
+            return 0;
+        }
+
+        var penaltyEnd = checkedInAt < scheduledEnd
+            ? checkedInAt
+            : scheduledEnd;
+        return Math.Max(
+            0,
+            (int)Math.Ceiling((penaltyEnd - scheduledStart).TotalMinutes));
+    }
+
+    private static decimal CalculateRecordedAttendanceHours(
+        StaffAttendance attendance,
+        StaffShift shift,
+        DateTime vietnamNow)
+    {
+        var scheduledStart = attendance.AttendanceDate.ToDateTime(shift.StartTime);
+        var scheduledEnd = attendance.AttendanceDate.ToDateTime(shift.EndTime);
+        var checkedInAt = ConvertToVietnamTime(attendance.CheckInTime);
+        var workStartedAt = checkedInAt > scheduledStart
+            ? checkedInAt
+            : scheduledStart;
+
+        DateTime workEndedAt;
+        if (attendance.CheckOutTime.HasValue)
+        {
+            var checkedOutAt = ConvertToVietnamTime(attendance.CheckOutTime.Value);
+            workEndedAt = checkedOutAt < scheduledEnd
+                ? checkedOutAt
+                : scheduledEnd;
+        }
+        else
+        {
+            // Attendance currently records check-in only. Once the assigned shift
+            // has ended, its scheduled end is used as the payable end time.
+            if (vietnamNow < scheduledEnd)
+            {
+                return 0m;
+            }
+
+            workEndedAt = scheduledEnd;
+        }
+
+        if (workEndedAt <= workStartedAt)
+        {
+            return 0m;
+        }
+
+        return (decimal)(workEndedAt - workStartedAt).TotalHours;
+    }
+
     private static DateTime ConvertToVietnamTime(DateTime value)
     {
         var utcValue = value.Kind switch
@@ -899,6 +1509,9 @@ public static class BranchManagerDataService
         };
         return TimeZoneInfo.ConvertTimeFromUtc(utcValue, VietnamTimeZone);
     }
+
+    public static DateOnly GetVietnamToday() =>
+        DateOnly.FromDateTime(ConvertToVietnamTime(DateTime.UtcNow));
 
     private static TimeZoneInfo ResolveVietnamTimeZone()
     {

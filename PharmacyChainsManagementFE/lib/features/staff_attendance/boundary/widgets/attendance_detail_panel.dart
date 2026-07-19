@@ -14,6 +14,9 @@ class AttendanceDetailPanel extends StatelessWidget {
   final bool canCheckIn;
   final bool checkInInProgress;
   final VoidCallback onCheckIn;
+  final bool canCheckOut;
+  final bool checkOutInProgress;
+  final VoidCallback onCheckOut;
 
   const AttendanceDetailPanel({
     super.key,
@@ -22,6 +25,9 @@ class AttendanceDetailPanel extends StatelessWidget {
     required this.canCheckIn,
     required this.checkInInProgress,
     required this.onCheckIn,
+    required this.canCheckOut,
+    required this.checkOutInProgress,
+    required this.onCheckOut,
   });
 
   @override
@@ -61,13 +67,21 @@ class AttendanceDetailPanel extends StatelessWidget {
             isLoading: checkInInProgress,
             onPressed: onCheckIn,
           ),
+        ] else if (canCheckOut) ...[
+          const Spacer(),
+          PrimaryButton(
+            text: AppStrings.attendanceCheckOut,
+            isLoading: checkOutInProgress,
+            onPressed: onCheckOut,
+          ),
         ],
       ],
     ),
   );
 
-  String _time(DateTime? value) =>
-      value == null ? AppStrings.notAvailable : DateFormat.Hm().format(value);
+  String _time(DateTime? value) => value == null
+      ? AppStrings.notAvailable
+      : DateFormat.Hm().format(value.toLocal());
 }
 
 class _DetailRow extends StatelessWidget {

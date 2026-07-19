@@ -8,3 +8,5 @@ public sealed record StaffAttendanceResponseDto(
     string Status);
 
 public sealed record StaffAttendanceCheckInRequestDto(DateOnly AttendanceDate);
+
+public sealed record StaffAttendanceCheckOutRequestDto(DateOnly AttendanceDate);

@@ -37,7 +37,11 @@ class BranchManagerApiClientBase {
     Options? options,
   }) async {
     try {
-      return await _dio.get(path, queryParameters: queryParameters, options: options);
+      return await _dio.get(
+        path,
+        queryParameters: queryParameters,
+        options: options,
+      );
     } on DioException catch (error) {
       throw _mapException(error);
     }
@@ -46,6 +50,14 @@ class BranchManagerApiClientBase {
   Future<Response<dynamic>> post(String path, {Object? data}) async {
     try {
       return await _dio.post(path, data: data);
+    } on DioException catch (error) {
+      throw _mapException(error);
+    }
+  }
+
+  Future<Response<dynamic>> put(String path, {Object? data}) async {
+    try {
+      return await _dio.put(path, data: data);
     } on DioException catch (error) {
       throw _mapException(error);
     }
@@ -64,7 +76,8 @@ class BranchManagerApiClientBase {
         error.type == DioExceptionType.receiveTimeout) {
       return const BranchManagerTimeoutException();
     }
-    if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
+    if (error.response?.statusCode == 401 ||
+        error.response?.statusCode == 403) {
       return const BranchManagerUnauthorizedException();
     }
     if ((error.response?.statusCode ?? 0) >= 500) {
@@ -72,7 +85,10 @@ class BranchManagerApiClientBase {
     }
     final responseData = error.response?.data;
     if (responseData is Map<String, dynamic>) {
-      final message = responseData['message'] ?? responseData['detail'] ?? responseData['title'];
+      final message =
+          responseData['message'] ??
+          responseData['detail'] ??
+          responseData['title'];
       if (message != null) {
         return BranchManagerServerException(message.toString());
       }

@@ -17,6 +17,7 @@ import '../../branch_revenue/boundary/branch_revenue_screen.dart';
 import '../../branch_revenue/control/branch_revenue_bloc.dart';
 import '../../branch_revenue/control/branch_revenue_event.dart';
 import '../../branch_revenue/control/branch_revenue_state.dart';
+import '../../business_admin/boundary/profile_screen.dart';
 import '../../staff_performance/boundary/staff_performance_screen.dart';
 import '../../staff_performance/control/staff_performance_bloc.dart';
 import '../../staff_performance/control/staff_performance_event.dart';
@@ -37,6 +38,8 @@ class _BranchManagerPortalScreenState extends State<BranchManagerPortalScreen> {
     setState(() => _selectedIndex = index);
     _refreshTab(index);
   }
+
+  void _openProfile() => _onTabSelected(4);
 
   void _refreshTab(int index) {
     switch (index) {
@@ -93,6 +96,7 @@ class _BranchManagerPortalScreenState extends State<BranchManagerPortalScreen> {
     (AppStrings.revenue, Icons.account_balance_wallet_outlined),
     (AppStrings.staff, Icons.groups_outlined),
     (AppStrings.inventory, Icons.inventory_2_outlined),
+    (AppStrings.profile, Icons.person_outline),
   ];
 
   @override
@@ -102,11 +106,12 @@ class _BranchManagerPortalScreenState extends State<BranchManagerPortalScreen> {
     final compact = screenWidth < AppSpacing.compactNavigationBreakpoint;
     final content = IndexedStack(
       index: _selectedIndex,
-      children: const [
-        BranchDashboardScreen(),
-        BranchRevenueScreen(),
-        StaffPerformanceScreen(),
-        BranchInventoryScreen(),
+      children: [
+        BranchDashboardScreen(onProfileTap: _openProfile),
+        BranchRevenueScreen(onProfileTap: _openProfile),
+        StaffPerformanceScreen(onProfileTap: _openProfile),
+        BranchInventoryScreen(onProfileTap: _openProfile),
+        const ProfileScreen(),
       ],
     );
     if (mobile) {

@@ -20,7 +20,9 @@ import 'widgets/daily_revenue_confirmation_dialog.dart';
 import 'widgets/daily_revenue_confirmation_details_dialog.dart';
 
 class BranchDashboardScreen extends StatefulWidget {
-  const BranchDashboardScreen({super.key});
+  final VoidCallback? onProfileTap;
+
+  const BranchDashboardScreen({super.key, this.onProfileTap});
 
   @override
   State<BranchDashboardScreen> createState() => _BranchDashboardScreenState();
@@ -56,6 +58,7 @@ class _BranchDashboardScreenState extends State<BranchDashboardScreen> {
               children: [
                 AppPageHeader(
                   title: AppStrings.branchManagerDashboard,
+                  onProfileTap: widget.onProfileTap,
                   subtitle: state is BranchDashboardLoadSuccess
                       ? '${AppStrings.dashboardSubtitle} — ${state.dashboard.branchName}'
                       : AppStrings.dashboardSubtitle,

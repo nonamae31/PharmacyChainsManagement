@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../entity/staff_management_dto.dart';
 import '../entity/staff_performance_dto.dart';
+import '../entity/staff_payroll_dto.dart';
 
 sealed class StaffPerformanceState extends Equatable {
   const StaffPerformanceState();
@@ -25,6 +26,7 @@ class StaffPerformanceLoadSuccess extends StaffPerformanceState {
   final String sort;
   final List<StaffShiftDto> shifts;
   final DateTime shiftDate;
+  final StaffPayrollSummaryDto payroll;
 
   const StaffPerformanceLoadSuccess(
     this.performance, {
@@ -33,6 +35,7 @@ class StaffPerformanceLoadSuccess extends StaffPerformanceState {
     this.sort = 'revenue_desc',
     required this.shifts,
     required this.shiftDate,
+    required this.payroll,
   });
 
   @override
@@ -43,6 +46,7 @@ class StaffPerformanceLoadSuccess extends StaffPerformanceState {
     sort,
     shifts,
     shiftDate,
+    payroll,
   ];
 }
 
@@ -57,6 +61,7 @@ final class StaffPerformanceOperationSuccess
     required super.sort,
     required super.shifts,
     required super.shiftDate,
+    required super.payroll,
     required this.message,
   });
 
@@ -75,6 +80,7 @@ final class StaffPerformanceOperationFailure
     required super.sort,
     required super.shifts,
     required super.shiftDate,
+    required super.payroll,
     required this.message,
   });
 

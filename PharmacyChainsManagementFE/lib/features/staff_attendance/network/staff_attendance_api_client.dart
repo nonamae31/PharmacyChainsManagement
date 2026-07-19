@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/network/network_exceptions.dart';
 import '../entity/attendance_check_in_request_dto.dart';
+import '../entity/attendance_check_out_request_dto.dart';
 import '../entity/attendance_record_dto.dart';
 
 class StaffAttendanceApiClient {
@@ -36,6 +37,22 @@ class StaffAttendanceApiClient {
     try {
       final response = await _dio.post(
         '/api/v1/staff-attendance/check-in',
+        data: request.toJson(),
+      );
+      return AttendanceRecordDto.fromJson(
+        _unwrap(response.data) as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<AttendanceRecordDto> checkOut(
+    AttendanceCheckOutRequestDto request,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/staff-attendance/check-out',
         data: request.toJson(),
       );
       return AttendanceRecordDto.fromJson(

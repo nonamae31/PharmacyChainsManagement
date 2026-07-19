@@ -14,4 +14,9 @@ public interface IStaffAttendanceService
         Guid staffId,
         StaffAttendanceCheckInRequestDto request,
         CancellationToken cancellationToken);
+
+    Task<StaffAttendanceResponseDto> CheckOutAsync(
+        Guid staffId,
+        StaffAttendanceCheckOutRequestDto request,
+        CancellationToken cancellationToken);
 }

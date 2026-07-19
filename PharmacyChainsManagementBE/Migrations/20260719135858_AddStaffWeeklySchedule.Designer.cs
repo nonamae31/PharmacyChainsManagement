@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PharmacyChainsManagementBE.Models;
@@ -11,9 +12,11 @@ using PharmacyChainsManagementBE.Models;
 namespace PharmacyChainsManagementBE.Migrations
 {
     [DbContext(typeof(PharmacyDbContext))]
-    partial class PharmacyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719135858_AddStaffWeeklySchedule")]
+    partial class AddStaffWeeklySchedule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -689,23 +692,9 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnType("decimal(12, 2)")
                         .HasColumnName("amount");
 
-                    b.Property<string>("BaseCurrency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)")
-                        .HasColumnName("base_currency");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
-
-                    b.Property<decimal?>("ExchangeRate")
-                        .HasColumnType("decimal(18, 4)")
-                        .HasColumnName("exchange_rate");
-
-                    b.Property<decimal?>("ExpectedAmountVnd")
-                        .HasColumnType("decimal(18, 0)")
-                        .HasColumnName("expected_amount_vnd");
 
                     b.Property<short?>("GatewayId")
                         .HasColumnType("smallint")
@@ -735,16 +724,6 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("payment_status");
-
-                    b.Property<decimal?>("ReceivedAmountVnd")
-                        .HasColumnType("decimal(18, 0)")
-                        .HasColumnName("received_amount_vnd");
-
-                    b.Property<string>("SettlementCurrency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)")
-                        .HasColumnName("settlement_currency");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

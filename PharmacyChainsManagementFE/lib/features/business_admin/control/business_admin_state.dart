@@ -24,13 +24,23 @@ final class BusinessAdminOperationSuccess extends BusinessAdminState {
   List<Object?> get props => [message];
 }
 
-final class BusinessAdminProfileLoadSuccess extends BusinessAdminState {
+class BusinessAdminProfileLoadSuccess extends BusinessAdminState {
   final ProfileDto profile;
 
   const BusinessAdminProfileLoadSuccess(this.profile);
 
   @override
   List<Object?> get props => [profile];
+}
+
+final class BusinessAdminProfileOperationSuccess
+    extends BusinessAdminProfileLoadSuccess {
+  final String message;
+
+  const BusinessAdminProfileOperationSuccess(super.profile, this.message);
+
+  @override
+  List<Object?> get props => [...super.props, message];
 }
 
 final class BranchesLoadSuccess extends BusinessAdminState {

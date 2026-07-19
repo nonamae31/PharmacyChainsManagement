@@ -320,6 +320,7 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
   TimeOfDay _end = const TimeOfDay(hour: 12, minute: 0);
   String _shiftPreset = 'MORNING';
   String _status = 'SCHEDULED';
+  bool _applyToWeeklySchedule = true;
 
   @override
   void dispose() {
@@ -347,7 +348,14 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
             onPickStart: () => _pickTime(true),
             onPickEnd: () => _pickTime(false),
             status: _status,
-            onStatusChanged: (value) => setState(() => _status = value),
+            onStatusChanged: (value) => setState(() {
+              _status = value;
+              if (value != 'SCHEDULED') _applyToWeeklySchedule = false;
+            }),
+            applyToWeeklySchedule: _applyToWeeklySchedule,
+            onApplyToWeeklyScheduleChanged: (value) => setState(
+              () => _applyToWeeklySchedule = value,
+            ),
             notesController: _notesController,
           ),
         ),
@@ -397,6 +405,12 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
   void _submit() {
     final startMinutes = _start.hour * 60 + _start.minute;
     final endMinutes = _end.hour * 60 + _end.minute;
+    if (_status == 'SCHEDULED' && _date.weekday == DateTime.sunday) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.sundayDayOffHelp)),
+      );
+      return;
+    }
     if (_status == 'SCHEDULED' && startMinutes >= endMinutes) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(AppStrings.invalidShiftTime)),
@@ -420,6 +434,7 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
         endTime: TimeOfDayValue(_end.hour, _end.minute),
         status: _status,
         notes: _notesController.text.trim(),
+        applyToWeeklySchedule: _applyToWeeklySchedule,
       ),
     );
   }
@@ -493,9 +508,7 @@ class _AssessmentFormFields extends StatelessWidget {
         _DateField(
           label: AppStrings.assessmentDate,
           value: date,
-          firstDate: DateTime(
-            BranchManagerValidationRules.earliestSupportedDateYear,
-          ),
+          firstDate: today,
           lastDate: today,
           onChanged: onDateChanged,
         ),
@@ -548,6 +561,8 @@ class _ShiftFormFields extends StatelessWidget {
   final VoidCallback onPickEnd;
   final String status;
   final ValueChanged<String> onStatusChanged;
+  final bool applyToWeeklySchedule;
+  final ValueChanged<bool> onApplyToWeeklyScheduleChanged;
   final TextEditingController notesController;
 
   const _ShiftFormFields({
@@ -564,6 +579,8 @@ class _ShiftFormFields extends StatelessWidget {
     required this.onPickEnd,
     required this.status,
     required this.onStatusChanged,
+    required this.applyToWeeklySchedule,
+    required this.onApplyToWeeklyScheduleChanged,
     required this.notesController,
   });
 
@@ -581,7 +598,9 @@ class _ShiftFormFields extends StatelessWidget {
         _DateField(
           label: AppStrings.shiftDate,
           value: date,
-          firstDate: today,
+          firstDate: DateTime(
+            BranchManagerValidationRules.earliestSupportedDateYear,
+          ),
           lastDate: DateTime(
             today.year + BranchManagerValidationRules.maximumSchedulingYears,
             today.month,
@@ -651,6 +670,17 @@ class _ShiftFormFields extends StatelessWidget {
               style: AppTextStyles.caption,
             ),
           ),
+        if (status == 'SCHEDULED') ...[
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: applyToWeeklySchedule,
+            onChanged: (value) =>
+                onApplyToWeeklyScheduleChanged(value ?? false),
+            title: const Text(AppStrings.applyToWeeklySchedule),
+            subtitle: const Text(AppStrings.weeklyScheduleHelp),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        ],
         TextField(
           controller: notesController,
           maxLength: BranchManagerValidationRules.maximumShiftNotesLength,

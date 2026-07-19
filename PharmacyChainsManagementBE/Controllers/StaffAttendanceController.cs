@@ -31,6 +31,24 @@ public sealed class StaffAttendanceController : ControllerBase
         CancellationToken cancellationToken) =>
         _service.CheckInAsync(GetStaffId(), request, cancellationToken);
 
+    [HttpPost("check-out")]
+    public async Task<ActionResult<StaffAttendanceResponseDto>> CheckOut(
+        [FromBody] StaffAttendanceCheckOutRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _service.CheckOutAsync(
+                GetStaffId(),
+                request,
+                cancellationToken));
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
     private Guid GetStaffId() =>
         Guid.Parse(
             User.FindFirstValue(ClaimTypes.NameIdentifier) ??
