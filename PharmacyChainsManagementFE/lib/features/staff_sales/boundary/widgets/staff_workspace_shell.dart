@@ -13,6 +13,7 @@ enum StaffWorkspaceSection {
   prescriptions,
   payments,
   attendance,
+  profile,
 }
 
 class StaffWorkspaceShell extends StatelessWidget {
@@ -68,6 +69,12 @@ class StaffWorkspaceShell extends StatelessWidget {
       AppStrings.attendanceTitle,
       Icons.fact_check_outlined,
       '/staff/attendance',
+    ),
+    (
+      StaffWorkspaceSection.profile,
+      AppStrings.profile,
+      Icons.person_outline,
+      '/staff/profile',
     ),
   ];
   @override
@@ -176,7 +183,12 @@ class _TopBar extends StatelessWidget {
         const IconButton(onPressed: null, icon: Icon(Icons.help_outline)),
         const IconButton(onPressed: null, icon: Icon(Icons.settings_outlined)),
         IconButton(
-          tooltip: 'Log out',
+          tooltip: AppStrings.profile,
+          onPressed: () => context.go('/staff/profile'),
+          icon: const Icon(Icons.person_outline),
+        ),
+        IconButton(
+          tooltip: AppStrings.logout,
           onPressed: () => context.read<AuthBloc>().add(LogoutRequested()),
           icon: const Icon(Icons.logout),
         ),

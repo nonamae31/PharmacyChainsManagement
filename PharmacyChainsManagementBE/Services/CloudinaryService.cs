@@ -9,14 +9,22 @@ namespace PharmacyChainsManagementBE.Services
 {
     public class CloudinaryService : ICloudinaryService
     {
-        private readonly Cloudinary _cloudinary;
+        private readonly Cloudinary? _cloudinary;
 
         public CloudinaryService(IOptions<CloudinarySettings> config)
         {
+            var settings = config.Value;
+            if (string.IsNullOrWhiteSpace(settings.CloudName) ||
+                string.IsNullOrWhiteSpace(settings.ApiKey) ||
+                string.IsNullOrWhiteSpace(settings.ApiSecret))
+            {
+                return;
+            }
+
             var acc = new Account(
-                config.Value.CloudName,
-                config.Value.ApiKey,
-                config.Value.ApiSecret
+                settings.CloudName,
+                settings.ApiKey,
+                settings.ApiSecret
             );
 
             _cloudinary = new Cloudinary(acc);
@@ -24,6 +32,11 @@ namespace PharmacyChainsManagementBE.Services
 
         public async Task<string?> UploadImageAsync(IFormFile file)
         {
+            if (_cloudinary == null)
+            {
+                return null;
+            }
+
             var uploadResult = new ImageUploadResult();
 
             if (file.Length > 0)

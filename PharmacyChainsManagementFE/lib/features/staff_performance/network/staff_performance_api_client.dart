@@ -1,6 +1,7 @@
 import '../../../core/network/branch_manager_api_client_base.dart';
 import '../entity/staff_performance_dto.dart';
 import '../entity/staff_management_dto.dart';
+import '../entity/staff_payroll_dto.dart';
 
 class StaffPerformanceApiClient {
   final BranchManagerApiClientBase _apiClient;
@@ -37,10 +38,16 @@ class StaffPerformanceApiClient {
     );
   }
 
-  Future<List<StaffShiftDto>> fetchStaffShifts(DateTime date) async {
+  Future<List<StaffShiftDto>> fetchStaffShifts(
+    DateTime fromDate,
+    DateTime toDate,
+  ) async {
     final response = await _apiClient.get(
       '/api/v1/branch-manager/staff-shifts',
-      queryParameters: {'date': _date(date)},
+      queryParameters: {
+        'fromDate': _date(fromDate),
+        'toDate': _date(toDate),
+      },
     );
     return (response.data as List<dynamic>)
         .map((json) => StaffShiftDto.fromJson(json as Map<String, dynamic>))
@@ -57,6 +64,33 @@ class StaffPerformanceApiClient {
   Future<void> updateStaffStatus(UpdateStaffStatusRequestDto request) async {
     await _apiClient.patch(
       '/api/v1/branch-manager/staff/${request.staffId}/status',
+      data: request.toJson(),
+    );
+  }
+
+  Future<StaffPayrollSummaryDto> fetchStaffPayroll(
+    DateTime fromDate,
+    DateTime toDate,
+  ) async {
+    final response = await _apiClient.get(
+      '/api/v1/branch-manager/staff-payroll',
+      queryParameters: {'fromDate': _date(fromDate), 'toDate': _date(toDate)},
+    );
+    return StaffPayrollSummaryDto.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+  }
+
+  Future<void> updateStaffPayRate(UpdateStaffPayRateRequestDto request) async {
+    await _apiClient.put(
+      '/api/v1/branch-manager/staff-pay-rates',
+      data: request.toJson(),
+    );
+  }
+
+  Future<void> upsertStaffPayroll(UpsertStaffPayrollRequestDto request) async {
+    await _apiClient.post(
+      '/api/v1/branch-manager/staff-payroll',
       data: request.toJson(),
     );
   }

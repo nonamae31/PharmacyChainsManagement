@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/branch_manager_app_theme.dart';
 
 class AppPageHeader extends StatelessWidget {
@@ -7,6 +8,7 @@ class AppPageHeader extends StatelessWidget {
   final String subtitle;
   final String? searchHint;
   final ValueChanged<String>? onSearchChanged;
+  final VoidCallback? onProfileTap;
   final List<Widget> actions;
 
   const AppPageHeader({
@@ -15,6 +17,7 @@ class AppPageHeader extends StatelessWidget {
     required this.subtitle,
     this.searchHint,
     this.onSearchChanged,
+    this.onProfileTap,
     this.actions = const [],
   });
 
@@ -95,13 +98,24 @@ class AppPageHeader extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
             const SizedBox(width: AppSpacing.sm),
-            const CircleAvatar(
-              radius: AppSpacing.md,
-              backgroundColor: AppColors.primary,
-              child: Icon(
-                Icons.person_outline,
-                color: AppColors.surface,
-                size: AppSpacing.iconSmall,
+            Tooltip(
+              message: AppStrings.profile,
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: onProfileTap,
+                  customBorder: const CircleBorder(),
+                  child: const CircleAvatar(
+                    radius: AppSpacing.md,
+                    backgroundColor: AppColors.primary,
+                    child: Icon(
+                      Icons.person_outline,
+                      color: AppColors.surface,
+                      size: AppSpacing.iconSmall,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

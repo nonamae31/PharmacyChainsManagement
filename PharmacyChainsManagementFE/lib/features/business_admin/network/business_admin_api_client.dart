@@ -47,6 +47,26 @@ class BusinessAdminApiClient {
     return ProfileDto.fromJson(_payload(response.data));
   }
 
+  Future<ProfileDto> uploadProfileAvatar(
+    List<int> bytes,
+    String fileName,
+  ) async {
+    final formData = FormData.fromMap({
+      'file': MultipartFile.fromBytes(bytes, filename: fileName),
+    });
+    final response = await _request(
+      () => _dio.post('/api/v1/profile/avatar', data: formData),
+    );
+    return ProfileDto.fromJson(_payload(response.data));
+  }
+
+  Future<void> changePassword(ChangePasswordRequestDto request) async {
+    await _request(
+      () =>
+          _dio.post('/api/v1/profile/change-password', data: request.toJson()),
+    );
+  }
+
   Future<void> requestForgotPassword(ForgotPasswordRequestDto request) async {
     await _request(
       () => _dio.post('/api/v1/auth/forgot-password', data: request.toJson()),

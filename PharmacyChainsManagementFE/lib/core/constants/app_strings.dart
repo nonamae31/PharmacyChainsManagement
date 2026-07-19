@@ -52,10 +52,13 @@ class AppStrings {
   static const String attendanceCheckInTime = 'Check-in time';
   static const String attendanceCheckOutTime = 'Check-out time';
   static const String attendanceCheckIn = 'Check in';
+  static const String attendanceCheckOut = 'Check out';
   static const String attendanceNotCheckedIn = 'Not checked in';
   static const String attendanceCheckedInShort = 'Present';
   static const String attendanceCheckInSuccess =
       'Attendance recorded successfully.';
+  static const String attendanceCheckOutSuccess =
+      'Check-out recorded successfully.';
   static const String attendancePreviousPeriod = 'Previous period';
   static const String attendanceNextPeriod = 'Next period';
   static const List<String> attendanceWeekdayLabels = [

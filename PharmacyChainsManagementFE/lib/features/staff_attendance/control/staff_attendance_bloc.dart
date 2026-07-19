@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/network/network_exceptions.dart';
 import '../entity/attendance_check_in_request_dto.dart';
+import '../entity/attendance_check_out_request_dto.dart';
 import '../network/staff_attendance_api_client.dart';
 import 'staff_attendance_event.dart';
 import 'staff_attendance_state.dart';
@@ -19,6 +20,7 @@ class StaffAttendanceBloc
     on<StaffAttendanceDetailPresented>(_markDetailPresented);
     on<StaffAttendancePeriodChanged>(_changePeriod);
     on<StaffAttendanceCheckInSubmitted>(_checkIn);
+    on<StaffAttendanceCheckOutSubmitted>(_checkOut);
   }
 
   Future<void> _fetch(
@@ -112,6 +114,36 @@ class StaffAttendanceBloc
           records: [...current.records, record],
           checkInInProgress: false,
           operationMessage: AppStrings.attendanceCheckInSuccess,
+        ),
+      );
+    } on AppException catch (error) {
+      emit(StaffAttendanceLoadFailure(error.message));
+    } catch (_) {
+      emit(const StaffAttendanceLoadFailure(AppStrings.unknownError));
+    }
+  }
+
+  Future<void> _checkOut(
+    StaffAttendanceCheckOutSubmitted event,
+    Emitter<StaffAttendanceState> emit,
+  ) async {
+    final current = state;
+    if (current is! StaffAttendanceLoadSuccess || !current.canCheckOut) return;
+    emit(
+      current.copyWith(checkOutInProgress: true, clearOperationMessage: true),
+    );
+    try {
+      final record = await _apiClient.checkOut(
+        AttendanceCheckOutRequestDto(attendanceDate: current.selectedDate),
+      );
+      emit(
+        current.copyWith(
+          records: [
+            for (final item in current.records)
+              if (item.id == record.id) record else item,
+          ],
+          checkOutInProgress: false,
+          operationMessage: AppStrings.attendanceCheckOutSuccess,
         ),
       );
     } on AppException catch (error) {

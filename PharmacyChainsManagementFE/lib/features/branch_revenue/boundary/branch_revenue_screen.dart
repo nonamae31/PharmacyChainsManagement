@@ -13,7 +13,9 @@ import '../control/branch_revenue_state.dart';
 import 'widgets/branch_revenue_content.dart';
 
 class BranchRevenueScreen extends StatefulWidget {
-  const BranchRevenueScreen({super.key});
+  final VoidCallback? onProfileTap;
+
+  const BranchRevenueScreen({super.key, this.onProfileTap});
 
   @override
   State<BranchRevenueScreen> createState() => _BranchRevenueScreenState();
@@ -51,6 +53,7 @@ class _BranchRevenueScreenState extends State<BranchRevenueScreen> {
                 AppPageHeader(
                   title: AppStrings.branchRevenueTitle,
                   subtitle: AppStrings.revenueStatisticsSubtitle,
+                  onProfileTap: widget.onProfileTap,
                   actions: [
                     FilledButton.icon(
                       onPressed: state is BranchRevenueLoadSuccess

@@ -23,6 +23,28 @@ final class BusinessAdminProfileUpdateSubmitted extends BusinessAdminEvent {
   List<Object?> get props => [request];
 }
 
+final class BusinessAdminProfileAvatarSubmitted extends BusinessAdminEvent {
+  final List<int> bytes;
+  final String fileName;
+
+  const BusinessAdminProfileAvatarSubmitted({
+    required this.bytes,
+    required this.fileName,
+  });
+
+  @override
+  List<Object?> get props => [bytes, fileName];
+}
+
+final class BusinessAdminPasswordChangeSubmitted extends BusinessAdminEvent {
+  final ChangePasswordRequestDto request;
+
+  const BusinessAdminPasswordChangeSubmitted(this.request);
+
+  @override
+  List<Object?> get props => [request];
+}
+
 final class BusinessAdminForgotPasswordRequested extends BusinessAdminEvent {
   final ForgotPasswordRequestDto request;
 

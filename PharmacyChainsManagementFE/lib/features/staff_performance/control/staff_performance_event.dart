@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../entity/staff_management_dto.dart';
+import '../entity/staff_payroll_dto.dart';
 
 sealed class StaffPerformanceEvent extends Equatable {
   const StaffPerformanceEvent();
@@ -66,6 +67,37 @@ final class StaffStatusUpdateRequested extends StaffPerformanceEvent {
   final UpdateStaffStatusRequestDto request;
 
   const StaffStatusUpdateRequested(this.request);
+
+  @override
+  List<Object?> get props => [request];
+}
+
+final class StaffPayrollPeriodSelected extends StaffPerformanceEvent {
+  final DateTime fromDate;
+  final DateTime toDate;
+
+  const StaffPayrollPeriodSelected({
+    required this.fromDate,
+    required this.toDate,
+  });
+
+  @override
+  List<Object?> get props => [fromDate, toDate];
+}
+
+final class StaffPayRateUpsertRequested extends StaffPerformanceEvent {
+  final UpdateStaffPayRateRequestDto request;
+
+  const StaffPayRateUpsertRequested(this.request);
+
+  @override
+  List<Object?> get props => [request];
+}
+
+final class StaffPayrollUpsertRequested extends StaffPerformanceEvent {
+  final UpsertStaffPayrollRequestDto request;
+
+  const StaffPayrollUpsertRequested(this.request);
 
   @override
   List<Object?> get props => [request];

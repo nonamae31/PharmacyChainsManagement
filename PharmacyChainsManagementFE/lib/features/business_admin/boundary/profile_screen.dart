@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/app_strings.dart';
@@ -31,11 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _dateOfBirthController = TextEditingController();
   final _genderController = TextEditingController();
   final _imagePicker = ImagePicker();
-  final _profileStorage = const FlutterSecureStorage();
   Uint8List? _avatarBytes;
-  String? _activeProfileEmail;
-  String? _avatarStorageEmail;
-  bool _isAvatarLoading = false;
 
   @override
   void initState() {
@@ -49,13 +43,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       listener: (context, state) {
         if (state is BusinessAdminLoadFailure) {
           showAppErrorDialog(context, message: state.message);
+        } else if (state is BusinessAdminProfileOperationSuccess) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
         }
       },
       builder: (context, state) {
         if (state is BusinessAdminLoading) return const AppLoadingIndicator();
         if (state is BusinessAdminProfileLoadSuccess) {
-          _activeProfileEmail = state.profile.email;
-          _loadAvatarForProfile(state.profile.email);
           return _ProfileView(
             profile: state.profile,
             fullNameController: _fullNameController,
@@ -97,53 +93,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (pickedImage == null) return;
 
       final bytes = await pickedImage.readAsBytes();
-      final profileEmail =
-          _activeProfileEmail ?? _ProfileCopy.avatarFallbackKey;
-      await _profileStorage.write(
-        key: _avatarStorageKey(profileEmail),
-        value: base64Encode(bytes),
-      );
       if (!mounted) return;
 
       setState(() {
         _avatarBytes = bytes;
-        _avatarStorageEmail = profileEmail;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text(_ProfileCopy.photoUpdated)));
+      context.read<BusinessAdminBloc>().add(
+        BusinessAdminProfileAvatarSubmitted(
+          bytes: bytes,
+          fileName: pickedImage.name,
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(_ProfileCopy.photoUpdateFailed)),
       );
-    }
-  }
-
-  Future<void> _loadAvatarForProfile(String profileEmail) async {
-    if (_avatarStorageEmail == profileEmail || _isAvatarLoading) return;
-
-    _isAvatarLoading = true;
-    try {
-      final encodedAvatar = await _profileStorage.read(
-        key: _avatarStorageKey(profileEmail),
-      );
-      if (!mounted) return;
-
-      setState(() {
-        _avatarStorageEmail = profileEmail;
-        _avatarBytes = encodedAvatar == null
-            ? null
-            : base64Decode(encodedAvatar);
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _avatarStorageEmail = profileEmail;
-        _avatarBytes = null;
-      });
-    } finally {
-      _isAvatarLoading = false;
     }
   }
 }
@@ -174,6 +139,8 @@ class _ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<_ProfileView> {
+  final _editFormKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
@@ -200,6 +167,7 @@ class _ProfileViewState extends State<_ProfileView> {
                   avatarBytes: widget.avatarBytes,
                   onChangePhoto: widget.onChangePhoto,
                   onEdit: () => _showEditDialog(context),
+                  onChangePassword: () => _showChangePasswordDialog(context),
                 )
               : _MobileProfileLayout(
                   profile: widget.profile,
@@ -207,6 +175,7 @@ class _ProfileViewState extends State<_ProfileView> {
                   avatarBytes: widget.avatarBytes,
                   onChangePhoto: widget.onChangePhoto,
                   onEdit: () => _showEditDialog(context),
+                  onChangePassword: () => _showChangePasswordDialog(context),
                 );
 
           return ListView(
@@ -228,56 +197,79 @@ class _ProfileViewState extends State<_ProfileView> {
         title: const Text(_ProfileCopy.editProfile),
         content: SizedBox(
           width: _ProfileDimensions.dialogWidth,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: widget.fullNameController,
-                maxLength: _ProfileDimensions.maxFullNameLength,
-                decoration: const InputDecoration(
-                  labelText: _ProfileCopy.fullName,
-                  prefixIcon: Icon(Icons.badge_outlined),
-                  border: OutlineInputBorder(),
+          child: Form(
+            key: _editFormKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: widget.fullNameController,
+                  maxLength: _ProfileDimensions.maxFullNameLength,
+                  decoration: const InputDecoration(
+                    labelText: _ProfileCopy.fullName,
+                    prefixIcon: Icon(Icons.badge_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) => (value?.trim().length ?? 0) < 2
+                      ? _ProfileCopy.fullNameInvalid
+                      : null,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: widget.phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: _ProfileCopy.phoneNumber,
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  border: OutlineInputBorder(),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: widget.phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: _ProfileCopy.phoneNumber,
+                    prefixIcon: Icon(Icons.phone_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    final phone = value?.trim() ?? '';
+                    if (phone.isEmpty) return null;
+                    return RegExp(r'^\+?[0-9]{9,15}$').hasMatch(phone)
+                        ? null
+                        : _ProfileCopy.phoneInvalid;
+                  },
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: widget.addressController,
-                decoration: const InputDecoration(
-                  labelText: _ProfileCopy.address,
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                  border: OutlineInputBorder(),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: widget.addressController,
+                  maxLength: _ProfileDimensions.maxAddressLength,
+                  decoration: const InputDecoration(
+                    labelText: _ProfileCopy.address,
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: widget.dateOfBirthController,
-                decoration: const InputDecoration(
-                  labelText: _ProfileCopy.dateOfBirth,
-                  prefixIcon: Icon(Icons.cake_outlined),
-                  border: OutlineInputBorder(),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: widget.dateOfBirthController,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: _ProfileCopy.dateOfBirth,
+                    prefixIcon: Icon(Icons.cake_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  onTap: () => _pickDateOfBirth(dialogContext),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: widget.genderController,
-                decoration: const InputDecoration(
-                  labelText: _ProfileCopy.gender,
-                  prefixIcon: Icon(Icons.person_outline),
-                  border: OutlineInputBorder(),
+                const SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<String>(
+                  initialValue: _genderValue(widget.genderController.text),
+                  decoration: const InputDecoration(
+                    labelText: _ProfileCopy.gender,
+                    prefixIcon: Icon(Icons.person_outline),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Male', child: Text('Male')),
+                    DropdownMenuItem(value: 'Female', child: Text('Female')),
+                    DropdownMenuItem(value: 'Other', child: Text('Other')),
+                  ],
+                  onChanged: (value) =>
+                      widget.genderController.text = value ?? '',
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -287,11 +279,15 @@ class _ProfileViewState extends State<_ProfileView> {
           ),
           FilledButton(
             onPressed: () {
+              if (!_editFormKey.currentState!.validate()) return;
               context.read<BusinessAdminBloc>().add(
                 BusinessAdminProfileUpdateSubmitted(
                   UpdateProfileRequestDto(
                     fullName: widget.fullNameController.text.trim(),
                     phone: widget.phoneController.text.trim(),
+                    address: widget.addressController.text.trim(),
+                    dateOfBirth: _parseDate(widget.dateOfBirthController.text),
+                    gender: widget.genderController.text.trim(),
                   ),
                 ),
               );
@@ -303,6 +299,31 @@ class _ProfileViewState extends State<_ProfileView> {
         ],
       ),
     );
+  }
+
+  Future<void> _showChangePasswordDialog(BuildContext context) async {
+    final request = await showDialog<ChangePasswordRequestDto>(
+      context: context,
+      builder: (_) => const _ChangePasswordDialog(),
+    );
+    if (request == null || !context.mounted) return;
+    context.read<BusinessAdminBloc>().add(
+      BusinessAdminPasswordChangeSubmitted(request),
+    );
+  }
+
+  Future<void> _pickDateOfBirth(BuildContext context) async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final current = _parseDate(widget.dateOfBirthController.text);
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: current ?? DateTime(today.year - 18),
+      firstDate: DateTime(1900),
+      lastDate: today,
+    );
+    if (selected != null) {
+      widget.dateOfBirthController.text = _formatDate(selected);
+    }
   }
 
   _ProfileEditableDetails get _editableDetails => _ProfileEditableDetails(
@@ -318,13 +339,15 @@ class _ProfileViewState extends State<_ProfileView> {
 
   void _ensureExtraDetails() {
     if (widget.addressController.text.trim().isEmpty) {
-      widget.addressController.text = _ProfileCopy.defaultAddress;
+      widget.addressController.text = widget.profile.address ?? '';
     }
     if (widget.dateOfBirthController.text.trim().isEmpty) {
-      widget.dateOfBirthController.text = _ProfileCopy.defaultDateOfBirth;
+      widget.dateOfBirthController.text = widget.profile.dateOfBirth == null
+          ? ''
+          : _formatDate(widget.profile.dateOfBirth!);
     }
     if (widget.genderController.text.trim().isEmpty) {
-      widget.genderController.text = _ProfileCopy.defaultGender;
+      widget.genderController.text = widget.profile.gender ?? '';
     }
   }
 }
@@ -335,6 +358,7 @@ class _DesktopProfileLayout extends StatelessWidget {
   final Uint8List? avatarBytes;
   final VoidCallback onChangePhoto;
   final VoidCallback onEdit;
+  final VoidCallback onChangePassword;
 
   const _DesktopProfileLayout({
     required this.profile,
@@ -342,6 +366,7 @@ class _DesktopProfileLayout extends StatelessWidget {
     required this.avatarBytes,
     required this.onChangePhoto,
     required this.onEdit,
+    required this.onChangePassword,
   });
 
   @override
@@ -370,6 +395,7 @@ class _DesktopProfileLayout extends StatelessWidget {
                 profile: profile,
                 editableDetails: editableDetails,
                 onEdit: onEdit,
+                onChangePassword: onChangePassword,
               ),
             ),
           ],
@@ -385,6 +411,7 @@ class _MobileProfileLayout extends StatelessWidget {
   final Uint8List? avatarBytes;
   final VoidCallback onChangePhoto;
   final VoidCallback onEdit;
+  final VoidCallback onChangePassword;
 
   const _MobileProfileLayout({
     required this.profile,
@@ -392,6 +419,7 @@ class _MobileProfileLayout extends StatelessWidget {
     required this.avatarBytes,
     required this.onChangePhoto,
     required this.onEdit,
+    required this.onChangePassword,
   });
 
   @override
@@ -417,6 +445,12 @@ class _MobileProfileLayout extends StatelessWidget {
             label: _ProfileCopy.email,
             value: profile.email,
           ),
+          if (profile.branchName?.trim().isNotEmpty ?? false)
+            _MobileProfileTile(
+              icon: Icons.store_outlined,
+              label: _ProfileCopy.branch,
+              value: profile.branchName!,
+            ),
           _MobileProfileTile(
             icon: Icons.phone_outlined,
             label: _ProfileCopy.phoneNumber,
@@ -441,7 +475,14 @@ class _MobileProfileLayout extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           Align(
             alignment: Alignment.centerRight,
-            child: _EditProfileButton(onPressed: onEdit),
+            child: Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                _ChangePasswordButton(onPressed: onChangePassword),
+                _EditProfileButton(onPressed: onEdit),
+              ],
+            ),
           ),
         ],
       ),
@@ -493,6 +534,16 @@ class _IdentityCard extends StatelessWidget {
               context,
             ).textTheme.titleMedium?.copyWith(color: AppColors.textMuted),
           ),
+          if (profile.branchName?.trim().isNotEmpty ?? false) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              profile.branchName!,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: AppColors.textMuted),
+            ),
+          ],
           const SizedBox(height: AppSpacing.lg),
           _StatusPill(label: profile.status),
         ],
@@ -505,11 +556,13 @@ class _PersonalInformationCard extends StatelessWidget {
   final ProfileDto profile;
   final _ProfileEditableDetails editableDetails;
   final VoidCallback onEdit;
+  final VoidCallback onChangePassword;
 
   const _PersonalInformationCard({
     required this.profile,
     required this.editableDetails,
     required this.onEdit,
+    required this.onChangePassword,
   });
 
   @override
@@ -529,50 +582,84 @@ class _PersonalInformationCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           const Divider(height: 1, color: AppColors.border),
           const SizedBox(height: AppSpacing.xl),
-          GridView.count(
-            crossAxisCount: 2,
-            childAspectRatio: _ProfileDimensions.infoAspectRatio,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: AppSpacing.xl,
-            crossAxisSpacing: AppSpacing.xxl,
-            children: [
-              _DesktopInfoItem(
-                icon: Icons.badge_outlined,
-                label: _ProfileCopy.fullName,
-                value: editableDetails.fullName,
-              ),
-              _DesktopInfoItem(
-                icon: Icons.mail_outline,
-                label: _ProfileCopy.email,
-                value: profile.email,
-              ),
-              _DesktopInfoItem(
-                icon: Icons.phone_outlined,
-                label: _ProfileCopy.phoneNumber,
-                value: editableDetails.phone,
-              ),
-              _DesktopInfoItem(
-                icon: Icons.location_on_outlined,
-                label: _ProfileCopy.address,
-                value: editableDetails.address,
-              ),
-              _DesktopInfoItem(
-                icon: Icons.cake_outlined,
-                label: _ProfileCopy.dateOfBirth,
-                value: editableDetails.dateOfBirth,
-              ),
-              _DesktopInfoItem(
-                icon: Icons.person_outline,
-                label: _ProfileCopy.gender,
-                value: editableDetails.gender,
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columnCount =
+                  constraints.maxWidth <
+                      _ProfileDimensions.singleColumnBreakpoint
+                  ? 1
+                  : 2;
+              final itemWidth = columnCount == 1
+                  ? constraints.maxWidth
+                  : (constraints.maxWidth - AppSpacing.xxl) / 2;
+
+              return Wrap(
+                spacing: AppSpacing.xxl,
+                runSpacing: AppSpacing.xl,
+                children: [
+                  SizedBox(
+                    width: itemWidth,
+                    child: _DesktopInfoItem(
+                      icon: Icons.badge_outlined,
+                      label: _ProfileCopy.fullName,
+                      value: editableDetails.fullName,
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _DesktopInfoItem(
+                      icon: Icons.mail_outline,
+                      label: _ProfileCopy.email,
+                      value: profile.email,
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _DesktopInfoItem(
+                      icon: Icons.phone_outlined,
+                      label: _ProfileCopy.phoneNumber,
+                      value: editableDetails.phone,
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _DesktopInfoItem(
+                      icon: Icons.location_on_outlined,
+                      label: _ProfileCopy.address,
+                      value: editableDetails.address,
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _DesktopInfoItem(
+                      icon: Icons.cake_outlined,
+                      label: _ProfileCopy.dateOfBirth,
+                      value: editableDetails.dateOfBirth,
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _DesktopInfoItem(
+                      icon: Icons.person_outline,
+                      label: _ProfileCopy.gender,
+                      value: editableDetails.gender,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: AppSpacing.xxl),
           Align(
             alignment: Alignment.centerRight,
-            child: _EditProfileButton(onPressed: onEdit),
+            child: Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                _ChangePasswordButton(onPressed: onChangePassword),
+                _EditProfileButton(onPressed: onEdit),
+              ],
+            ),
           ),
         ],
       ),
@@ -815,6 +902,165 @@ class _EditProfileButton extends StatelessWidget {
   }
 }
 
+class _ChangePasswordButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _ChangePasswordButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.lock_reset_outlined),
+      label: const Text(_ProfileCopy.changePassword),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(
+          _ProfileDimensions.changePasswordButtonWidth,
+          _ProfileDimensions.editButtonHeight,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      ),
+    );
+  }
+}
+
+class _ChangePasswordDialog extends StatefulWidget {
+  const _ChangePasswordDialog();
+
+  @override
+  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _currentController = TextEditingController();
+  final _newController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+
+  @override
+  void dispose() {
+    _currentController.dispose();
+    _newController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(_ProfileCopy.changePassword),
+      content: SizedBox(
+        width: _ProfileDimensions.dialogWidth,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _PasswordField(
+                controller: _currentController,
+                label: _ProfileCopy.currentPassword,
+                obscureText: _obscureCurrent,
+                onToggleVisibility: () =>
+                    setState(() => _obscureCurrent = !_obscureCurrent),
+                validator: (value) => (value?.isEmpty ?? true)
+                    ? _ProfileCopy.passwordRequired
+                    : null,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _PasswordField(
+                controller: _newController,
+                label: _ProfileCopy.newPassword,
+                obscureText: _obscureNew,
+                onToggleVisibility: () =>
+                    setState(() => _obscureNew = !_obscureNew),
+                validator: (value) =>
+                    _ProfileCopy.passwordPattern.hasMatch(value ?? '')
+                    ? null
+                    : _ProfileCopy.passwordStrength,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _PasswordField(
+                controller: _confirmController,
+                label: _ProfileCopy.confirmPassword,
+                obscureText: _obscureConfirm,
+                onToggleVisibility: () =>
+                    setState(() => _obscureConfirm = !_obscureConfirm),
+                validator: (value) => value == _newController.text
+                    ? null
+                    : _ProfileCopy.passwordMismatch,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(_ProfileCopy.cancel),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text(_ProfileCopy.changePassword),
+        ),
+      ],
+    );
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.pop(
+      context,
+      ChangePasswordRequestDto(
+        currentPassword: _currentController.text,
+        newPassword: _newController.text,
+      ),
+    );
+  }
+}
+
+class _PasswordField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final bool obscureText;
+  final VoidCallback onToggleVisibility;
+  final FormFieldValidator<String> validator;
+
+  const _PasswordField({
+    required this.controller,
+    required this.label,
+    required this.obscureText,
+    required this.onToggleVisibility,
+    required this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      autocorrect: false,
+      enableSuggestions: false,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: const Icon(Icons.lock_outline),
+        suffixIcon: IconButton(
+          onPressed: onToggleVisibility,
+          icon: Icon(
+            obscureText
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+          ),
+        ),
+        border: const OutlineInputBorder(),
+      ),
+      validator: validator,
+    );
+  }
+}
+
 class _StatusPill extends StatelessWidget {
   final String label;
 
@@ -933,8 +1179,27 @@ String _fieldValue(String? value, String? fallback) {
   return _displayValue(fallback);
 }
 
-String _avatarStorageKey(String profileEmail) =>
-    '${_ProfileCopy.avatarStoragePrefix}${profileEmail.trim().toLowerCase()}';
+String _formatDate(DateTime value) =>
+    '${value.day.toString().padLeft(2, '0')}/'
+    '${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+DateTime? _parseDate(String value) {
+  final parts = value.trim().split('/');
+  if (parts.length != 3) return null;
+  final day = int.tryParse(parts[0]);
+  final month = int.tryParse(parts[1]);
+  final year = int.tryParse(parts[2]);
+  if (day == null || month == null || year == null) return null;
+  final date = DateTime(year, month, day);
+  return date.day == day && date.month == month && date.year == year
+      ? date
+      : null;
+}
+
+String? _genderValue(String value) =>
+    const {'Male', 'Female', 'Other'}.contains(value.trim())
+    ? value.trim()
+    : null;
 
 class _ProfileCopy {
   const _ProfileCopy._();
@@ -942,19 +1207,28 @@ class _ProfileCopy {
   static const personalInformation = 'Personal Information';
   static const fullName = 'Full Name';
   static const email = 'Email';
+  static const branch = 'Branch';
   static const phoneNumber = 'Phone Number';
   static const address = 'Address';
   static const dateOfBirth = 'Date of Birth';
   static const gender = 'Gender';
   static const editProfile = 'Edit Profile';
   static const cancel = 'Cancel';
-  static const photoUpdated = 'Profile photo updated';
   static const photoUpdateFailed = 'Unable to update profile photo';
-  static const avatarFallbackKey = 'business_admin_profile';
-  static const avatarStoragePrefix = 'business_admin_avatar_';
-  static const defaultAddress = 'Ha Noi';
-  static const defaultDateOfBirth = '11/7/1996';
-  static const defaultGender = 'Male';
+  static const changePassword = 'Change Password';
+  static const currentPassword = 'Current Password';
+  static const newPassword = 'New Password';
+  static const confirmPassword = 'Confirm New Password';
+  static const passwordRequired = 'Enter your current password.';
+  static const passwordStrength =
+      'Use at least 8 characters with uppercase, lowercase, number, and special character.';
+  static const passwordMismatch = 'Passwords do not match.';
+  static const fullNameInvalid =
+      'Full name must contain at least 2 characters.';
+  static const phoneInvalid = 'Enter a valid phone number.';
+  static final passwordPattern = RegExp(
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])\S{8,100}$',
+  );
 }
 
 class _ProfileDimensions {
@@ -971,10 +1245,12 @@ class _ProfileDimensions {
   static const cameraIconScale = 0.52;
   static const avatarPickerMaxSize = 512.0;
   static const avatarPickerQuality = 85;
-  static const infoAspectRatio = 4.4;
+  static const singleColumnBreakpoint = 520.0;
   static const editButtonWidth = 180.0;
+  static const changePasswordButtonWidth = 200.0;
   static const editButtonHeight = 52.0;
   static const maxFullNameLength = 100;
+  static const maxAddressLength = 255;
 }
 
 class _ProfilePalette {

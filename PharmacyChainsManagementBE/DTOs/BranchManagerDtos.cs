@@ -201,6 +201,8 @@ public sealed class UpsertStaffShiftRequestDto
 
     [StringLength(500)]
     public string? Notes { get; init; }
+
+    public bool ApplyToWeeklySchedule { get; init; }
 }
 
 public sealed record StaffShiftDto(
@@ -212,7 +214,90 @@ public sealed record StaffShiftDto(
     TimeOnly EndTime,
     string Status,
     string? Notes,
+    DateTime UpdatedAt,
+    bool IsRecurring);
+
+public sealed class UpdateStaffPayRateRequestDto
+{
+    [Required]
+    public Guid StaffId { get; init; }
+
+    [Range(typeof(decimal), "0.01", "999999999999")]
+    public decimal HourlyRate { get; init; }
+
+    public DateOnly EffectiveFrom { get; init; }
+}
+
+public sealed class UpsertStaffPayrollRequestDto
+{
+    [Required]
+    public Guid StaffId { get; init; }
+
+    public DateOnly PeriodStart { get; init; }
+
+    public DateOnly PeriodEnd { get; init; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal Bonus { get; init; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal Deduction { get; init; }
+
+    [Required, StringLength(30), RegularExpression("^(DRAFT|CONFIRMED)$")]
+    public string Status { get; init; } = "DRAFT";
+
+    [StringLength(500)]
+    public string? Notes { get; init; }
+}
+
+public sealed record StaffPayRateDto(
+    Guid StaffId,
+    decimal HourlyRate,
+    DateOnly EffectiveFrom,
     DateTime UpdatedAt);
+
+public sealed record StaffPayrollAttendanceDayDto(
+    DateOnly AttendanceDate,
+    DateTime CheckInTime,
+    DateTime? CheckOutTime,
+    string Status,
+    TimeOnly? ScheduledStartTime,
+    TimeOnly? ScheduledEndTime,
+    int LateMinutes,
+    decimal PayableHours);
+
+public sealed record StaffPayrollRowDto(
+    Guid? PayrollId,
+    Guid StaffId,
+    string StaffName,
+    decimal? HourlyRate,
+    decimal CompletedHours,
+    int AttendanceDays,
+    int PeriodDays,
+    int LateDays,
+    int LateMinutes,
+    decimal LatePayReduction,
+    IReadOnlyList<StaffPayrollAttendanceDayDto> AttendanceRecords,
+    decimal BasePay,
+    decimal Bonus,
+    decimal Deduction,
+    decimal NetPay,
+    string Status,
+    string? Notes,
+    DateTime? UpdatedAt);
+
+public sealed record StaffPayrollSummaryDto(
+    Guid BranchId,
+    DateOnly PeriodStart,
+    DateOnly PeriodEnd,
+    decimal TotalCompletedHours,
+    int TotalLateMinutes,
+    decimal TotalLatePayReduction,
+    decimal TotalBasePay,
+    decimal TotalBonus,
+    decimal TotalDeduction,
+    decimal TotalNetPay,
+    IReadOnlyList<StaffPayrollRowDto> Staff);
 
 public sealed class CreateStaffAssessmentRequestDto
 {

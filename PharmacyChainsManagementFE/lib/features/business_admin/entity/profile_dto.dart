@@ -9,6 +9,9 @@ class ProfileDto extends Equatable {
   final String? phone;
   final String? branchName;
   final String? profilePhotoUri;
+  final String? address;
+  final DateTime? dateOfBirth;
+  final String? gender;
   final DateTime? joinedDate;
 
   const ProfileDto({
@@ -20,6 +23,9 @@ class ProfileDto extends Equatable {
     this.phone,
     this.branchName,
     this.profilePhotoUri,
+    this.address,
+    this.dateOfBirth,
+    this.gender,
     this.joinedDate,
   });
 
@@ -32,6 +38,9 @@ class ProfileDto extends Equatable {
     phone: json['phone']?.toString(),
     branchName: json['branchName']?.toString(),
     profilePhotoUri: json['profilePhotoUri']?.toString(),
+    address: json['address']?.toString(),
+    dateOfBirth: DateTime.tryParse(json['dateOfBirth']?.toString() ?? ''),
+    gender: json['gender']?.toString(),
     joinedDate: DateTime.tryParse(json['joinedDate']?.toString() ?? ''),
   );
 
@@ -44,6 +53,9 @@ class ProfileDto extends Equatable {
     'phone': phone,
     'branchName': branchName,
     'profilePhotoUri': profilePhotoUri,
+    'address': address,
+    'dateOfBirth': dateOfBirth?.toIso8601String(),
+    'gender': gender,
     'joinedDate': joinedDate?.toIso8601String(),
   };
 
@@ -57,6 +69,9 @@ class ProfileDto extends Equatable {
     phone,
     branchName,
     profilePhotoUri,
+    address,
+    dateOfBirth,
+    gender,
     joinedDate,
   ];
 }
@@ -64,11 +79,50 @@ class ProfileDto extends Equatable {
 class UpdateProfileRequestDto extends Equatable {
   final String fullName;
   final String? phone;
+  final String? address;
+  final DateTime? dateOfBirth;
+  final String? gender;
 
-  const UpdateProfileRequestDto({required this.fullName, this.phone});
+  const UpdateProfileRequestDto({
+    required this.fullName,
+    this.phone,
+    this.address,
+    this.dateOfBirth,
+    this.gender,
+  });
 
-  Map<String, dynamic> toJson() => {'fullName': fullName, 'phone': phone};
+  Map<String, dynamic> toJson() => {
+    'fullName': fullName,
+    'phone': phone,
+    'address': address,
+    'dateOfBirth': dateOfBirth == null
+        ? null
+        : DateTime.utc(
+            dateOfBirth!.year,
+            dateOfBirth!.month,
+            dateOfBirth!.day,
+          ).toIso8601String(),
+    'gender': gender,
+  };
 
   @override
-  List<Object?> get props => [fullName, phone];
+  List<Object?> get props => [fullName, phone, address, dateOfBirth, gender];
+}
+
+class ChangePasswordRequestDto extends Equatable {
+  final String currentPassword;
+  final String newPassword;
+
+  const ChangePasswordRequestDto({
+    required this.currentPassword,
+    required this.newPassword,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'currentPassword': currentPassword,
+    'newPassword': newPassword,
+  };
+
+  @override
+  List<Object?> get props => [currentPassword, newPassword];
 }

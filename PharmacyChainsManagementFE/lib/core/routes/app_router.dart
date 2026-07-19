@@ -17,6 +17,7 @@ import '../../features/prescription/boundary/prescription_list_screen.dart';
 import '../../features/staff_attendance/boundary/staff_attendance_screen.dart';
 import '../../features/staff_sales/boundary/invoice_detail_screen.dart';
 import '../../features/staff_sales/boundary/staff_sales_screens.dart';
+import '../../features/staff_sales/boundary/staff_profile_screen.dart';
 import '../../features/staff_sales/entity/staff_sales_dto.dart';
 import '../app_logger.dart';
 import '../theme/branch_manager_app_theme.dart';
@@ -164,6 +165,10 @@ class AppRouter {
         path: '/staff/payments/process',
         builder: (_, state) =>
             PaymentProcessingScreen(invoice: state.extra as InvoiceSummaryDto),
+      ),
+      GoRoute(
+        path: '/staff/profile',
+        builder: (_, __) => const StaffProfileScreen(),
       ),
       GoRoute(
         path: '/inventory_home',

@@ -257,13 +257,6 @@ class _StaffPanel extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Text(
-                      '${AppStrings.currencySymbol}${staff.salesRevenue.toStringAsFixed(0)}',
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.teal,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
                   ],
                 ),
               ),
