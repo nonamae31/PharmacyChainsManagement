@@ -208,13 +208,20 @@ abstract final class AppStrings {
   static const staffLoading = 'Staff data is loading. Please try again.';
   static const noStaffAvailable = 'No branch staff is available.';
   static const shiftDate = 'Shift date';
+  static const shiftPreset = 'Shift preset';
+  static const morningShift = 'Morning (08:00 - 12:00)';
+  static const afternoonShift = 'Afternoon (12:00 - 17:00)';
+  static const eveningShift = 'Evening (17:00 - 22:00)';
+  static const customShift = 'Custom time';
   static const startTime = 'Start time';
   static const endTime = 'End time';
   static const scheduled = 'Scheduled';
   static const dayOff = 'Day off';
   static const cancelled = 'Cancelled';
   static const invalidShiftTime = 'End time must be later than start time.';
-  static const shiftTooLong = 'A shift cannot exceed 16 hours.';
+  static const shiftTooLong = 'A shift cannot exceed 12 hours.';
+  static const inactiveShiftTimeHelp =
+      'The existing shift time is retained when marking a staff member off or cancelling the shift.';
   static const differenceReasonRequired =
       'Enter a reason when received revenue differs from system revenue.';
 }

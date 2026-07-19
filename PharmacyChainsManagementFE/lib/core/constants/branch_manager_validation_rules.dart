@@ -4,7 +4,7 @@ abstract final class BranchManagerValidationRules {
   static const maximumEmailLength = 150;
   static const maximumPhoneLength = 16;
   static const maximumPasswordLength = 100;
-  static const maximumShiftHours = 16;
+  static const maximumShiftHours = 12;
   static const maximumShiftNotesLength = 500;
   static const maximumAssessmentNotesLength = 1000;
   static const maximumCurrencyAmount = 999999999999.0;

@@ -64,6 +64,24 @@ final class StaffPerformanceOperationSuccess
   List<Object?> get props => [...super.props, message];
 }
 
+final class StaffPerformanceOperationFailure
+    extends StaffPerformanceLoadSuccess {
+  final String message;
+
+  const StaffPerformanceOperationFailure(
+    super.performance, {
+    required super.search,
+    required super.status,
+    required super.sort,
+    required super.shifts,
+    required super.shiftDate,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [...super.props, message];
+}
+
 final class StaffPerformanceLoadFailure extends StaffPerformanceState {
   final String message;
 
