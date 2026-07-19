@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../shared/shared_components/app_error_dialog.dart';
 import '../../../shared/shared_components/app_loading_indicator.dart';
+import '../../auth/control/auth_bloc.dart';
+import '../../auth/control/auth_event.dart';
 import '../control/inventory_dashboard_bloc.dart';
 import '../control/inventory_dashboard_event.dart';
 import '../control/inventory_dashboard_state.dart';
@@ -424,7 +427,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               children: [
                 _buildBottomSidebarItem('Profile (Hồ sơ)', Icons.person_outline, _showUserProfileDialog),
                 _buildBottomSidebarItem('Logout (Đăng xuất)', Icons.logout_outlined, () {
-                  Navigator.of(context).pop();
+                  context.read<AuthBloc>().add(LogoutRequested());
+                  context.go('/login');
                 }),
               ],
             ),

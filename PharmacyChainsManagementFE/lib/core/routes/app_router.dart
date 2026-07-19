@@ -33,6 +33,10 @@ class AppRouter {
         return isLoggingIn ? null : '/login';
       }
 
+      if (isLoggingIn) {
+        return null;
+      }
+
       final role = authState.role.toUpperCase();
 
       String targetPath = '/login';
@@ -54,7 +58,7 @@ class AppRouter {
           break;
       }
 
-      if (isLoggingIn || state.matchedLocation != targetPath) {
+      if (state.matchedLocation != targetPath) {
         return targetPath;
       }
       return null;

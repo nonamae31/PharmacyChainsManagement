@@ -370,7 +370,7 @@ class _BranchCanvas extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: AppSpacing.md,
             mainAxisSpacing: AppSpacing.md,
-            childAspectRatio: crossAxisCount == 2 ? 1.65 : 2.25,
+            childAspectRatio: crossAxisCount == 2 ? 1.65 : 1.6,
           ),
           itemBuilder: (context, index) {
             final branch = branches[index];
@@ -407,7 +407,7 @@ class _BranchCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFFEAF4FF) : Colors.white,
           border: Border.all(
@@ -441,21 +441,26 @@ class _BranchCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Text(
               '${_managerName(branch)} | ${branch.phone ?? AppStrings.notAvailable}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
             ),
-            const Spacer(),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                _BranchMetric(
-                  label: 'Daily Revenue',
-                  value: _money(branch.dailyRevenue ?? 0),
+                Expanded(
+                  child: _BranchMetric(
+                    label: 'Daily Revenue',
+                    value: _money(branch.dailyRevenue ?? 0),
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: AppSpacing.md),
                 _BranchMetric(
                   label: 'Staff',
                   value: (branch.staffCount ?? 0).toString(),
+                  alignEnd: true,
                 ),
               ],
             ),
@@ -840,28 +845,47 @@ class _BranchMetric extends StatelessWidget {
   final String label;
   final String value;
   final String? accent;
+  final bool alignEnd;
 
-  const _BranchMetric({required this.label, required this.value, this.accent});
+  const _BranchMetric({
+    required this.label,
+    required this.value,
+    this.accent,
+    this.alignEnd = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: AppColors.textMuted,
             fontWeight: FontWeight.w800,
           ),
         ),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: alignEnd
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
             ),
             if (accent != null) ...[
               const SizedBox(width: AppSpacing.xs),

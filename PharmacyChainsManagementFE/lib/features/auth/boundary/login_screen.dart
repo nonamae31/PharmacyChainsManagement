@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -21,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
   bool _obscurePassword = true;
+  bool _loginRequested = false;
 
   void _submit() {
     FocusScope.of(context).unfocus();
@@ -34,12 +36,31 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
+    _loginRequested = true;
     context.read<AuthBloc>().add(LoginRequested(email, password));
   }
 
   void _onGoogleLogin() {
     FocusScope.of(context).unfocus();
+    _loginRequested = true;
     context.read<AuthBloc>().add(GoogleLoginRequested());
+  }
+
+  String _homePathForRole(String role) {
+    switch (role.toUpperCase()) {
+      case 'FOUNDER':
+        return '/founder_home';
+      case 'BUSINESS_ADMIN':
+        return '/business_admin_home';
+      case 'BRANCH_MANAGER':
+        return '/branch_manager_home';
+      case 'STAFF':
+        return '/staff_home';
+      case 'INVENTORY_MANAGER':
+        return '/inventory_home';
+      default:
+        return '/login';
+    }
   }
 
   @override
@@ -48,6 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
+            _loginRequested = false;
             Fluttertoast.showToast(
               msg: state.message,
               toastLength: Toast.LENGTH_LONG,
@@ -56,10 +78,8 @@ class _LoginScreenState extends State<LoginScreen> {
               textColor: Colors.white,
               fontSize: 16,
             );
-          } else if (state is AuthAuthenticated) {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
+          } else if (state is AuthAuthenticated && _loginRequested) {
+            context.go(_homePathForRole(state.role));
           }
         },
         child: LayoutBuilder(
