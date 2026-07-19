@@ -125,13 +125,23 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
         }
       }
     } catch (e) {
+      final errorStr = e.toString();
+      if (errorStr.contains('MissingPluginException')) {
+        _showMissingPluginWarning();
+        return;
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('⚠️ Không thể mở Camera hoặc thiết bị không có Webcam: ${e.toString().replaceAll("Exception: ", "")}. Đang chuyển sang thư viện ảnh...'),
-            backgroundColor: AppColors.warning,
+            content: Text(
+              Platform.isWindows || Platform.isLinux || Platform.isMacOS
+                  ? '🖥️ Chế độ Camera trực tiếp không khả dụng trên PC. Đang tự động mở thư viện file tệp máy tính...'
+                  : '⚠️ Không thể mở Camera ($errorStr). Đang mở thư viện ảnh...',
+            ),
+            backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 3),
           ),
         );
         _pickFromGallery(key, title);
@@ -174,7 +184,13 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
         }
       }
     } catch (e) {
-      // If file_picker fails, fallback to image_picker gallery
+      final errorStr = e.toString();
+      if (errorStr.contains('MissingPluginException')) {
+        _showMissingPluginWarning();
+        return;
+      }
+
+      // If file_picker fails for other reasons, fallback to image_picker gallery
       try {
         final XFile? photo = await _imagePicker.pickImage(
           source: ImageSource.gallery,
@@ -197,10 +213,15 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
           }
         }
       } catch (err) {
+        final errStr = err.toString();
+        if (errStr.contains('MissingPluginException')) {
+          _showMissingPluginWarning();
+          return;
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('⚠️ Lỗi chọn ảnh: ${err.toString().replaceAll("Exception: ", "")}'),
+              content: Text('⚠️ Lỗi chọn ảnh: $errStr'),
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ),
@@ -208,6 +229,37 @@ class _VerificationPhotosModalState extends State<VerificationPhotosModal> {
         }
       }
     }
+  }
+
+  void _showMissingPluginWarning() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.system_update_alt, color: AppColors.primary),
+            SizedBox(width: 10),
+            Text('Yêu cầu Khởi động lại App', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          'Do hệ thống vừa cài đặt thêm thư viện gốc (C++/Native plugin) để truy cập Camera và File Explorer máy tính:\n\n'
+          '👉 Hot Reload (r) hay Hot Restart (R) sẽ không tải được plugin gốc và báo lỗi MissingPluginException.\n\n'
+          '⚠️ Vui lòng dừng hẳn ứng dụng (tắt terminal) và chạy lại lệnh:\n'
+          'flutter run -d windows\n(hoặc flutter run trên thiết bị của bạn) để sử dụng Camera & File Picker thật nhé!',
+          style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textPrimary),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            child: const Text('Đã hiểu, tôi sẽ chạy lại flutter run'),
+          ),
+        ],
+      ),
+    );
   }
 
   bool get _isComplete => _photos.length == 3 && _photos.containsKey('front') && _photos.containsKey('back') && _photos.containsKey('label');
