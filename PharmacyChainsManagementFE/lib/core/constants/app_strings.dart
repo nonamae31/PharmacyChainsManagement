@@ -101,6 +101,10 @@ class AppStrings {
   static const String checkingPaymentStatus = 'Checking payment status...';
 
   // Staff sales invoice
+  static const String invoicesTitle = 'Invoices';
+  static const String invoiceHistoryDescription =
+      'Review and process financial transactions for this branch.';
+  static const String noInvoices = 'No invoices yet.';
   static const String invoiceGeneration = 'Invoice generation';
   static const String invoiceGenerationDescription =
       'Create an invoice with one or more medicines supplied by this branch.';
@@ -124,11 +128,16 @@ class AppStrings {
   static const String invoiceSummary = 'Invoice summary';
   static const String selectedItems = 'Selected items';
   static const String subtotal = 'Subtotal';
+  static const String totalPayable = 'Total payable';
   static const String generateInvoice = 'Generate invoice';
   static const String invoiceDetails = 'Invoice details';
   static const String invoiceDetailsDescription =
       'Review invoice information and itemized medicines.';
   static const String viewDetails = 'View details';
+  static const String processPayment = 'Process payment';
+  static const String cancelledInvoicePaymentTitle = 'Payment unavailable';
+  static const String cancelledInvoicePaymentMessage =
+      'This invoice has been cancelled and cannot be processed for payment.';
   static const String backToInvoices = 'Back to invoices';
   static const String invoiceCode = 'Invoice code';
   static const String invoiceDate = 'Invoice date';
@@ -136,6 +145,7 @@ class AppStrings {
   static const String invoiceStatus = 'Invoice status';
   static const String batchNumber = 'Batch';
   static const String totalAmount = 'Total amount';
+  static String invoiceItemCount(int count) => '$count items';
   static const String invoiceRequiresMedicine =
       'Add at least one medicine before generating the invoice.';
   static const String invalidMedicineQuantity =

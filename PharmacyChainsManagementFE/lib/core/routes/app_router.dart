@@ -12,8 +12,6 @@ import '../../features/business_admin/boundary/business_admin_shell_screen.dart'
 import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
 import '../../features/founder_admin/presentation/screens/founder_layout_screen.dart';
 import '../../features/inventory/boundary/inventory_dashboard_screen.dart';
-import '../../features/prescription/boundary/prescription_detail_screen.dart';
-import '../../features/prescription/boundary/prescription_list_screen.dart';
 import '../../features/staff_attendance/boundary/staff_attendance_screen.dart';
 import '../../features/staff_sales/boundary/invoice_detail_screen.dart';
 import '../../features/staff_sales/boundary/staff_sales_screens.dart';
@@ -132,16 +130,6 @@ class AppRouter {
         path: '/staff/invoices',
         pageBuilder: (context, state) =>
             _buildTransition(context, state, const InvoiceHistoryScreen()),
-      ),
-      GoRoute(
-        path: '/staff/prescriptions',
-        builder: (_, __) => const PrescriptionListScreen(),
-      ),
-      GoRoute(
-        path: '/staff/prescriptions/:prescriptionId',
-        builder: (_, state) => PrescriptionDetailScreen(
-          prescriptionId: state.pathParameters['prescriptionId']!,
-        ),
       ),
       GoRoute(
         path: '/staff/invoices/:invoiceId',

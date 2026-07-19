@@ -14,6 +14,7 @@ public interface IStaffSalesService
     Task<InvoiceResponseDto> GetInvoiceAsync(Guid staffId, Guid invoiceId, CancellationToken cancellationToken);
     Task<PaymentTransactionResponseDto> CreateMockPaymentAsync(Guid staffId, Guid invoiceId, CreatePaymentRequestDto request, CancellationToken cancellationToken);
     Task<PaymentTransactionResponseDto> GetPaymentAsync(Guid staffId, Guid paymentId, CancellationToken cancellationToken);
+    Task<int> CancelExpiredQrInvoicesAsync(CancellationToken cancellationToken);
     Task ProcessSePayWebhookAsync(SePayWebhookRequestDto request, CancellationToken cancellationToken);
     Task<IReadOnlyList<PaymentTransactionResponseDto>> GetPaymentsAsync(Guid staffId, string? paymentStatus, CancellationToken cancellationToken);
     Task<StaffDashboardResponseDto> GetDashboardAsync(Guid staffId, CancellationToken cancellationToken);

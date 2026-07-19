@@ -195,6 +195,7 @@ try
     // Business Admin & Finance Services
     builder.Services.AddScoped<IBusinessAdminService, BusinessAdminService>();
     builder.Services.AddScoped<IStaffSalesService, StaffSalesService>();
+    builder.Services.AddHostedService<QrPaymentExpirationBackgroundService>();
     builder.Services.AddScoped<IStaffAttendanceService, StaffAttendanceService>();
     builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
     builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();

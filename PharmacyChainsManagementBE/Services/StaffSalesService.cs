@@ -94,10 +94,10 @@ public sealed class StaffSalesService : IStaffSalesService
         var branchId = await GetStaffBranchIdAsync(staffId, cancellationToken);
         var query = _context.Invoices.AsNoTracking().Include(invoice => invoice.InvoiceDetails).Where(invoice => invoice.BranchId == branchId);
         if (!string.IsNullOrWhiteSpace(search)) query = query.Where(invoice => invoice.InvoiceCode.Contains(search));
-        if (!string.IsNullOrWhiteSpace(paymentStatus)) query = query.Where(invoice => invoice.PaymentStatus == paymentStatus.ToUpper());
+        if (!string.IsNullOrWhiteSpace(paymentStatus)) query = query.Where(invoice => invoice.PaymentStatus.ToUpper() == paymentStatus.ToUpper());
         if (fromDate.HasValue) query = query.Where(invoice => invoice.InvoiceDate >= fromDate.Value);
         if (toDate.HasValue) query = query.Where(invoice => invoice.InvoiceDate <= toDate.Value);
-        return await query.OrderByDescending(invoice => invoice.CreatedAt).Select(invoice => new InvoiceListItemResponseDto(invoice.InvoiceId, invoice.InvoiceCode, invoice.InvoiceDate, invoice.TotalAmount, invoice.PaymentStatus, invoice.Status, invoice.InvoiceDetails.Count)).ToListAsync(cancellationToken);
+        return await query.OrderByDescending(invoice => invoice.CreatedAt).Select(invoice => new InvoiceListItemResponseDto(invoice.InvoiceId, invoice.InvoiceCode, invoice.InvoiceDate, invoice.TotalAmount, invoice.PaymentStatus.ToUpper(), invoice.Status.ToUpper(), invoice.InvoiceDetails.Count)).ToListAsync(cancellationToken);
     }
 
     public async Task<InvoiceResponseDto> GetInvoiceAsync(Guid staffId, Guid invoiceId, CancellationToken cancellationToken)
@@ -105,7 +105,7 @@ public sealed class StaffSalesService : IStaffSalesService
         var branchId = await GetStaffBranchIdAsync(staffId, cancellationToken);
         var invoice = await _context.Invoices.AsNoTracking().Include(item => item.InvoiceDetails).ThenInclude(item => item.Medicine).Include(item => item.InvoiceDetails).ThenInclude(item => item.Batch)
             .SingleOrDefaultAsync(item => item.InvoiceId == invoiceId && item.BranchId == branchId, cancellationToken) ?? throw new DataNotFoundException("Invoice was not found.");
-        return new InvoiceResponseDto(invoice.InvoiceId, invoice.InvoiceCode, invoice.InvoiceDate, invoice.TotalAmount, invoice.PaymentStatus, invoice.Status,
+        return new InvoiceResponseDto(invoice.InvoiceId, invoice.InvoiceCode, invoice.InvoiceDate, invoice.TotalAmount, invoice.PaymentStatus.ToUpperInvariant(), invoice.Status.ToUpperInvariant(),
             invoice.InvoiceDetails.Select(item => new InvoiceLineResponseDto(item.InvoiceDetailId, item.MedicineId, item.Medicine.MedicineName, item.BatchId, item.Batch.BatchNumber, item.Quantity, item.UnitPrice, item.LineTotal)).ToList());
     }
 
@@ -113,8 +113,9 @@ public sealed class StaffSalesService : IStaffSalesService
     {
         var branchId = await GetStaffBranchIdAsync(staffId, cancellationToken);
         var invoice = await _context.Invoices.SingleOrDefaultAsync(item => item.InvoiceId == invoiceId && item.BranchId == branchId, cancellationToken) ?? throw new DataNotFoundException("Invoice was not found.");
-        if (invoice.PaymentStatus == "PAID") throw new InvalidOperationException("This invoice has already been paid.");
-        var methods = new[] { "CASH", "CARD", "QR" };
+        if (string.Equals(invoice.PaymentStatus, "PAID", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("This invoice has already been paid.");
+        if (!string.Equals(invoice.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Only active invoices can be processed for payment.");
+        var methods = new[] { "CASH", "QR" };
         var paymentMethod = request.PaymentMethod.ToUpperInvariant();
         if (!methods.Contains(paymentMethod)) throw new InvalidOperationException("Unsupported payment method.");
         var now = DateTime.UtcNow;
@@ -157,21 +158,50 @@ public sealed class StaffSalesService : IStaffSalesService
         var branchId = await GetStaffBranchIdAsync(staffId, cancellationToken);
         var payment = await _context.PaymentTransactions
             .Include(item => item.Invoice)
+            .ThenInclude(invoice => invoice.InvoiceDetails)
             .SingleOrDefaultAsync(
                 item => item.PaymentId == paymentId && item.Invoice.BranchId == branchId,
                 cancellationToken)
             ?? throw new DataNotFoundException("Payment transaction was not found.");
 
         if (payment.PaymentMethod == "QR"
-            && payment.PaymentStatus == "PENDING"
+            && string.Equals(payment.PaymentStatus, "PENDING", StringComparison.OrdinalIgnoreCase)
             && payment.CreatedAt.AddMinutes(_qrPaymentSettings.ExpirationMinutes) <= DateTime.UtcNow)
         {
-            payment.PaymentStatus = "EXPIRED";
-            payment.UpdatedAt = DateTime.UtcNow;
+            await CancelExpiredQrPaymentAsync(payment, DateTime.UtcNow, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
 
         return ToPaymentDto(payment, payment.Invoice.InvoiceCode);
+    }
+
+    public async Task<int> CancelExpiredQrInvoicesAsync(CancellationToken cancellationToken)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+        var now = DateTime.UtcNow;
+        var cutoff = now.AddMinutes(-_qrPaymentSettings.ExpirationMinutes);
+        var expiredPayments = await _context.PaymentTransactions
+            .Include(item => item.Invoice)
+            .ThenInclude(invoice => invoice.InvoiceDetails)
+            .Where(item => item.PaymentMethod == "QR"
+                && item.PaymentStatus.ToUpper() == "PENDING"
+                && item.CreatedAt <= cutoff)
+            .ToListAsync(cancellationToken);
+
+        foreach (var payment in expiredPayments)
+        {
+            await CancelExpiredQrPaymentAsync(payment, now, cancellationToken);
+        }
+
+        if (expiredPayments.Count > 0)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return expiredPayments.Count;
     }
 
     public async Task ProcessSePayWebhookAsync(
@@ -189,14 +219,26 @@ public sealed class StaffSalesService : IStaffSalesService
             cancellationToken);
         var payment = await _context.PaymentTransactions
             .Include(item => item.Invoice)
+            .ThenInclude(invoice => invoice.InvoiceDetails)
             .SingleOrDefaultAsync(
                 item => item.PaymentMethod == "QR"
                     && item.GatewayReference != null
                     && item.GatewayReference.StartsWith(request.Code),
                 cancellationToken);
 
-        if (payment is null || payment.PaymentStatus == "PAID")
+        if (payment is null
+            || !string.Equals(payment.PaymentStatus, "PENDING", StringComparison.OrdinalIgnoreCase))
         {
+            await transaction.CommitAsync(cancellationToken);
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        if (string.Equals(payment.PaymentStatus, "PENDING", StringComparison.OrdinalIgnoreCase)
+            && payment.CreatedAt.AddMinutes(_qrPaymentSettings.ExpirationMinutes) <= now)
+        {
+            await CancelExpiredQrPaymentAsync(payment, now, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return;
         }
@@ -225,7 +267,6 @@ public sealed class StaffSalesService : IStaffSalesService
             return;
         }
 
-        var now = DateTime.UtcNow;
         payment.PaymentStatus = "PAID";
         payment.PaymentDate = now;
         payment.GatewayReference =
@@ -241,7 +282,7 @@ public sealed class StaffSalesService : IStaffSalesService
     {
         var branchId = await GetStaffBranchIdAsync(staffId, cancellationToken);
         var query = _context.PaymentTransactions.AsNoTracking().Include(item => item.Invoice).Where(item => item.Invoice.BranchId == branchId);
-        if (!string.IsNullOrWhiteSpace(paymentStatus)) query = query.Where(item => item.PaymentStatus == paymentStatus.ToUpper());
+        if (!string.IsNullOrWhiteSpace(paymentStatus)) query = query.Where(item => item.PaymentStatus.ToUpper() == paymentStatus.ToUpper());
         var payments = await query.OrderByDescending(item => item.CreatedAt).ToListAsync(cancellationToken);
         return payments.Select(item => ToPaymentDto(item, item.Invoice.InvoiceCode)).ToList();
     }
@@ -252,13 +293,51 @@ public sealed class StaffSalesService : IStaffSalesService
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var invoices = _context.Invoices.AsNoTracking().Where(item => item.BranchId == branchId && item.InvoiceDate == today);
         var lowStock = await _context.Inventories.AsNoTracking().CountAsync(item => item.BranchId == branchId && item.QuantityOnHand <= item.SafetyStockLevel, cancellationToken);
-        return new StaffDashboardResponseDto(await invoices.Where(item => item.PaymentStatus == "PAID").SumAsync(item => (decimal?)item.TotalAmount, cancellationToken) ?? 0m,
-            await invoices.CountAsync(cancellationToken), await _context.Invoices.CountAsync(item => item.BranchId == branchId && item.PaymentStatus == "UNPAID", cancellationToken), lowStock, "08:00 - 16:00");
+        return new StaffDashboardResponseDto(await invoices.Where(item => item.PaymentStatus.ToUpper() == "PAID").SumAsync(item => (decimal?)item.TotalAmount, cancellationToken) ?? 0m,
+            await invoices.CountAsync(cancellationToken), await _context.Invoices.CountAsync(item => item.BranchId == branchId && item.PaymentStatus.ToUpper() == "UNPAID", cancellationToken), lowStock, "08:00 - 16:00");
     }
 
     private async Task<Guid> GetStaffBranchIdAsync(Guid staffId, CancellationToken cancellationToken) =>
         await _context.Users.AsNoTracking().Where(user => user.UserId == staffId && user.Status == "ACTIVE").Select(user => user.BranchId).SingleOrDefaultAsync(cancellationToken)
         ?? throw new InvalidOperationException("The staff account is not assigned to an active branch.");
+
+    private async Task CancelExpiredQrPaymentAsync(
+        PaymentTransaction payment,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(payment.PaymentStatus, "PENDING", StringComparison.OrdinalIgnoreCase)
+            || payment.CreatedAt.AddMinutes(_qrPaymentSettings.ExpirationMinutes) > now)
+        {
+            return;
+        }
+
+        payment.PaymentStatus = "EXPIRED";
+        payment.UpdatedAt = now;
+
+        if (string.Equals(payment.Invoice.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        payment.Invoice.Status = "CANCELLED";
+        payment.Invoice.UpdatedAt = now;
+
+        foreach (var group in payment.Invoice.InvoiceDetails.GroupBy(item => item.BatchId))
+        {
+            var inventory = await _context.Inventories.SingleOrDefaultAsync(
+                item => item.BranchId == payment.Invoice.BranchId
+                    && item.BatchId == group.Key,
+                cancellationToken);
+            if (inventory is null)
+            {
+                continue;
+            }
+
+            inventory.QuantityOnHand += group.Sum(item => item.Quantity);
+            inventory.UpdatedAt = now;
+        }
+    }
 
     private PaymentTransactionResponseDto ToPaymentDto(PaymentTransaction payment, string invoiceCode)
     {

@@ -209,7 +209,10 @@ class _DateTile extends StatelessWidget {
                   ),
                   Text(DateFormat.MMMd().format(date)),
                   const Spacer(),
-                  _AttendanceDot(attended: record != null),
+                  _AttendanceDot(
+                    attended: record != null,
+                    showLabel: true,
+                  ),
                 ],
               )
             : Stack(
@@ -224,7 +227,10 @@ class _DateTile extends StatelessWidget {
                   ),
                   Align(
                     alignment: Alignment.bottomLeft,
-                    child: _AttendanceDot(attended: record != null),
+                    child: _AttendanceDot(
+                      attended: record != null,
+                      showLabel: false,
+                    ),
                   ),
                 ],
               ),
@@ -235,8 +241,12 @@ class _DateTile extends StatelessWidget {
 
 class _AttendanceDot extends StatelessWidget {
   final bool attended;
+  final bool showLabel;
 
-  const _AttendanceDot({required this.attended});
+  const _AttendanceDot({
+    required this.attended,
+    required this.showLabel,
+  });
 
   @override
   Widget build(BuildContext context) => Row(
@@ -250,7 +260,7 @@ class _AttendanceDot extends StatelessWidget {
           shape: BoxShape.circle,
         ),
       ),
-      if (attended) ...[
+      if (attended && showLabel) ...[
         const SizedBox(width: AppSpacing.xs),
         const Text(AppStrings.attendanceCheckedInShort),
       ],
