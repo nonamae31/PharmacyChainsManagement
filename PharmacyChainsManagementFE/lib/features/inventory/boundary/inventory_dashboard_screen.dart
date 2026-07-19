@@ -23,6 +23,8 @@ import '../../auth/control/auth_event.dart';
 import '../../auth/control/auth_state.dart';
 import '../../auth/boundary/login_screen.dart';
 import 'package:go_router/go_router.dart';
+import '../../stock_replenishment/boundary/inventory_replenishment_queue_panel.dart';
+import '../../../core/theme/app_spacing.dart';
 
 class InventoryDashboardScreen extends StatefulWidget {
   final String branchId;
@@ -32,7 +34,6 @@ class InventoryDashboardScreen extends StatefulWidget {
   @override
   State<InventoryDashboardScreen> createState() => _InventoryDashboardScreenState();
 }
-
 class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   int _selectedIndex = 6; // Default to 'Safety Stock'
   final TextEditingController _searchController = TextEditingController();
@@ -2044,6 +2045,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const InventoryReplenishmentQueuePanel(),
+        const SizedBox(height: AppSpacing.lg),
         // 1. FEFO ENGINE & PICKING LIST BANNER
         Container(
           padding: const EdgeInsets.all(24),

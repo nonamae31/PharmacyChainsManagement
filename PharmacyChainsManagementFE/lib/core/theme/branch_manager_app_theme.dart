@@ -55,6 +55,10 @@ abstract final class AppSpacing {
   static const dialogWidthCompact = 420.0;
   static const dialogWidthStandard = 480.0;
   static const dialogWidthWide = 540.0;
+  static const replenishmentDialogWidth = 920.0;
+  static const replenishmentDialogHeight = 720.0;
+  static const replenishmentMedicineFieldWidth = 360.0;
+  static const replenishmentQuantityFieldWidth = 140.0;
   static const narrowMobileBreakpoint = 360.0;
   static const mobileHeaderBreakpoint = 720.0;
   static const stackedPanelBreakpoint = 820.0;

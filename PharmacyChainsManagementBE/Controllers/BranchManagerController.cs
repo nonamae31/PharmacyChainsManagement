@@ -25,13 +25,16 @@ public sealed class BranchManagerController : ControllerBase
     private const int MaximumShiftHours = 12;
     private readonly PharmacyDbContext _dbContext;
     private readonly IPasswordHashingStrategy _passwordHashingStrategy;
+    private readonly IStockReplenishmentService _stockReplenishmentService;
 
     public BranchManagerController(
         PharmacyDbContext dbContext,
-        IPasswordHashingStrategy passwordHashingStrategy)
+        IPasswordHashingStrategy passwordHashingStrategy,
+        IStockReplenishmentService stockReplenishmentService)
     {
         _dbContext = dbContext;
         _passwordHashingStrategy = passwordHashingStrategy;
+        _stockReplenishmentService = stockReplenishmentService;
     }
 
     [HttpGet("dashboard")]
@@ -690,6 +693,100 @@ public sealed class BranchManagerController : ControllerBase
             _dbContext,
             access.Value.BranchId,
             cancellationToken));
+    }
+
+    [HttpGet("inventory/replenishment-options")]
+    [ProducesResponseType(typeof(IReadOnlyList<StockReplenishmentOptionDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStockReplenishmentOptions(CancellationToken cancellationToken)
+    {
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        return Ok(await _stockReplenishmentService.GetOptionsAsync(
+            access.Value.BranchId,
+            cancellationToken));
+    }
+
+    [HttpGet("inventory/replenishment-requests")]
+    [ProducesResponseType(typeof(IReadOnlyList<StockReplenishmentRequestDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStockReplenishmentRequests(CancellationToken cancellationToken)
+    {
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        return Ok(await _stockReplenishmentService.GetBranchRequestsAsync(
+            access.Value.BranchId,
+            cancellationToken));
+    }
+
+    [HttpPost("inventory/replenishment-requests")]
+    [ProducesResponseType(typeof(StockReplenishmentRequestDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateStockReplenishmentRequest(
+        [FromBody] CreateStockReplenishmentRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var result = await _stockReplenishmentService.CreateAsync(
+            access.Value.ManagerId,
+            access.Value.BranchId,
+            request,
+            cancellationToken);
+        if (result.IsSuccess)
+        {
+            return StatusCode(StatusCodes.Status201Created, result.Value);
+        }
+
+        return result.Error.Type == PharmacyChainsManagementBE.Common.ErrorType.Conflict
+            ? Conflict(new { message = result.Error.Message })
+            : BadRequest(new { message = result.Error.Message });
+    }
+
+    [HttpPost("inventory/replenishment-requests/{requestId:guid}/confirm-received")]
+    [ProducesResponseType(typeof(StockReplenishmentRequestDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ConfirmStockReplenishmentReceived(
+        Guid requestId,
+        CancellationToken cancellationToken)
+    {
+        var access = await ResolveAccessAsync(cancellationToken);
+        if (access is null)
+        {
+            return Forbid();
+        }
+
+        var result = await _stockReplenishmentService.ConfirmReceivedAsync(
+            requestId,
+            access.Value.ManagerId,
+            access.Value.BranchId,
+            cancellationToken);
+        if (result.IsSuccess)
+        {
+            return Ok(result.Value);
+        }
+
+        return result.Error.Type switch
+        {
+            PharmacyChainsManagementBE.Common.ErrorType.NotFound =>
+                NotFound(new { message = result.Error.Message }),
+            PharmacyChainsManagementBE.Common.ErrorType.Conflict =>
+                Conflict(new { message = result.Error.Message }),
+            _ => BadRequest(new { message = result.Error.Message })
+        };
     }
 
     [HttpPost("daily-revenue/confirm")]

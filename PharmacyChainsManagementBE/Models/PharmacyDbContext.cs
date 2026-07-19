@@ -56,6 +56,10 @@ public partial class PharmacyDbContext : DbContext
 
     public virtual DbSet<StockTransferDetail> StockTransferDetails { get; set; }
 
+    public virtual DbSet<StockReplenishmentRequest> StockReplenishmentRequests { get; set; }
+
+    public virtual DbSet<StockReplenishmentRequestDetail> StockReplenishmentRequestDetails { get; set; }
+
     public virtual DbSet<StaffAssessment> StaffAssessments { get; set; }
 
     public virtual DbSet<StaffShift> StaffShifts { get; set; }
@@ -381,6 +385,51 @@ public partial class PharmacyDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.StaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<StockReplenishmentRequest>(entity =>
+        {
+            entity.Property(request => request.RequestId).ValueGeneratedNever();
+
+            entity.HasOne(request => request.Branch)
+                .WithMany()
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(request => request.RequestedByNavigation)
+                .WithMany()
+                .HasForeignKey(request => request.RequestedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(request => request.ProcessedByNavigation)
+                .WithMany()
+                .HasForeignKey(request => request.ProcessedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(request => request.Transfer)
+                .WithMany()
+                .HasForeignKey(request => request.TransferId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(request => request.ReceivedByNavigation)
+                .WithMany()
+                .HasForeignKey(request => request.ReceivedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(request => request.TransferId)
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<StockReplenishmentRequestDetail>(entity =>
+        {
+            entity.Property(detail => detail.RequestDetailId).ValueGeneratedNever();
+
+            entity.HasOne(detail => detail.Request)
+                .WithMany(request => request.Details)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(detail => detail.Medicine)
+                .WithMany()
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 

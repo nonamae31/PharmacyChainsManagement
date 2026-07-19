@@ -25,6 +25,9 @@ import 'features/inventory/control/stocktake_bloc.dart';
 import 'features/inventory/network/inventory_api_client.dart';
 import 'features/staff_performance/control/staff_performance_bloc.dart';
 import 'features/staff_performance/network/staff_performance_api_client.dart';
+import 'features/stock_replenishment/control/branch_replenishment_bloc.dart';
+import 'features/stock_replenishment/control/inventory_replenishment_bloc.dart';
+import 'features/stock_replenishment/network/stock_replenishment_api_client.dart';
 import 'firebase_options.dart';
 import 'injection_container.dart' as di;
 
@@ -91,6 +94,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final stockReplenishmentApiClient = StockReplenishmentApiClient(
+      di.sl<Dio>(),
+    );
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>.value(value: authBloc),
@@ -113,6 +119,13 @@ class MyApp extends StatelessWidget {
           create: (_) => BranchInventoryBloc(
             BranchInventoryApiClient(branchManagerApiClient),
           ),
+        ),
+        BlocProvider(
+          create: (_) => BranchReplenishmentBloc(stockReplenishmentApiClient),
+        ),
+        BlocProvider(
+          create: (_) =>
+              InventoryReplenishmentBloc(stockReplenishmentApiClient),
         ),
         BlocProvider<InventoryDashboardBloc>(
           create: (context) =>
