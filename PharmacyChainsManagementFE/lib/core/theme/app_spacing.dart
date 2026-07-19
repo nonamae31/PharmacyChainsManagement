@@ -9,6 +9,9 @@ class AppSpacing {
   static const double xxl = 48.0;
   static const double xxxl = 64.0;
 
+  static const double attendanceDetailHeight = 240.0;
+  static const double attendanceDialogWidth = 420.0;
+
   static const double borderRadiusSm = 4.0;
   static const double borderRadiusMd = 8.0;
   static const double borderRadiusLg = 12.0;

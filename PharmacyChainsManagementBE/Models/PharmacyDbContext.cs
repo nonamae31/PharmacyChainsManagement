@@ -60,6 +60,8 @@ public partial class PharmacyDbContext : DbContext
 
     public virtual DbSet<StaffShift> StaffShifts { get; set; }
 
+    public virtual DbSet<StaffAttendance> StaffAttendances { get; set; }
+
     public virtual DbSet<Supplier> Suppliers { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -358,6 +360,21 @@ public partial class PharmacyDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<StaffAttendance>(entity =>
+        {
+            entity.Property(e => e.AttendanceId).ValueGeneratedNever();
+
+            entity.HasOne<Branch>()
+                .WithMany()
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.StaffId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 

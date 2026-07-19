@@ -194,6 +194,7 @@ try
     // Business Admin & Finance Services
     builder.Services.AddScoped<IBusinessAdminService, BusinessAdminService>();
     builder.Services.AddScoped<IStaffSalesService, StaffSalesService>();
+    builder.Services.AddScoped<IStaffAttendanceService, StaffAttendanceService>();
     builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
     builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
     builder.Services.AddScoped<IExportFormatStrategy<PharmacyChainsManagementBE.DTOs.Finance.ReportPayloadDTO>, PdfExportStrategy>();

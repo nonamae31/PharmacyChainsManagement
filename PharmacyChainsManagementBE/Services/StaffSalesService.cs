@@ -242,7 +242,14 @@ public sealed class StaffSalesService : IStaffSalesService
                 payment.GatewayReference, null, null, null, null, null, null);
         }
 
-        ValidateQrSettings();
+        if (!IsQrConfigured())
+        {
+            return new PaymentTransactionResponseDto(
+                payment.PaymentId, payment.InvoiceId, invoiceCode, payment.Amount,
+                payment.PaymentMethod, payment.PaymentStatus, payment.PaymentDate,
+                payment.GatewayReference, null, null, null, null, null, null);
+        }
+
         var transferContent = payment.GatewayReference?.Split('|')[0] ?? invoiceCode;
         var amount = payment.Amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
         var qrCodeUrl =
@@ -262,14 +269,17 @@ public sealed class StaffSalesService : IStaffSalesService
 
     private void ValidateQrSettings()
     {
-        if (string.IsNullOrWhiteSpace(_qrPaymentSettings.BankBin)
-            || string.IsNullOrWhiteSpace(_qrPaymentSettings.BankName)
-            || string.IsNullOrWhiteSpace(_qrPaymentSettings.AccountNumber)
-            || string.IsNullOrWhiteSpace(_qrPaymentSettings.AccountName))
+        if (!IsQrConfigured())
         {
             throw new InvalidOperationException("QR payment has not been configured for this environment.");
         }
     }
+
+    private bool IsQrConfigured() =>
+        !string.IsNullOrWhiteSpace(_qrPaymentSettings.BankBin)
+        && !string.IsNullOrWhiteSpace(_qrPaymentSettings.BankName)
+        && !string.IsNullOrWhiteSpace(_qrPaymentSettings.AccountNumber)
+        && !string.IsNullOrWhiteSpace(_qrPaymentSettings.AccountName);
 
     private static string MaskAccountNumber(string accountNumber) =>
         accountNumber.Length <= 4

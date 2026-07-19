@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../../../auth/control/auth_bloc.dart';
 import '../../../auth/control/auth_event.dart';
 
@@ -9,7 +10,9 @@ enum StaffWorkspaceSection {
   dashboard,
   medicines,
   invoices,
+  prescriptions,
   payments,
+  attendance,
 }
 
 class StaffWorkspaceShell extends StatelessWidget {
@@ -53,6 +56,12 @@ class StaffWorkspaceShell extends StatelessWidget {
       'Payments',
       Icons.payments_outlined,
       '/staff/payments',
+    ),
+    (
+      StaffWorkspaceSection.attendance,
+      AppStrings.attendanceTitle,
+      Icons.fact_check_outlined,
+      '/staff/attendance',
     ),
   ];
   @override

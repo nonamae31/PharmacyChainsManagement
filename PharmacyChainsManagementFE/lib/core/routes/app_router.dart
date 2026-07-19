@@ -12,6 +12,7 @@ import '../../features/business_admin/boundary/business_admin_shell_screen.dart'
 import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
 import '../../features/founder_admin/presentation/screens/founder_layout_screen.dart';
 import '../../features/inventory/boundary/inventory_dashboard_screen.dart';
+import '../../features/staff_attendance/boundary/staff_attendance_screen.dart';
 import '../../features/staff_sales/boundary/invoice_detail_screen.dart';
 import '../../features/staff_sales/boundary/staff_sales_screens.dart';
 import '../../features/staff_sales/entity/staff_sales_dto.dart';
@@ -139,6 +140,11 @@ class AppRouter {
         path: '/staff/payments',
         pageBuilder: (context, state) =>
             _buildTransition(context, state, const PaymentTransactionsScreen()),
+      ),
+      GoRoute(
+        path: '/staff/attendance',
+        pageBuilder: (context, state) =>
+            _buildTransition(context, state, const StaffAttendanceScreen()),
       ),
       GoRoute(
         path: '/staff/payments/process',

@@ -33,6 +33,8 @@ import 'features/finance/domain/usecases/export_financial_report_usecase.dart';
 import 'features/finance/presentation/cubit/financial_export_cubit.dart';
 import 'features/staff_sales/network/staff_sales_api_client.dart';
 import 'features/staff_sales/control/staff_sales_bloc.dart';
+import 'features/staff_attendance/control/staff_attendance_bloc.dart';
+import 'features/staff_attendance/network/staff_attendance_api_client.dart';
 
 // Profile
 import 'features/profile/domain/repositories/founder_profile_repository.dart';
@@ -63,6 +65,7 @@ Future<void> init() async {
     () => FinancialExportCubit(exportFinancialReportUseCase: sl()),
   );
   sl.registerFactory(() => StaffSalesBloc(apiClient: sl()));
+  sl.registerFactory(() => StaffAttendanceBloc(apiClient: sl()));
   sl.registerFactory(() => FounderProfileCubit(repository: sl()));
 
   // Bloc
@@ -96,6 +99,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<StaffSalesApiClient>(
     () => StaffSalesApiClient(sl()),
+  );
+  sl.registerLazySingleton<StaffAttendanceApiClient>(
+    () => StaffAttendanceApiClient(sl()),
   );
   sl.registerLazySingleton<FounderProfileRepository>(
     () => FounderProfileRepositoryImpl(dio: sl(), secureStorage: sl()),

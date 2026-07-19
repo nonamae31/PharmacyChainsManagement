@@ -44,6 +44,30 @@ class AppStrings {
   static const String close = 'Close';
   static const String confirm = 'Confirm';
 
+  // Staff attendance
+  static const String attendanceTitle = 'Attendance';
+  static const String attendanceSubtitle =
+      'Review your schedule and record today\'s attendance.';
+  static const String attendanceStatus = 'Status';
+  static const String attendanceCheckInTime = 'Check-in time';
+  static const String attendanceCheckOutTime = 'Check-out time';
+  static const String attendanceCheckIn = 'Check in';
+  static const String attendanceNotCheckedIn = 'Not checked in';
+  static const String attendanceCheckedInShort = 'Present';
+  static const String attendanceCheckInSuccess =
+      'Attendance recorded successfully.';
+  static const String attendancePreviousPeriod = 'Previous period';
+  static const String attendanceNextPeriod = 'Next period';
+  static const List<String> attendanceWeekdayLabels = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
+
   // Staff sales QR payment
   static const String qrPayment = 'Bank transfer via QR';
   static const String qrPaymentDescription =
