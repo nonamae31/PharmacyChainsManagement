@@ -193,30 +193,65 @@ public class AuthService : IAuthService
         var cacheKey = $"UserProfile_{email}";
         if (!_memoryCache.TryGetValue(cacheKey, out (UserResponse userDto, RoleResponse roleDto, Guid userId) cachedProfile))
         {
-            var user = await _userRepository.FindActiveByEmailAsync(email, cancellationToken);
-            if (user == null)
+            Guid userId;
+            UserResponse userDto;
+            RoleResponse roleDto;
+
+            if (!string.IsNullOrEmpty(_founderSettings.Email) && email.Equals(_founderSettings.Email, StringComparison.OrdinalIgnoreCase))
             {
-                return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.UserNotFound", "Tài khoản không tồn tại trong hệ thống. Vui lòng đăng ký."));
-            }
+                var founderUser = await _userRepository.FindActiveByEmailAsync(email, cancellationToken)
+                    ?? await _userRepository.FindByEmailAsync(email, cancellationToken);
 
-            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+                if (founderUser == null)
+                {
+                    var role = await _userRepository.GetRoleByCodeAsync("BUSINESS_ADMIN", cancellationToken);
+                    founderUser = new User
+                    {
+                        UserId = Guid.NewGuid(),
+                        FullName = "Founder",
+                        Email = email,
+                        PasswordHash = _passwordHashingStrategy.HashPassword(_founderSettings.Password ?? "Founder@1234"),
+                        Status = "ACTIVE",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        RoleId = role?.RoleId ?? 1
+                    };
+                    await _userRepository.AddAsync(founderUser, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+
+                userId = founderUser.UserId;
+                userDto = new UserResponse(userId, founderUser.FullName, founderUser.Email, founderUser.Phone, founderUser.ProfilePhotoUri, founderUser.Status);
+                roleDto = new RoleResponse(0, "Founder", "Founder");
+            }
+            else
             {
-                var timeLeft = user.LockoutEnd.Value - DateTime.UtcNow;
-                return Result.Failure<AuthResultResponse>(Error.Validation("Auth.AccountLocked", $"Account is temporarily locked. Please try again in {Math.Ceiling(timeLeft.TotalMinutes)} minutes."));
+                var user = await _userRepository.FindActiveByEmailAsync(email, cancellationToken);
+                if (user == null)
+                {
+                    return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.UserNotFound", "Tài khoản không tồn tại trong hệ thống. Vui lòng đăng ký."));
+                }
+
+                if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+                {
+                    var timeLeft = user.LockoutEnd.Value - DateTime.UtcNow;
+                    return Result.Failure<AuthResultResponse>(Error.Validation("Auth.AccountLocked", $"Account is temporarily locked. Please try again in {Math.Ceiling(timeLeft.TotalMinutes)} minutes."));
+                }
+
+                user.AccessFailedCount = 0;
+                user.LockoutEnd = null;
+                await _userRepository.UpdateAsync(user, cancellationToken);
+
+                var userRoleCode = user.Role?.RoleCode ?? "USER";
+                var userRoleName = user.Role?.RoleName ?? "User";
+                var userRoleId = user.Role?.RoleId ?? 0;
+
+                userId = user.UserId;
+                userDto = new UserResponse(user.UserId, user.FullName, user.Email, user.Phone, user.ProfilePhotoUri, user.Status);
+                roleDto = new RoleResponse(userRoleId, userRoleCode, userRoleName);
             }
-
-            user.AccessFailedCount = 0;
-            user.LockoutEnd = null;
-            await _userRepository.UpdateAsync(user, cancellationToken);
-
-            var userRoleCode = user.Role?.RoleCode ?? "USER";
-            var userRoleName = user.Role?.RoleName ?? "User";
-            var userRoleId = user.Role?.RoleId ?? 0;
-
-            var userDto = new UserResponse(user.UserId, user.FullName, user.Email, user.Phone, user.ProfilePhotoUri, user.Status);
-            var roleDto = new RoleResponse(userRoleId, userRoleCode, userRoleName);
             
-            cachedProfile = (userDto, roleDto, user.UserId);
+            cachedProfile = (userDto, roleDto, userId);
 
             var cacheEntryOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(10));

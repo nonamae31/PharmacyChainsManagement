@@ -58,8 +58,25 @@ class _LoginScreenState extends State<LoginScreen> {
               fontSize: 16,
             );
           } else if (state is AuthAuthenticated) {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
+            final role = state.role.toLowerCase();
+            switch (role) {
+              case 'founder':
+                context.go('/founder_home');
+                break;
+              case 'business_admin':
+                context.go('/business_admin_home');
+                break;
+              case 'branch_manager':
+                context.go('/branch_manager_home');
+                break;
+              case 'staff':
+                context.go('/staff_home');
+                break;
+              case 'inventory_manager':
+                context.go('/inventory_home');
+                break;
+              default:
+                context.go('/login');
             }
           }
         },

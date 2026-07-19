@@ -28,32 +28,31 @@ class AppRouter {
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (BuildContext context, GoRouterState state) {
       final authState = authBloc.state;
-      final isPublicAuthRoute = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/forgot-password';
+      final isLoggingIn = state.uri.toString() == '/login';
+      
+      print('AppRouter redirect triggered: isLoggingIn=$isLoggingIn, authState=$authState');
 
       if (authState is! AuthAuthenticated) {
         return isPublicAuthRoute ? null : '/login';
       }
 
-      final role = authState.role.toUpperCase();
-
-      String targetPath = '/login';
-      switch (role) {
-        case 'FOUNDER':
-          targetPath = '/founder_home';
-          break;
-        case 'BUSINESS_ADMIN':
-          targetPath = '/business_admin_home';
-          break;
-        case 'BRANCH_MANAGER':
-          targetPath = '/branch_manager_home';
-          break;
-        case 'STAFF':
-          targetPath = '/staff_home';
-          break;
-        case 'INVENTORY_MANAGER':
-          targetPath = '/inventory_home';
-          break;
+      if (isLoggingIn) {
+        final role = authState.role.toLowerCase();
+        print('AppRouter navigating to home for role: $role');
+        switch (role) {
+          case 'founder':
+            return '/founder_home';
+          case 'business_admin':
+            return '/business_admin_home';
+          case 'branch_manager':
+            return '/branch_manager_home';
+          case 'staff':
+            return '/staff_home';
+          case 'inventory_manager':
+            return '/inventory_home';
+          default:
+            return '/login';
+        }
       }
 
       final isStaffWorkspaceRoute =
@@ -167,7 +166,7 @@ class AppRouter {
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
-    _subscription = stream.asBroadcastStream().listen(
+    _subscription = stream.listen(
       (dynamic _) => notifyListeners(),
     );
   }

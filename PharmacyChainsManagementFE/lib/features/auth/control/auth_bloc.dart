@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
@@ -149,34 +149,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onGoogleLoginRequested(GoogleLoginRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final googleSignIn = GoogleSignIn(
-        serverClientId: '186467490377-boumjq0i8ms7uhkpqs4ejpbvpo2ol8fp.apps.googleusercontent.com',
-        scopes: ['email', 'profile', 'openid'],
-      );
-      await googleSignIn.signOut();
-      final googleUser = await googleSignIn.signIn();
+      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      final userCredential = await FirebaseAuth.instance.signInWithPopup(googleProvider);
       
-      if (googleUser == null) {
-        emit(const AuthError('Đăng nhập Google bị hủy.'));
-        return;
-      }
-      
-      final googleAuth = await googleUser.authentication;
-      final idToken = googleAuth.idToken;
+      final idToken = await userCredential.user?.getIdToken();
       
       if (idToken == null) {
-        emit(const AuthError('Không thể lấy Google ID token.'));
+        emit(const AuthError('Không thể lấy Firebase ID token.'));
         return;
       }
+      
       final result = await authApiClient.googleLogin(idToken);
       
       await SecureStorageService.saveToken(result.accessToken);
       await SecureStorageService.saveRefreshToken(result.refreshToken);
-      AppLogger.info('Google auth success, token prefix: ${AppLogger.maskToken(result.accessToken)}');
+      AppLogger.info('Firebase Google auth success, token prefix: ${AppLogger.maskToken(result.accessToken)}');
       
       emit(AuthAuthenticated(result.role));
     } catch (e) {
-      AppLogger.error('Google auth failed', e);
+      AppLogger.error('Firebase Google auth failed', e);
       emit(AuthError(e.toString()));
     }
   }
@@ -216,10 +207,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       await SecureStorageService.clearAll();
-      final googleSignIn = GoogleSignIn(
-        serverClientId: '186467490377-boumjq0i8ms7uhkpqs4ejpbvpo2ol8fp.apps.googleusercontent.com',
-      );
-      await googleSignIn.signOut();
+      await FirebaseAuth.instance.signOut();
       AppLogger.info('Logout successful');
       emit(AuthInitial());
     } catch (e) {
