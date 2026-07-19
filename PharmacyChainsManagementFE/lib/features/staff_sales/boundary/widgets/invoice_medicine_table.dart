@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/currency_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../entity/staff_sales_dto.dart';
 
@@ -81,8 +82,18 @@ class InvoiceMedicineTable extends StatelessWidget {
                       ),
                     ),
                   ),
-                  DataCell(Text(line.medicine.unitPrice.toStringAsFixed(2))),
-                  DataCell(Text(line.lineTotal.toStringAsFixed(2))),
+                  DataCell(
+                    Text(
+                      '${CurrencyConstants.usdSymbol}'
+                      '${line.medicine.unitPrice.toStringAsFixed(2)}',
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      '${CurrencyConstants.usdSymbol}'
+                      '${line.lineTotal.toStringAsFixed(2)}',
+                    ),
+                  ),
                   DataCell(
                     IconButton(
                       tooltip: AppStrings.removeMedicine,
