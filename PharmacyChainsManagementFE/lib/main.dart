@@ -19,6 +19,7 @@ import 'features/branch_revenue/network/branch_revenue_api_client.dart';
 import 'features/staff_performance/control/staff_performance_bloc.dart';
 import 'features/staff_performance/network/staff_performance_api_client.dart';
 import 'firebase_options.dart';
+import 'injection_container.dart' as di;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,8 @@ Future<void> main() async {
   } catch (error) {
     debugPrint('Could not load .env file: $error');
   }
+
+  await di.init();
 
   try {
     if (Firebase.apps.isEmpty) {
