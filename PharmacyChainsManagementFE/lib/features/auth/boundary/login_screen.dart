@@ -26,9 +26,6 @@ class LoginScreen extends StatelessWidget {
               fontSize: 16.0,
             );
           } else if (state is AuthAuthenticated) {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
             final role = state.role.toLowerCase();
             switch (role) {
               case 'founder':

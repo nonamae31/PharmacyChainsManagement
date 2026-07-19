@@ -22,6 +22,8 @@ class AppRouter {
     redirect: (BuildContext context, GoRouterState state) {
       final authState = authBloc.state;
       final isLoggingIn = state.uri.toString() == '/login';
+      
+      print('AppRouter redirect triggered: isLoggingIn=$isLoggingIn, authState=$authState');
 
       if (authState is! AuthAuthenticated) {
         return isLoggingIn ? null : '/login';
@@ -29,6 +31,7 @@ class AppRouter {
 
       if (isLoggingIn) {
         final role = authState.role.toLowerCase();
+        print('AppRouter navigating to home for role: $role');
         switch (role) {
           case 'founder':
             return '/founder_home';
@@ -93,7 +96,7 @@ class AppRouter {
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
-    _subscription = stream.asBroadcastStream().listen(
+    _subscription = stream.listen(
       (dynamic _) => notifyListeners(),
     );
   }
