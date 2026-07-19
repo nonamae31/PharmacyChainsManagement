@@ -1,0 +1,225 @@
+<mxfile host="Electron" modified="2026-07-18T23:00:00.000Z" agent="Antigravity/1.0" version="21.0.0" type="device">
+  <diagram id="UC02_ClassDiagram" name="UC02_ClassDiagram">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Legend and Arrow Types Reference -->
+        <mxCell id="legend" value="&lt;b&gt;UML Relationships Used (Black &amp;amp; White):&lt;/b&gt;&lt;br&gt;1. Association (-&amp;gt;)&lt;br&gt;2. Dependency (..&amp;gt;)&lt;br&gt;3. Realization (..|&amp;gt;)&lt;br&gt;4. Composition (*-)&lt;br&gt;5. Aggregation (o-)" style="text;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=6;whiteSpace=wrap;html=1;fontColor=#000000;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="260" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Boundary Class: ReceiveGoodsScreen -->
+        <mxCell id="screen" value="&lt;b&gt;ReceiveGoodsScreen&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;boundary&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="340" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_attr" value="- _poNumberController: TextEditingController&lt;br&gt;- _supplierInvoiceController: TextEditingController&lt;br&gt;- _receivedItems: List&amp;lt;Map&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="screen">
+          <mxGeometry y="45" width="340" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="screen">
+          <mxGeometry y="100" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="screen_op" value="+ build(context: BuildContext): Widget&lt;br&gt;+ _submitReceipt(): void&lt;br&gt;+ _showAddItemDialog(): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="screen">
+          <mxGeometry y="108" width="340" height="52" as="geometry" />
+        </mxCell>
+
+        <!-- Control Class: ReceiveGoodsBloc -->
+        <mxCell id="bloc" value="&lt;b&gt;ReceiveGoodsBloc&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="460" y="150" width="340" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_attr" value="- _apiClient: InventoryApiClient&lt;br&gt;+ state: ReceiveGoodsState" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="bloc">
+          <mxGeometry y="45" width="340" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="bloc">
+          <mxGeometry y="100" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="bloc_op" value="+ on&amp;lt;SubmitReceiveGoods&amp;gt;(event, emit)&lt;br&gt;+ emit(ReceiveGoodsSuccess)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="bloc">
+          <mxGeometry y="108" width="340" height="52" as="geometry" />
+        </mxCell>
+
+        <!-- Control Class: InventoryApiClient -->
+        <mxCell id="apiclient" value="&lt;b&gt;InventoryApiClient&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="880" y="150" width="360" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_attr" value="- _dio: Dio&lt;br&gt;- _baseUrl: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="apiclient">
+          <mxGeometry y="45" width="360" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="apiclient">
+          <mxGeometry y="100" width="360" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="apiclient_op" value="+ submitReceiveGoods(request: ReceiveGoodsRequestDto): Future&lt;br&gt;- _shouldUseMock(e: DioException): bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="apiclient">
+          <mxGeometry y="108" width="360" height="52" as="geometry" />
+        </mxCell>
+
+        <!-- DTO Class: ReceiveGoodsRequestDto -->
+        <mxCell id="dto" value="&lt;b&gt;ReceiveGoodsRequestDto&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;DTO&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="880" y="380" width="360" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_attr" value="+ poNumber: String&lt;br&gt;+ supplierInvoice: String&lt;br&gt;+ items: List&amp;lt;ReceiveGoodsItemDto&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="dto">
+          <mxGeometry y="45" width="360" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="dto">
+          <mxGeometry y="110" width="360" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_op" value="+ toJson(): Map&amp;lt;String, dynamic&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="dto">
+          <mxGeometry y="118" width="360" height="32" as="geometry" />
+        </mxCell>
+
+        <!-- DTO Item Class -->
+        <mxCell id="dto_item" value="&lt;b&gt;ReceiveGoodsItemDto&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;DTO&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1290" y="380" width="280" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_item_attr" value="+ medicineId: String&lt;br&gt;+ batchNumber: String&lt;br&gt;+ quantityReceived: int&lt;br&gt;+ unitPrice: double" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="dto_item">
+          <mxGeometry y="45" width="280" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_item_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="dto_item">
+          <mxGeometry y="110" width="280" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dto_item_op" value="+ toJson(): Map&amp;lt;String, dynamic&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="dto_item">
+          <mxGeometry y="118" width="280" height="32" as="geometry" />
+        </mxCell>
+
+        <!-- Control Class: InventoryController -->
+        <mxCell id="controller" value="&lt;b&gt;InventoryController&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;control&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="880" y="580" width="360" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_attr" value="- _inventoryService: IInventoryService" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="controller">
+          <mxGeometry y="45" width="360" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="controller">
+          <mxGeometry y="85" width="360" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_op" value="+ ReceiveGoods(request: ReceiveGoodsRequest): Task&amp;lt;IActionResult&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="controller">
+          <mxGeometry y="93" width="360" height="47" as="geometry" />
+        </mxCell>
+
+        <!-- Service Interface: IInventoryService -->
+        <mxCell id="iservice" value="&lt;b&gt;IInventoryService&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;interface&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="460" y="580" width="340" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="iservice_attr" value="" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="iservice">
+          <mxGeometry y="45" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="iservice_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="iservice">
+          <mxGeometry y="75" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="iservice_op" value="+ ReceiveGoodsAsync(request: ReceiveGoodsRequest): Task&amp;lt;Result&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="iservice">
+          <mxGeometry y="83" width="340" height="57" as="geometry" />
+        </mxCell>
+
+        <!-- Service Class: InventoryService -->
+        <mxCell id="service" value="&lt;b&gt;InventoryService&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;service&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="460" y="780" width="340" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="service_attr" value="- _dbContext: PharmacyDbContext" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="service">
+          <mxGeometry y="45" width="340" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="service_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="service">
+          <mxGeometry y="90" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="service_op" value="+ ReceiveGoodsAsync(request: ReceiveGoodsRequest): Task&amp;lt;Result&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="service">
+          <mxGeometry y="98" width="340" height="52" as="geometry" />
+        </mxCell>
+
+        <!-- Repository Class: PharmacyDbContext -->
+        <mxCell id="repo" value="&lt;b&gt;PharmacyDbContext&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;repository&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="780" width="340" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_attr" value="+ GoodsReceipts: DbSet&amp;lt;GoodsReceipt&amp;gt;&lt;br&gt;+ GoodsReceiptDetails: DbSet&amp;lt;GoodsReceiptDetail&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="repo">
+          <mxGeometry y="45" width="340" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="repo">
+          <mxGeometry y="90" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="repo_op" value="+ BeginTransactionAsync(): Task&lt;br&gt;+ SaveChangesAsync(token: CancellationToken): Task&amp;lt;int&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="repo">
+          <mxGeometry y="98" width="340" height="52" as="geometry" />
+        </mxCell>
+
+        <!-- Entity Class: GoodsReceipt -->
+        <mxCell id="entity_gr" value="&lt;b&gt;GoodsReceipt&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;entity&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="880" y="780" width="300" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="egr_attr" value="+ ReceiptId: Guid&lt;br&gt;+ PoNumber: string&lt;br&gt;+ SupplierInvoice: string&lt;br&gt;+ ReceiptDate: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="entity_gr">
+          <mxGeometry y="45" width="300" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="egr_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="entity_gr">
+          <mxGeometry y="130" width="300" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="egr_op" value="" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="entity_gr">
+          <mxGeometry y="138" width="300" height="12" as="geometry" />
+        </mxCell>
+
+        <!-- Entity Class: GoodsReceiptDetail -->
+        <mxCell id="entity_detail" value="&lt;b&gt;GoodsReceiptDetail&lt;/b&gt;&lt;br&gt;&lt;i&gt;&amp;lt;&amp;lt;entity&amp;gt;&amp;gt;&lt;/i&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="780" width="300" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="edetail_attr" value="+ ReceiptDetailId: Guid&lt;br&gt;+ ReceiptId: Guid&lt;br&gt;+ MedicineId: Guid&lt;br&gt;+ BatchNumber: string&lt;br&gt;+ QuantityReceived: int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="entity_detail">
+          <mxGeometry y="45" width="300" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="edetail_line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#000000;" vertex="1" parent="entity_detail">
+          <mxGeometry y="130" width="300" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="edetail_op" value="" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;fontColor=#000000;" vertex="1" parent="entity_detail">
+          <mxGeometry y="138" width="300" height="12" as="geometry" />
+        </mxCell>
+
+        <!-- RELATIONSHIPS -->
+        <!-- 1. Association from Screen to Bloc -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="screen" target="bloc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 2. Association from Bloc to ApiClient -->
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="bloc" target="apiclient">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 3. Dependency from ApiClient to DTO -->
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;dashed=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="apiclient" target="dto">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 4. Aggregation from DTO to DTO Item -->
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=0;startSize=14;endArrow=none;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="dto" target="dto_item">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 5. Association from ApiClient to Controller -->
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="apiclient" target="controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 6. Association from Controller to IInventoryService -->
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="controller" target="iservice">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 7. Realization from InventoryService to IInventoryService -->
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;dashed=1;endFill=0;endSize=14;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="service" target="iservice">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 8. Association from InventoryService to PharmacyDbContext -->
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endSize=12;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="service" target="repo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 9. Composition from PharmacyDbContext to GoodsReceipt -->
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;startSize=14;endArrow=none;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="repo" target="entity_gr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 10. Composition from PharmacyDbContext to GoodsReceiptDetail -->
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;startSize=14;endArrow=none;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="repo" target="entity_detail">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="210" y="960" />
+              <mxPoint x="1410" y="960" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

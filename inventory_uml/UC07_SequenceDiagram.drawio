@@ -1,0 +1,142 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram id="UC07_SequenceDiagram" name="UC07_SequenceDiagram">
+    <mxGraphModel dx="3069" dy="921" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="group_backend" value="ASP.NET Core API / Background Workers" style="shape=rectangle;whiteSpace=wrap;html=1;fontStyle=1;align=center;verticalAlign=middle;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="180" y="10" width="900" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="group_frontend" value="Flutter Frontend" style="shape=rectangle;whiteSpace=wrap;html=1;fontStyle=1;align=center;verticalAlign=middle;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="10" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="timer" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="System Cron / Periodic Timer (Every 12h)" vertex="1">
+          <mxGeometry height="60" width="30" x="30" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="timer_lifeline" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeWidth=1;strokeColor=#000000;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="45" y="115" as="sourcePoint" />
+            <mxPoint x="45" y="790" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bg" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" value=":ExpiredStockBackgroundService" vertex="1">
+          <mxGeometry height="750" width="180" x="180" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="svc" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" value=":InventoryService" vertex="1">
+          <mxGeometry height="750" width="160" x="440" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="repo" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" value=":PharmacyDbContext" vertex="1">
+          <mxGeometry height="750" width="160" x="680" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="audit" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" value=":AuditLogService" vertex="1">
+          <mxGeometry height="750" width="160" x="920" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="screen" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" value=":ExpiredStockManagementScreen" vertex="1">
+          <mxGeometry height="750" width="200" x="1160" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act_bg" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="265" y="140" width="10" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="act_svc" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="515" y="170" width="10" height="480" as="geometry" />
+        </mxCell>
+        <mxCell id="act_repo" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="755" y="200" width="10" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="act_audit" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="995" y="440" width="10" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="act_screen" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="560" width="10" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="m1" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="1: trigger periodic execution / ExecuteAsync(token)">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="45" y="140" as="sourcePoint" />
+            <mxPoint x="270" y="140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m2" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="2: create scope &amp;amp; resolve IInventoryService">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="270" y="180" as="sourcePoint" />
+            <mxPoint x="520" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="3: CheckSafetyStockAndAlertAsync(token)">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="270" y="220" as="sourcePoint" />
+            <mxPoint x="520" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="4: MedicineBatches.Where(b =&amp;gt; b.ExpiryDate &amp;lt;= DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)))">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="520" y="260" as="sourcePoint" />
+            <mxPoint x="760" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m5" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="5: UPDATE MEDICINE_BATCH SET status = &amp;quot;EXPIRED&amp;quot; WHERE expiry_date &amp;lt;= today">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="760" y="300" as="sourcePoint" />
+            <mxPoint x="760" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="6: UPDATE MEDICINE_BATCH SET status = &amp;quot;QUARANTINED&amp;quot; WHERE expiry_date in next 30 days">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="760" y="350" as="sourcePoint" />
+            <mxPoint x="760" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m7" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="7: SaveChangesAsync(token)">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="520" y="400" as="sourcePoint" />
+            <mxPoint x="760" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m8" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="8: LogAsync(&amp;quot;SAFETY_ALERT&amp;quot;, &amp;quot;Safety stock or expiry quarantine applied...&amp;quot;)">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="520" y="440" as="sourcePoint" />
+            <mxPoint x="1000" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m9" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;rounded=0;" value="9: return Result.Success()">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="520" y="480" as="sourcePoint" />
+            <mxPoint x="270" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m10" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="10: [User Interaction] Pharmacist views Quarantined &amp;amp; Expired list on ExpiredStockManagementScreen">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="45" y="520" as="sourcePoint" />
+            <mxPoint x="1260" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m11" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="11: click Dispose / Quarantine (_processAction / _showDisposalReportDialog)">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="45" y="560" as="sourcePoint" />
+            <mxPoint x="1260" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m12" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;rounded=0;" value="12: setState() &amp;amp; show SnackBar">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="1260" y="600" as="sourcePoint" />
+            <mxPoint x="45" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="frame_alt" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;width=240;height=30;boundedLbl=1;verticalAlign=middle;align=left;" value="alt [Database Exception / Cancellation Requested]" vertex="1">
+          <mxGeometry height="100" width="1240" x="100" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="m13" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="13: _logger.LogError(ex, &amp;quot;Error checking safety stock...&amp;quot;)">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="520" y="660" as="sourcePoint" />
+            <mxPoint x="270" y="660" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m14" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;" value="14: await Task.Delay(TimeSpan.FromHours(12), stoppingToken) [Retry on next cycle]">
+          <mxGeometry relative="1" width="80" as="geometry">
+            <mxPoint x="270" y="700" as="sourcePoint" />
+            <mxPoint x="270" y="720" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

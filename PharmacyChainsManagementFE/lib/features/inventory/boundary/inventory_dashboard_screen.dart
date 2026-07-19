@@ -11,6 +11,7 @@ import '../control/stocktake_bloc.dart';
 import '../control/receive_goods_bloc.dart';
 import '../control/issue_stock_bloc.dart';
 import 'widgets/inventory_summary_card.dart';
+import 'widgets/verification_photos_modal.dart';
 import 'qc_inspection_screen.dart';
 import 'internal_transfer_approval_screen.dart';
 import 'stocktake_screen.dart';
@@ -1213,72 +1214,25 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     );
   }
 
-    void _showProofImageSelectorModal(BuildContext parentCtx, Map<String, dynamic> item, StateSetter setDialogState) {
+  void _showProofImageSelectorModal(BuildContext parentCtx, Map<String, dynamic> item, StateSetter setDialogState) {
     showModalBottomSheet(
       context: parentCtx,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (selectorCtx) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.camera_alt, color: Color(0xFF2563EB), size: 24),
-                SizedBox(width: 10),
-                Text('📸 Chọn ảnh minh chứng gửi cho Business Admin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Text('Vui lòng chọn hình ảnh thực tế Phiếu giao hàng hoặc Kiện hàng để xác nhận số liệu nhập kho chuẩn xác:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.receipt_long_outlined, color: Color(0xFF2563EB)),
-              ),
-              title: const Text('📄 Phiếu giao hàng & Hóa đơn VAT nhà cung cấp', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('phieu_giao_hang_GSK_batch081.jpg • 1.2 MB', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                setDialogState(() => item['proofImage'] = 'phieu_giao_hang_GSK_batch081.jpg');
-                setState(() => item['proofImage'] = 'phieu_giao_hang_GSK_batch081.jpg');
-                Navigator.pop(selectorCtx);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF10B981)),
-              ),
-              title: const Text('📦 Kiện thuốc nguyên seal & Mã vạch GS1 DataMatrix', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('thung_panadol_inbound_box.jpg • 2.4 MB', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                setDialogState(() => item['proofImage'] = 'thung_panadol_inbound_box.jpg');
-                setState(() => item['proofImage'] = 'thung_panadol_inbound_box.jpg');
-                Navigator.pop(selectorCtx);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.verified_user_outlined, color: Color(0xFFEF4444)),
-              ),
-              title: const Text('🔬 Phiếu kiểm nghiệm chất lượng COA từ nhà máy', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('tem_kiem_dinh_COA_lab.jpg • 1.8 MB', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                setDialogState(() => item['proofImage'] = 'tem_kiem_dinh_COA_lab.jpg');
-                setState(() => item['proofImage'] = 'tem_kiem_dinh_COA_lab.jpg');
-                Navigator.pop(selectorCtx);
-              },
-            ),
-          ],
-        ),
+      builder: (selectorCtx) => VerificationPhotosModal(
+        medicineTitle: item['name']?.toString() ?? item['medicine']?.toString() ?? 'Sản phẩm kho GSP',
+        initialPhotos: item['verificationPhotos'] is Map ? Map<String, dynamic>.from(item['verificationPhotos'] as Map) : null,
+        onSubmitted: (photos) {
+          setDialogState(() {
+            item['verificationPhotos'] = photos;
+            item['proofImage'] = 'Đã gửi đủ 3 ảnh xác minh (Front, Back, Label)';
+          });
+          setState(() {
+            item['verificationPhotos'] = photos;
+            item['proofImage'] = 'Đã gửi đủ 3 ảnh xác minh (Front, Back, Label)';
+          });
+          _showToast('📸 Đã đính kèm 3 ảnh xác minh (Mặt trước, Mặt sau, Tem nhãn) cho Business Admin!');
+        },
       ),
     );
   }
@@ -1394,22 +1348,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         ),
                         const SizedBox(height: 12),
                         if (item['proofImage'] == null) ...[
-                          Row(
-                            children: [
-                              ElevatedButton.icon(
-                                onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
-                                icon: const Icon(Icons.camera_alt, size: 16),
-                                label: const Text('📷 Chụp ảnh thực tế'),
-                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
-                              ),
-                              const SizedBox(width: 10),
-                              OutlinedButton.icon(
-                                onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
-                                icon: const Icon(Icons.folder_open, size: 16),
-                                label: const Text('📁 Chọn Phiếu / COA'),
-                                style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
-                              ),
-                            ],
+                          ElevatedButton.icon(
+                            onPressed: () => _showProofImageSelectorModal(ctx, item, setDialogState),
+                            icon: const Icon(Icons.camera_alt, size: 18),
+                            label: const Text('📸 Gửi ảnh xác minh (3 góc chụp bắt buộc)', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
                           ),
                         ] else ...[
                           Container(
@@ -2033,7 +1976,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           OutlinedButton.icon(
-                            onPressed: () => _showQuickOrderDialog(item),
+                            onPressed: () => _showProofImageSelectorModal(context, item, (fn) => setState(fn)),
                             icon: Icon(item['proofImage'] != null ? Icons.photo_camera : Icons.add_a_photo_outlined, size: 16, color: const Color(0xFF2563EB)),
                             label: Text(item['proofImage'] != null ? '📸 Đổi ảnh xác minh' : '📸 Gửi ảnh xác minh'),
                             style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), side: const BorderSide(color: Color(0xFF2563EB))),
