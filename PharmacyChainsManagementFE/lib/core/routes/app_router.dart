@@ -29,30 +29,38 @@ class AppRouter {
     redirect: (BuildContext context, GoRouterState state) {
       final authState = authBloc.state;
       final isLoggingIn = state.uri.toString() == '/login';
+      final isForgotPassword = state.uri.toString() == '/forgot-password';
+      final isPublicAuthRoute = isLoggingIn || isForgotPassword;
       
-      print('AppRouter redirect triggered: isLoggingIn=$isLoggingIn, authState=$authState');
+      print('AppRouter redirect triggered: route=${state.uri.toString()}, authState=$authState');
 
       if (authState is! AuthAuthenticated) {
         return isPublicAuthRoute ? null : '/login';
       }
 
-      if (isLoggingIn) {
-        final role = authState.role.toLowerCase();
+      final role = authState.role.toUpperCase();
+      String targetPath = '/login';
+      switch (role.toLowerCase()) {
+        case 'founder':
+          targetPath = '/founder_home';
+          break;
+        case 'business_admin':
+          targetPath = '/business_admin_home';
+          break;
+        case 'branch_manager':
+          targetPath = '/branch_manager_home';
+          break;
+        case 'staff':
+          targetPath = '/staff_home';
+          break;
+        case 'inventory_manager':
+          targetPath = '/inventory_home';
+          break;
+      }
+
+      if (isLoggingIn || isForgotPassword) {
         print('AppRouter navigating to home for role: $role');
-        switch (role) {
-          case 'founder':
-            return '/founder_home';
-          case 'business_admin':
-            return '/business_admin_home';
-          case 'branch_manager':
-            return '/branch_manager_home';
-          case 'staff':
-            return '/staff_home';
-          case 'inventory_manager':
-            return '/inventory_home';
-          default:
-            return '/login';
-        }
+        return targetPath;
       }
 
       final isStaffWorkspaceRoute =
