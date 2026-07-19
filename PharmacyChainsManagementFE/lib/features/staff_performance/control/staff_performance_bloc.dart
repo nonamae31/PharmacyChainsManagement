@@ -70,9 +70,29 @@ class StaffPerformanceBloc
         ),
       );
     } on BranchManagerAppException catch (error) {
-      emit(StaffPerformanceLoadFailure(error.message));
+      emit(
+        StaffPerformanceOperationFailure(
+          current.performance,
+          search: current.search,
+          status: current.status,
+          sort: current.sort,
+          shifts: current.shifts,
+          shiftDate: current.shiftDate,
+          message: error.message,
+        ),
+      );
     } catch (_) {
-      emit(const StaffPerformanceLoadFailure(AppStrings.dataCannotLoad));
+      emit(
+        StaffPerformanceOperationFailure(
+          current.performance,
+          search: current.search,
+          status: current.status,
+          sort: current.sort,
+          shifts: current.shifts,
+          shiftDate: current.shiftDate,
+          message: AppStrings.dataCannotLoad,
+        ),
+      );
     }
   }
 
@@ -162,9 +182,29 @@ class StaffPerformanceBloc
         ),
       );
     } on BranchManagerAppException catch (error) {
-      emit(StaffPerformanceLoadFailure(error.message));
+      emit(
+        StaffPerformanceOperationFailure(
+          current.performance,
+          search: current.search,
+          status: current.status,
+          sort: current.sort,
+          shifts: current.shifts,
+          shiftDate: current.shiftDate,
+          message: error.message,
+        ),
+      );
     } catch (_) {
-      emit(const StaffPerformanceLoadFailure(AppStrings.dataCannotLoad));
+      emit(
+        StaffPerformanceOperationFailure(
+          current.performance,
+          search: current.search,
+          status: current.status,
+          sort: current.sort,
+          shifts: current.shifts,
+          shiftDate: current.shiftDate,
+          message: AppStrings.dataCannotLoad,
+        ),
+      );
     }
   }
 

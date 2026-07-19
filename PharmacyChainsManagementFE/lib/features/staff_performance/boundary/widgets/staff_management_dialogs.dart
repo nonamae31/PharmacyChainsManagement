@@ -317,7 +317,8 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
   late String _staffId = widget.staff.first.staffId;
   DateTime _date = DateTime.now();
   TimeOfDay _start = const TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay _end = const TimeOfDay(hour: 17, minute: 0);
+  TimeOfDay _end = const TimeOfDay(hour: 12, minute: 0);
+  String _shiftPreset = 'MORNING';
   String _status = 'SCHEDULED';
 
   @override
@@ -339,6 +340,8 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
             onStaffChanged: (value) => setState(() => _staffId = value),
             date: _date,
             onDateChanged: (value) => setState(() => _date = value),
+            shiftPreset: _shiftPreset,
+            onShiftPresetChanged: _applyShiftPreset,
             start: _start,
             end: _end,
             onPickStart: () => _pickTime(true),
@@ -365,19 +368,42 @@ class _StaffShiftDialogState extends State<StaffShiftDialog> {
       initialTime: start ? _start : _end,
     );
     if (value == null) return;
-    setState(() => start ? _start = value : _end = value);
+    setState(() {
+      _shiftPreset = 'CUSTOM';
+      start ? _start = value : _end = value;
+    });
+  }
+
+  void _applyShiftPreset(String value) {
+    setState(() {
+      _shiftPreset = value;
+      switch (value) {
+        case 'MORNING':
+          _start = const TimeOfDay(hour: 8, minute: 0);
+          _end = const TimeOfDay(hour: 12, minute: 0);
+          break;
+        case 'AFTERNOON':
+          _start = const TimeOfDay(hour: 12, minute: 0);
+          _end = const TimeOfDay(hour: 17, minute: 0);
+          break;
+        case 'EVENING':
+          _start = const TimeOfDay(hour: 17, minute: 0);
+          _end = const TimeOfDay(hour: 22, minute: 0);
+          break;
+      }
+    });
   }
 
   void _submit() {
     final startMinutes = _start.hour * 60 + _start.minute;
     final endMinutes = _end.hour * 60 + _end.minute;
-    if (_status != 'OFF' && startMinutes >= endMinutes) {
+    if (_status == 'SCHEDULED' && startMinutes >= endMinutes) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(AppStrings.invalidShiftTime)),
       );
       return;
     }
-    if (_status != 'OFF' &&
+    if (_status == 'SCHEDULED' &&
         endMinutes - startMinutes >
             BranchManagerValidationRules.maximumShiftHours * 60) {
       ScaffoldMessenger.of(
@@ -514,6 +540,8 @@ class _ShiftFormFields extends StatelessWidget {
   final ValueChanged<String> onStaffChanged;
   final DateTime date;
   final ValueChanged<DateTime> onDateChanged;
+  final String shiftPreset;
+  final ValueChanged<String> onShiftPresetChanged;
   final TimeOfDay start;
   final TimeOfDay end;
   final VoidCallback onPickStart;
@@ -528,6 +556,8 @@ class _ShiftFormFields extends StatelessWidget {
     required this.onStaffChanged,
     required this.date,
     required this.onDateChanged,
+    required this.shiftPreset,
+    required this.onShiftPresetChanged,
     required this.start,
     required this.end,
     required this.onPickStart,
@@ -559,17 +589,43 @@ class _ShiftFormFields extends StatelessWidget {
           ),
           onChanged: onDateChanged,
         ),
+        DropdownButtonFormField<String>(
+          key: ValueKey(shiftPreset),
+          initialValue: shiftPreset,
+          decoration: const InputDecoration(labelText: AppStrings.shiftPreset),
+          items: const [
+            DropdownMenuItem(
+              value: 'MORNING',
+              child: Text(AppStrings.morningShift),
+            ),
+            DropdownMenuItem(
+              value: 'AFTERNOON',
+              child: Text(AppStrings.afternoonShift),
+            ),
+            DropdownMenuItem(
+              value: 'EVENING',
+              child: Text(AppStrings.eveningShift),
+            ),
+            DropdownMenuItem(
+              value: 'CUSTOM',
+              child: Text(AppStrings.customShift),
+            ),
+          ],
+          onChanged: status == 'SCHEDULED'
+              ? (value) => onShiftPresetChanged(value!)
+              : null,
+        ),
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text(AppStrings.startTime),
           trailing: Text(start.format(context)),
-          onTap: onPickStart,
+          onTap: status == 'SCHEDULED' ? onPickStart : null,
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text(AppStrings.endTime),
           trailing: Text(end.format(context)),
-          onTap: onPickEnd,
+          onTap: status == 'SCHEDULED' ? onPickEnd : null,
         ),
         DropdownButtonFormField<String>(
           initialValue: status,
@@ -587,6 +643,14 @@ class _ShiftFormFields extends StatelessWidget {
           ],
           onChanged: (value) => onStatusChanged(value!),
         ),
+        if (status != 'SCHEDULED')
+          const Padding(
+            padding: EdgeInsets.only(top: AppSpacing.xs),
+            child: Text(
+              AppStrings.inactiveShiftTimeHelp,
+              style: AppTextStyles.caption,
+            ),
+          ),
         TextField(
           controller: notesController,
           maxLength: BranchManagerValidationRules.maximumShiftNotesLength,

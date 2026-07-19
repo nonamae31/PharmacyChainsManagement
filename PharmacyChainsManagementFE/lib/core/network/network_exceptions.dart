@@ -18,3 +18,7 @@ final class UnauthorizedException extends AppException {
 final class ServerException extends AppException {
   const ServerException(super.message);
 }
+
+final class UnknownException extends AppException {
+  const UnknownException(super.message);
+}

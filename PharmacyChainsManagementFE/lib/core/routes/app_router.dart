@@ -1,19 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/auth/control/auth_bloc.dart';
-import '../../features/auth/control/auth_state.dart';
+
 import '../../features/auth/boundary/forgot_password_screen.dart';
 import '../../features/auth/boundary/login_screen.dart';
-import '../../features/home/boundary/founder_home_screen.dart';
-import '../../features/business_admin/boundary/business_admin_shell_screen.dart';
+import '../../features/auth/control/auth_bloc.dart';
+import '../../features/auth/control/auth_state.dart';
 import '../../features/branch_portal/boundary/branch_manager_portal_screen.dart';
-import '../../features/home/boundary/inventory_home_screen.dart';
+import '../../features/business_admin/boundary/business_admin_shell_screen.dart';
+import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
+import '../../features/founder_admin/presentation/screens/founder_layout_screen.dart';
+import '../../features/inventory/boundary/inventory_dashboard_screen.dart';
 import '../../features/prescription/boundary/prescription_detail_screen.dart';
 import '../../features/prescription/boundary/prescription_list_screen.dart';
 import '../../features/staff_sales/boundary/staff_sales_screens.dart';
 import '../../features/staff_sales/entity/staff_sales_dto.dart';
 import '../theme/branch_manager_app_theme.dart';
-import 'dart:async';
 
 class AppRouter {
   final AuthBloc authBloc;
@@ -75,7 +78,7 @@ class AppRouter {
       GoRoute(
         path: '/founder_home',
         pageBuilder: (context, state) =>
-            _buildTransition(context, state, const FounderHomeScreen()),
+            _buildTransition(context, state, const FounderLayoutScreen()),
       ),
       GoRoute(
         path: '/business_admin_home',
@@ -100,8 +103,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/staff/medicines',
-        pageBuilder: (context, state) =>
-            _buildTransition(context, state, const MedicineSearchScreen()),
+        builder: (_, __) => const MedicineSearchScreen(),
       ),
       GoRoute(
         path: '/staff/invoices/new',
@@ -110,13 +112,11 @@ class AppRouter {
       ),
       GoRoute(
         path: '/staff/invoices',
-        pageBuilder: (context, state) =>
-            _buildTransition(context, state, const InvoiceHistoryScreen()),
+        builder: (_, __) => const InvoiceHistoryScreen(),
       ),
       GoRoute(
         path: '/staff/prescriptions',
-        pageBuilder: (context, state) =>
-            _buildTransition(context, state, const PrescriptionListScreen()),
+        builder: (_, __) => const PrescriptionListScreen(),
       ),
       GoRoute(
         path: '/staff/prescriptions/:prescriptionId',
@@ -126,11 +126,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/staff/payments',
-        pageBuilder: (context, state) => _buildTransition(
-          context,
-          state,
-          const PaymentTransactionsScreen(),
-        ),
+        builder: (_, __) => const PaymentTransactionsScreen(),
       ),
       GoRoute(
         path: '/staff/payments/process',
@@ -139,8 +135,16 @@ class AppRouter {
       ),
       GoRoute(
         path: '/inventory_home',
+        pageBuilder: (context, state) => _buildTransition(
+          context,
+          state,
+          const InventoryDashboardScreen(branchId: 'BR-001'),
+        ),
+      ),
+      GoRoute(
+        path: '/cash_flow',
         pageBuilder: (context, state) =>
-            _buildTransition(context, state, const InventoryHomeScreen()),
+            _buildTransition(context, state, const CashFlowScreen()),
       ),
     ],
   );

@@ -78,31 +78,10 @@ public class AuthService : IAuthService
                 return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Invalid email or password."));
             }
 
-            var founderUser = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken)
-                ?? await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
-
-            if (founderUser == null)
-            {
-                var role = await _userRepository.GetRoleByCodeAsync("BUSINESS_ADMIN", cancellationToken);
-                founderUser = new User
-                {
-                    UserId = Guid.NewGuid(),
-                    FullName = "Founder",
-                    Email = request.Email,
-                    PasswordHash = _passwordHashingStrategy.HashPassword(request.Password),
-                    Status = "ACTIVE",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    RoleId = role?.RoleId ?? 1 // Fallback if no role found
-                };
-                await _userRepository.AddAsync(founderUser, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-            }
-
-            userId = founderUser.UserId;
-            userDto = new UserResponse(userId, founderUser.FullName, founderUser.Email, founderUser.Phone, founderUser.ProfilePhotoUri, founderUser.Status);
-            roleDto = new RoleResponse(0, "Founder", "Founder");
-            _logger.LogInformation("Founder logged in successfully from IP: {IpAddress}. Assigned UserId: {UserId}", ipAddress, userId);
+            userId = Guid.Empty;
+            userDto = new UserResponse(Guid.Empty, "Founder", _founderSettings.Email, null, null, "ACTIVE");
+            roleDto = new RoleResponse(0, "FOUNDER", "Founder");
+            _logger.LogInformation("Founder logged in successfully from IP: {IpAddress}", ipAddress);
         }
         else
         {
@@ -180,7 +159,7 @@ public class AuthService : IAuthService
                 UserId = userId,
                 RefreshToken = refreshToken,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMonths(1),
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
                 IsRevoked = false,
                 IpAddress = ipAddress,
                 UserAgent = userAgent,
@@ -255,7 +234,7 @@ public class AuthService : IAuthService
             UserId = cachedProfile.userId,
             RefreshToken = refreshToken,
             CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddMonths(1),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
             IsRevoked = false,
             IpAddress = ipAddress,
             UserAgent = userAgent,
@@ -285,7 +264,7 @@ public class AuthService : IAuthService
         if (!string.IsNullOrEmpty(_founderSettings.Email) && request.Email.Equals(_founderSettings.Email, StringComparison.OrdinalIgnoreCase))
         {
             return Result.Failure(Error.Validation(
-                "Auth.FounderRestriction", 
+                "Auth.FounderRestriction",
                 "Founder accounts cannot use the Forgot Password feature and must undergo manual administrative recovery."));
         }
 
@@ -293,7 +272,7 @@ public class AuthService : IAuthService
         if (user is null)
         {
             return Result.Failure(Error.Validation(
-                "Auth.EmailNotFound", 
+                "Auth.EmailNotFound",
                 "The email address does not exist in our system."));
         }
 
@@ -303,7 +282,7 @@ public class AuthService : IAuthService
         if (roleCode == null || !allowedRoles.Contains(roleCode))
         {
             return Result.Failure(Error.Validation(
-                "Auth.RoleNotAuthorized", 
+                "Auth.RoleNotAuthorized",
                 "Only Business Admin, Branch Manager, Inventory Manager, and Staff may access the Forgot Password feature."));
         }
 
@@ -382,10 +361,10 @@ public class AuthService : IAuthService
 
         // Enforce BR-08: Audit Trail
         await _auditLogService.LogAsync(
-            "ResetPassword", 
-            $"Password reset successfully for user: {user.Email}", 
-            user.UserId.ToString(), 
-            null, 
+            "ResetPassword",
+            $"Password reset successfully for user: {user.Email}",
+            user.UserId.ToString(),
+            null,
             cancellationToken);
 
         return Result.Success();

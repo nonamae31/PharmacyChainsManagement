@@ -11,12 +11,14 @@ class AuthApiClient {
   late final Dio _dio;
 
   AuthApiClient() {
-    _dio = Dio(BaseOptions(
-      baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl(),
-      connectTimeout: const Duration(seconds: 60),
-      receiveTimeout: const Duration(seconds: 60),
-      headers: {'Content-Type': 'application/json'},
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl(),
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
 
     // TODO (SECURITY): Bật SSL Pinning khi có certificate từ server
     _dio.interceptors.add(
@@ -39,10 +41,7 @@ class AuthApiClient {
               try {
                 final cloneReq = await _dio.request(
                   opts.path,
-                  options: Options(
-                    method: opts.method,
-                    headers: opts.headers,
-                  ),
+                  options: Options(method: opts.method, headers: opts.headers),
                   data: opts.data,
                   queryParameters: opts.queryParameters,
                 );
@@ -79,12 +78,9 @@ class AuthApiClient {
             throw ServerException(data['title'].toString());
           }
         }
-        if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-          throw const ServerException('Email hoặc mật khẩu không chính xác.');
-        }
-        throw const ServerException('Không thể kết nối đến máy chủ. Vui lòng thử lại.');
+        throw ServerException('Lỗi mạng: ${e.message}');
       }
-      throw const ServerException('Đã xảy ra lỗi không xác định.');
+      throw ServerException('Lỗi hệ thống: $e');
     }
   }
 
@@ -97,7 +93,9 @@ class AuthApiClient {
       return AuthResultDto.fromJson(response.data);
     } catch (e) {
       AppLogger.error('Register error', e);
-      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+      if (e is DioException &&
+          e.response?.data != null &&
+          e.response?.data is Map) {
         final data = e.response!.data as Map;
         if (data.containsKey('title')) {
           throw ServerException(data['title'].toString());
@@ -118,7 +116,9 @@ class AuthApiClient {
       return AuthResultDto.fromJson(response.data);
     } catch (e) {
       AppLogger.error('Google login error', e);
-      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+      if (e is DioException &&
+          e.response?.data != null &&
+          e.response?.data is Map) {
         final data = e.response!.data as Map;
         if (data.containsKey('message') && data['message'] != null) {
           throw ServerException(data['message'].toString());
@@ -194,13 +194,15 @@ class AuthApiClient {
     try {
       final refreshToken = await SecureStorageService.readRefreshToken();
       if (refreshToken == null) return false;
-      
-      final dio = Dio(BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl()));
+
+      final dio = Dio(
+        BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl()),
+      );
       final response = await dio.post(
         '/api/v1/auth/refresh',
         data: {'refresh_token': refreshToken},
       );
-      
+
       final result = AuthResultDto.fromJson(response.data);
       await SecureStorageService.saveToken(result.accessToken);
       await SecureStorageService.saveRefreshToken(result.refreshToken);

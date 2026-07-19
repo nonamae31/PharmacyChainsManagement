@@ -179,8 +179,8 @@ public class AuthController : BaseApiController
 
         var result = await _authService.RequestPasswordResetAsync(request, cancellationToken);
         
-        return result.IsSuccess 
-            ? Ok(ApiResponse<object>.Ok(null, "Verification code has been sent successfully.")) 
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(null, "Verification code has been sent successfully."))
             : BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
     }
 
@@ -196,8 +196,8 @@ public class AuthController : BaseApiController
 
         var result = await _authService.VerifyCodeAsync(request, cancellationToken);
         
-        return result.IsSuccess 
-            ? Ok(ApiResponse<object>.Ok(null, "Verification code is valid.")) 
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(null, "Verification code is valid."))
             : BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
     }
 

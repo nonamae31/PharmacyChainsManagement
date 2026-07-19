@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -7,15 +9,21 @@ import 'package:local_auth/local_auth.dart';
 import 'core/network/branch_manager_api_client_base.dart';
 import 'core/routes/app_router.dart';
 import 'features/auth/control/auth_bloc.dart';
+import 'features/auth/control/auth_event.dart';
 import 'features/auth/network/auth_api_client.dart';
-import 'features/business_admin/control/business_admin_bloc.dart';
-import 'features/business_admin/network/business_admin_api_client.dart';
 import 'features/branch_dashboard/control/branch_dashboard_bloc.dart';
 import 'features/branch_dashboard/network/branch_dashboard_api_client.dart';
 import 'features/branch_inventory/control/branch_inventory_bloc.dart';
 import 'features/branch_inventory/network/branch_inventory_api_client.dart';
 import 'features/branch_revenue/control/branch_revenue_bloc.dart';
 import 'features/branch_revenue/network/branch_revenue_api_client.dart';
+import 'features/business_admin/control/business_admin_bloc.dart';
+import 'features/business_admin/network/business_admin_api_client.dart';
+import 'features/inventory/control/inventory_dashboard_bloc.dart';
+import 'features/inventory/control/issue_stock_bloc.dart';
+import 'features/inventory/control/receive_goods_bloc.dart';
+import 'features/inventory/control/stocktake_bloc.dart';
+import 'features/inventory/network/inventory_api_client.dart';
 import 'features/staff_performance/control/staff_performance_bloc.dart';
 import 'features/staff_performance/network/staff_performance_api_client.dart';
 import 'firebase_options.dart';
@@ -23,6 +31,7 @@ import 'injection_container.dart' as di;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await di.init();
 
   try {
     await dotenv.load(fileName: '.env');
@@ -30,10 +39,8 @@ Future<void> main() async {
     debugPrint('Could not load .env file: $error');
   }
 
-  await di.init();
-
   try {
-    if (Firebase.apps.isEmpty) {
+    if (!kIsWeb && Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
@@ -43,13 +50,13 @@ Future<void> main() async {
   }
 
   final authApiClient = AuthApiClient();
-  final businessAdminApiClient = BusinessAdminApiClient();
   final localAuth = LocalAuthentication();
-  final authBloc = AuthBloc(authApiClient: authApiClient, localAuth: localAuth);
-  final businessAdminBloc = BusinessAdminBloc(
-    businessAdminApiClient: businessAdminApiClient,
-  );
+  final authBloc = AuthBloc(authApiClient: authApiClient, localAuth: localAuth)
+    ..add(AuthCheckRequested());
   final branchManagerApiClient = BranchManagerApiClientBase();
+  final businessAdminBloc = BusinessAdminBloc(
+    businessAdminApiClient: BusinessAdminApiClient(),
+  );
   final appRouter = AppRouter(authBloc);
 
   runApp(
@@ -58,8 +65,8 @@ Future<void> main() async {
       localAuth: localAuth,
       appRouter: appRouter,
       authBloc: authBloc,
-      businessAdminBloc: businessAdminBloc,
       branchManagerApiClient: branchManagerApiClient,
+      businessAdminBloc: businessAdminBloc,
     ),
   );
 }
@@ -71,16 +78,16 @@ class MyApp extends StatelessWidget {
     required this.localAuth,
     required this.appRouter,
     required this.authBloc,
-    required this.businessAdminBloc,
     required this.branchManagerApiClient,
+    required this.businessAdminBloc,
   });
 
   final AuthApiClient authApiClient;
   final LocalAuthentication localAuth;
   final AppRouter appRouter;
   final AuthBloc authBloc;
-  final BusinessAdminBloc businessAdminBloc;
   final BranchManagerApiClientBase branchManagerApiClient;
+  final BusinessAdminBloc businessAdminBloc;
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +113,19 @@ class MyApp extends StatelessWidget {
           create: (_) => BranchInventoryBloc(
             BranchInventoryApiClient(branchManagerApiClient),
           ),
+        ),
+        BlocProvider<InventoryDashboardBloc>(
+          create: (context) =>
+              InventoryDashboardBloc(InventoryApiClient(Dio())),
+        ),
+        BlocProvider<StocktakeBloc>(
+          create: (context) => StocktakeBloc(InventoryApiClient(Dio())),
+        ),
+        BlocProvider<ReceiveGoodsBloc>(
+          create: (context) => ReceiveGoodsBloc(InventoryApiClient(Dio())),
+        ),
+        BlocProvider<IssueStockBloc>(
+          create: (context) => IssueStockBloc(InventoryApiClient(Dio())),
         ),
       ],
       child: MaterialApp.router(

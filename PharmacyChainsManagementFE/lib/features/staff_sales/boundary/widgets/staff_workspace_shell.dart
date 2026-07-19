@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../auth/control/auth_bloc.dart';
-import '../../../auth/control/auth_event.dart';
 
 enum StaffWorkspaceSection {
   dashboard,
@@ -160,11 +156,6 @@ class _TopBar extends StatelessWidget {
         const IconButton(onPressed: null, icon: Icon(Icons.notifications_none)),
         const IconButton(onPressed: null, icon: Icon(Icons.help_outline)),
         const IconButton(onPressed: null, icon: Icon(Icons.settings_outlined)),
-        IconButton(
-          tooltip: 'Log out',
-          onPressed: () => context.read<AuthBloc>().add(LogoutRequested()),
-          icon: const Icon(Icons.logout),
-        ),
       ],
     ),
   );
@@ -234,7 +225,7 @@ class _Sidebar extends StatelessWidget {
             'Log out',
             style: TextStyle(color: Color(0xFFB42318)),
           ),
-          onTap: () => context.read<AuthBloc>().add(LogoutRequested()),
+          onTap: () => context.go('/login'),
         ),
       ],
     ),

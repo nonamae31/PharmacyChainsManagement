@@ -22,7 +22,7 @@ namespace PharmacyChainsManagementBE.Controllers;
 public sealed class BranchManagerController : ControllerBase
 {
     private const int MaximumReportDays = 366;
-    private const int MaximumShiftHours = 16;
+    private const int MaximumShiftHours = 12;
     private readonly PharmacyDbContext _dbContext;
     private readonly IPasswordHashingStrategy _passwordHashingStrategy;
 
@@ -292,11 +292,11 @@ public sealed class BranchManagerController : ControllerBase
                 nameof(request.ShiftDate),
                 "Shift date cannot be in the past.");
         }
-        if (normalizedStatus != "OFF" && request.StartTime >= request.EndTime)
+        if (normalizedStatus == "SCHEDULED" && request.StartTime >= request.EndTime)
         {
             ModelState.AddModelError(nameof(request.EndTime), "End time must be later than start time.");
         }
-        if (normalizedStatus != "OFF"
+        if (normalizedStatus == "SCHEDULED"
             && request.EndTime - request.StartTime > TimeSpan.FromHours(MaximumShiftHours))
         {
             ModelState.AddModelError(
@@ -312,6 +312,65 @@ public sealed class BranchManagerController : ControllerBase
         if (access is null)
         {
             return Forbid();
+        }
+
+        var isActiveBranchStaff = await _dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(user => user.UserId == request.StaffId
+                && user.BranchId == access.Value.BranchId
+                && user.Role.RoleCode == "STAFF"
+                && user.Status == "ACTIVE",
+                cancellationToken);
+        if (!isActiveBranchStaff)
+        {
+            return BadRequest(new { message = "The selected staff member does not belong to this branch or is inactive." });
+        }
+
+        var existingShift = await _dbContext.StaffShifts
+            .AsNoTracking()
+            .SingleOrDefaultAsync(shift => shift.BranchId == access.Value.BranchId
+                && shift.StaffId == request.StaffId
+                && shift.ShiftDate == request.ShiftDate,
+                cancellationToken);
+        if (normalizedStatus != "SCHEDULED" && existingShift is null)
+        {
+            return BadRequest(new
+            {
+                message = "This staff member has no scheduled shift on the selected date to mark as off or cancelled."
+            });
+        }
+
+        if (normalizedStatus == "SCHEDULED")
+        {
+            var conflictingShift = await _dbContext.StaffShifts
+                .AsNoTracking()
+                .Where(shift => shift.BranchId == access.Value.BranchId
+                    && shift.ShiftDate == request.ShiftDate
+                    && shift.StaffId != request.StaffId
+                    && shift.Status.ToUpper() == "SCHEDULED"
+                    && shift.StartTime < request.EndTime
+                    && request.StartTime < shift.EndTime)
+                .Join(
+                    _dbContext.Users.AsNoTracking(),
+                    shift => shift.StaffId,
+                    staff => staff.UserId,
+                    (shift, staff) => new
+                    {
+                        StaffName = staff.FullName,
+                        shift.StartTime,
+                        shift.EndTime
+                    })
+                .OrderBy(item => item.StartTime)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (conflictingShift is not null)
+            {
+                var start = conflictingShift.StartTime.ToString("HH:mm", CultureInfo.InvariantCulture);
+                var end = conflictingShift.EndTime.ToString("HH:mm", CultureInfo.InvariantCulture);
+                return Conflict(new
+                {
+                    message = $"This time slot is already assigned to {conflictingShift.StaffName} ({start} - {end}). Mark the existing shift as OFF or CANCELLED before assigning a replacement."
+                });
+            }
         }
 
         var shift = await BranchManagerDataService.UpsertStaffShiftAsync(

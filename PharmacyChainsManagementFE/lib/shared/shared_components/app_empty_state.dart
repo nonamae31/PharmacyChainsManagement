@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_strings.dart';
-import '../../core/theme/app_spacing.dart';
+
+import '../../core/constants/branch_manager_app_strings.dart';
+import '../../core/theme/branch_manager_app_theme.dart';
 
 class AppEmptyState extends StatelessWidget {
   final String message;
@@ -20,9 +21,26 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.inbox_outlined, size: 48),
-            const SizedBox(height: AppSpacing.md),
-            Text(message, textAlign: TextAlign.center),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.search_off,
+                size: AppSpacing.iconLarge,
+                color: AppColors.muted,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
             if (onRetry != null) ...[
               const SizedBox(height: AppSpacing.lg),
               OutlinedButton.icon(

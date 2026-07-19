@@ -1,25 +1,51 @@
 class AppStrings {
-  const AppStrings._();
+  AppStrings._();
 
-  static const appTitle = 'Pharmacy Chains Management';
-  static const businessAdminDashboard = 'Business Admin';
-  static const profile = 'Profile';
-  static const branchManagement = 'Branches';
-  static const medicineStatistics = 'Medicine Statistics';
-  static const businessAnalysisReport = 'Business Report';
-  static const forgotPassword = 'Forgot Password';
-  static const login = 'Login';
-  static const logout = 'Logout';
-  static const saveChanges = 'Save Changes';
-  static const refresh = 'Refresh';
-  static const exportCsv = 'Export CSV';
-  static const exportPdf = 'Export PDF';
-  static const exportExcel = 'Export Excel';
-  static const search = 'Search';
-  static const retry = 'Retry';
-  static const noData = 'No data';
-  static const notAvailable = 'N/A';
-  static const networkError = 'Cannot connect to server. Please try again.';
-  static const unknownError = 'An unknown error occurred.';
-  static const sessionExpired = 'Your session has expired.';
+  static const String appTitle = 'Pharmacy Chains Management';
+
+  // Business Admin
+  static const String businessAdminDashboard = 'Business Admin';
+  static const String profile = 'Profile';
+  static const String branchManagement = 'Branches';
+  static const String medicineStatistics = 'Medicine Statistics';
+  static const String businessAnalysisReport = 'Business Report';
+  static const String forgotPassword = 'Forgot Password';
+  static const String login = 'Login';
+  static const String logout = 'Logout';
+  static const String saveChanges = 'Save Changes';
+  static const String refresh = 'Refresh';
+  static const String exportCsv = 'Export CSV';
+  static const String exportPdf = 'Export PDF';
+  static const String exportExcel = 'Export Excel';
+  static const String search = 'Search';
+  static const String retry = 'Retry';
+  static const String noData = 'No data';
+  static const String notAvailable = 'N/A';
+  static const String sessionExpired = 'Your session has expired.';
+
+  // Inventory Generic
+  static const String inventoryDashboard = 'Inventory Dashboard';
+  static const String receiveGoods = 'Receive Goods';
+  static const String issueStock = 'Issue Stock';
+  static const String stocktake = 'Stocktake';
+  static const String approveTransfer = 'Approve Transfer';
+  static const String recallBatch = 'Recall Batch';
+  static const String batchTraceability = 'Batch Traceability';
+  static const String valuation = 'Valuation';
+  static const String lowStockAlerts = 'Low Stock Alerts';
+
+  // Common UI
+  static const String loading = 'Loading...';
+  static const String error = 'Error';
+  static const String success = 'Success';
+  static const String save = 'Save';
+  static const String cancel = 'Cancel';
+  static const String submit = 'Submit';
+  static const String close = 'Close';
+  static const String confirm = 'Confirm';
+
+  // Error Messages
+  static const String unknownError = 'An unknown error occurred.';
+  static const String networkError = 'Network connection issue.';
+  static const String unauthorizedError = 'Session expired. Please log in again.';
 }
