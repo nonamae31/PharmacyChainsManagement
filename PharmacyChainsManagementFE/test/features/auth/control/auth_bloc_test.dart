@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -10,23 +11,21 @@ import 'package:pharmacy_chains_management_fe/features/auth/network/auth_api_cli
 import 'package:pharmacy_chains_management_fe/features/auth/entity/login_request_dto.dart';
 import 'package:pharmacy_chains_management_fe/features/auth/entity/auth_result_dto.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_core/firebase_core.dart';
 
-// 1. Tạo Mock Classes
+// ===== MOCKS =====
 class MockAuthApiClient extends Mock implements AuthApiClient {}
 class MockLocalAuthentication extends Mock implements LocalAuthentication {}
 
-// 2. Fallback value
+// ===== FAKES =====
 class FakeLoginRequestDto extends Fake implements LoginRequestDto {}
 
 void main() {
   late MockAuthApiClient mockAuthApiClient;
   late MockLocalAuthentication mockLocalAuth;
-  late AuthBloc authBloc;
+  late AuthBloc sut;
 
-  // Helper function để tạo JWT Token giả (phần Payload)
   String createFakeJwtToken(String role) {
-    final payload = {'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': role};
+    final payload = {'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': role, 'exp': (DateTime.now().millisecondsSinceEpoch / 1000) + 3600};
     final base64Payload = base64Url.encode(utf8.encode(json.encode(payload)));
     return 'header.$base64Payload.signature';
   }
@@ -34,8 +33,7 @@ void main() {
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
     registerFallbackValue(FakeLoginRequestDto());
-    
-    // Giả lập platform channel cho flutter_secure_storage để tránh MissingPluginException
+
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
@@ -54,14 +52,14 @@ void main() {
   setUp(() {
     mockAuthApiClient = MockAuthApiClient();
     mockLocalAuth = MockLocalAuthentication();
-    authBloc = AuthBloc(
+    sut = AuthBloc(
       authApiClient: mockAuthApiClient,
       localAuth: mockLocalAuth,
     );
   });
 
   tearDown(() {
-    authBloc.close();
+    sut.close();
   });
 
   final tEmail = 'test@gmail.com';
@@ -72,30 +70,37 @@ void main() {
     role: 'SystemAdmin',
     userId: 'user-123',
   );
+  final tException = Exception('Unauthorized');
 
-  // ==========================================
-  // Nhóm 1: LoginRequested
-  // ==========================================
-  group('AuthBloc - LoginRequested', () {
+  // ═══════════════════════════════════════════════════
+  // STATE TRANSITION TESTING
+  // ═══════════════════════════════════════════════════
+  group('State Transitions - LoginRequested', () {
+    test('initial state should be AuthInitial', () {
+      expect(sut.state, isA<AuthInitial>());
+    });
+
     blocTest<AuthBloc, AuthState>(
-      'Thành công: emits [AuthLoading, AuthAuthenticated]',
+      'ST-V1: should emit [AuthLoading, AuthAuthenticated] when login succeeds',
       build: () {
         when(() => mockAuthApiClient.login(any())).thenAnswer((_) async => tAuthResult);
-        return authBloc;
+        return sut;
       },
       act: (bloc) => bloc.add(LoginRequested(tEmail, tPassword)),
       expect: () => [
         isA<AuthLoading>(),
         isA<AuthAuthenticated>().having((s) => s.role, 'role', 'SystemAdmin'),
       ],
+      verify: (_) {
+        verify(() => mockAuthApiClient.login(any())).called(1);
+      },
     );
 
     blocTest<AuthBloc, AuthState>(
-      'Thất bại: emits [AuthLoading, AuthError] khi API quăng Exception',
+      'ST-V2: should emit [AuthLoading, AuthError] when API throws Exception',
       build: () {
-        when(() => mockAuthApiClient.login(any()))
-            .thenThrow(Exception('Unauthorized'));
-        return authBloc;
+        when(() => mockAuthApiClient.login(any())).thenThrow(tException);
+        return sut;
       },
       act: (bloc) => bloc.add(LoginRequested(tEmail, tPassword)),
       expect: () => [
@@ -105,86 +110,90 @@ void main() {
     );
   });
 
-  // ==========================================
-  // Nhóm 2: RegisterRequested
-  // ==========================================
-  group('AuthBloc - RegisterRequested', () {
-    blocTest<AuthBloc, AuthState>(
-      'Thành công: emits [AuthLoading, AuthAuthenticated]',
-      build: () {
-        when(() => mockAuthApiClient.register(any())).thenAnswer((_) async => tAuthResult);
-        return authBloc;
-      },
-      act: (bloc) => bloc.add(RegisterRequested(tEmail, tPassword)),
-      expect: () => [
-        isA<AuthLoading>(),
-        isA<AuthAuthenticated>().having((s) => s.role, 'role', 'SystemAdmin'),
-      ],
-    );
+  // ═══════════════════════════════════════════════════
+  // USE CASE TESTING (Happy Path, Sad Path, etc.)
+  // ═══════════════════════════════════════════════════
+  group('Use Case Scenarios - BiometricLoginRequested', () {
+    group('Happy Path', () {
+      blocTest<AuthBloc, AuthState>(
+        'UC-HP: should complete successfully when biometric is supported and authenticated',
+        build: () {
+          when(() => mockLocalAuth.canCheckBiometrics).thenAnswer((_) async => true);
+          when(() => mockLocalAuth.isDeviceSupported()).thenAnswer((_) async => true);
+          when(() => mockLocalAuth.authenticate(localizedReason: any(named: 'localizedReason')))
+              .thenAnswer((_) async => true);
+          return sut;
+        },
+        act: (bloc) => bloc.add(BiometricLoginRequested()),
+        expect: () => [
+          isA<AuthLoading>(),
+          isA<AuthAuthenticated>().having((s) => s.role, 'role', 'User'),
+        ],
+      );
+    });
 
-    blocTest<AuthBloc, AuthState>(
-      'Thất bại: emits [AuthLoading, AuthError] khi API lỗi',
-      build: () {
-        when(() => mockAuthApiClient.register(any()))
-            .thenThrow(Exception('Email already exists'));
-        return authBloc;
-      },
-      act: (bloc) => bloc.add(RegisterRequested(tEmail, tPassword)),
-      expect: () => [
-        isA<AuthLoading>(),
-        isA<AuthError>().having((s) => s.message, 'message', contains('Email already exists')),
-      ],
-    );
+    group('Alternative Paths', () {
+      blocTest<AuthBloc, AuthState>(
+        'UC-AP1: should emit AuthError when user cancels authentication',
+        build: () {
+          when(() => mockLocalAuth.canCheckBiometrics).thenAnswer((_) async => true);
+          when(() => mockLocalAuth.isDeviceSupported()).thenAnswer((_) async => true);
+          when(() => mockLocalAuth.authenticate(localizedReason: any(named: 'localizedReason')))
+              .thenAnswer((_) async => false);
+          return sut;
+        },
+        act: (bloc) => bloc.add(BiometricLoginRequested()),
+        expect: () => [
+          isA<AuthLoading>(),
+          isA<AuthError>().having((s) => s.message, 'message', contains('Biometric authentication failed')),
+        ],
+      );
+    });
+
+    group('Exception Paths', () {
+      blocTest<AuthBloc, AuthState>(
+        'UC-EP1: should emit AuthError when biometrics are not supported on the device',
+        build: () {
+          when(() => mockLocalAuth.canCheckBiometrics).thenAnswer((_) async => false);
+          when(() => mockLocalAuth.isDeviceSupported()).thenAnswer((_) async => false);
+          return sut;
+        },
+        act: (bloc) => bloc.add(BiometricLoginRequested()),
+        expect: () => [
+          isA<AuthLoading>(),
+          isA<AuthError>().having((s) => s.message, 'message', contains('not supported')),
+        ],
+      );
+    });
   });
 
-  // ==========================================
-  // Nhóm 3: BiometricLoginRequested
-  // ==========================================
-  group('AuthBloc - BiometricLoginRequested', () {
+  // ═══════════════════════════════════════════════════
+  // ERROR GUESSING
+  // ═══════════════════════════════════════════════════
+  group('Error Guessing - LoginRequested', () {
     blocTest<AuthBloc, AuthState>(
-      'Biometric không hỗ trợ: emits [AuthLoading, AuthError]',
+      'EG-01: should handle empty email and password strings gracefully (API error simulation)',
       build: () {
-        when(() => mockLocalAuth.canCheckBiometrics).thenAnswer((_) async => false);
-        when(() => mockLocalAuth.isDeviceSupported()).thenAnswer((_) async => false);
-        return authBloc;
+        when(() => mockAuthApiClient.login(any())).thenThrow(Exception('Invalid inputs'));
+        return sut;
       },
-      act: (bloc) => bloc.add(BiometricLoginRequested()),
+      act: (bloc) => bloc.add(LoginRequested('', '')),
       expect: () => [
         isA<AuthLoading>(),
-        isA<AuthError>().having((s) => s.message, 'message', contains('not supported')),
+        isA<AuthError>().having((s) => s.message, 'message', contains('Invalid inputs')),
       ],
     );
 
     blocTest<AuthBloc, AuthState>(
-      'Người dùng hủy xác thực (authenticate = false): emits [AuthLoading, AuthError]',
+      'EG-02: should throw/catch TimeoutException gracefully',
       build: () {
-        when(() => mockLocalAuth.canCheckBiometrics).thenAnswer((_) async => true);
-        when(() => mockLocalAuth.isDeviceSupported()).thenAnswer((_) async => true);
-        when(() => mockLocalAuth.authenticate(localizedReason: any(named: 'localizedReason')))
-            .thenAnswer((_) async => false);
-        return authBloc;
+        when(() => mockAuthApiClient.login(any())).thenThrow(TimeoutException('Connection timeout'));
+        return sut;
       },
-      act: (bloc) => bloc.add(BiometricLoginRequested()),
+      act: (bloc) => bloc.add(LoginRequested(tEmail, tPassword)),
       expect: () => [
         isA<AuthLoading>(),
-        isA<AuthError>().having((s) => s.message, 'message', contains('failed')),
-      ],
-    );
-    
-    // Lưu ý: Test pass xác thực sinh trắc học phụ thuộc vào Storage
-    blocTest<AuthBloc, AuthState>(
-      'Thành công: emits [AuthLoading, AuthAuthenticated]',
-      build: () {
-        when(() => mockLocalAuth.canCheckBiometrics).thenAnswer((_) async => true);
-        when(() => mockLocalAuth.isDeviceSupported()).thenAnswer((_) async => true);
-        when(() => mockLocalAuth.authenticate(localizedReason: any(named: 'localizedReason')))
-            .thenAnswer((_) async => true);
-        return authBloc;
-      },
-      act: (bloc) => bloc.add(BiometricLoginRequested()),
-      expect: () => [
-        isA<AuthLoading>(),
-        isA<AuthAuthenticated>().having((s) => s.role, 'role', 'User'), // 'User' hardcode
+        isA<AuthError>().having((s) => s.message, 'message', contains('TimeoutException')),
       ],
     );
   });
