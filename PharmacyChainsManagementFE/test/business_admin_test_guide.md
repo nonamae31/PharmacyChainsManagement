@@ -89,6 +89,26 @@ flutter test test/features/founder_admin/data/repositories/business_admin_reposi
 
 ---
 
+## 5. Luồng Vô Hiệu Hóa (Deactivate/Soft Delete Business Admin)
+
+### A. Tầng Presentation (`BusinessAdminCubit`)
+- **Đường dẫn**: `test/features/founder_admin/presentation/cubit/business_admin_cubit_test.dart`
+- **Ghi chú kỹ thuật**: Luồng này áp dụng kỹ thuật **Optimistic UI Update** (cập nhật giao diện lập tức trước khi gọi API để mang lại cảm giác mượt mà không độ trễ).
+- **Kịch bản kiểm thử**:
+  - `HP-01 (Happy Path)`: Xác nhận Cubit phát ra state mới (đã loại bỏ Admin bị xóa) ngay lập tức, và không phát ra state nào thêm khi API báo thành công (giữ nguyên Optimistic state).
+  - `SP-01 (Sad Path & Rollback)`: Nếu API báo lỗi, Cubit lập tức thực hiện **Rollback** (khôi phục lại state cũ chứa Admin đó) để đảm bảo tính toàn vẹn dữ liệu.
+  - `ST-I2`: Khóa chốt an toàn - Hành động Deactivate sẽ bị chặn đứng (không gọi API) nếu trạng thái danh sách chưa được nạp (not Loaded).
+
+### B. Tầng Data (`BusinessAdminRepositoryImpl`)
+- **Đường dẫn**: `test/features/founder_admin/data/repositories/business_admin_repository_impl_deactivate_test.dart`
+- **Kịch bản kiểm thử**:
+  - `HP-01 / HP-02`: Đảm bảo API client map đúng Method `DELETE` lên đường dẫn chính xác và xử lý đúng mã 200/204.
+  - `SP-01`: Map lỗi logic (400+) thành `ServerFailure`.
+  - `EH-01 / EH-02`: Bịt kín mọi lỗi mạng (DioException) hoặc Exception cục bộ.
+  - `EG-01 (Error Guessing)`: Thử nghiệm truyền chuỗi ID rỗng (`""`), đảm bảo hệ thống không bị crash mà chỉ ném lỗi an toàn (404 Route Not Found).
+
+---
+
 ## Tổng kết
 
-Các luồng tạo và cập nhật Business Admin đã được che chắn tuyệt đối thông qua **31 kịch bản unit test** (bao gồm cả Phase tạo file test chung). Nếu có nhu cầu thay đổi field (VD: thêm Address, cmnd...), Developer bắt buộc phải sửa đổi lại các file Test Model tương ứng trong thư mục này trước khi đưa vào Production.
+Các luồng tạo, cập nhật, xem danh sách và vô hiệu hóa Business Admin đã được che chắn tuyệt đối thông qua **hơn 47 kịch bản unit test**. Nếu có nhu cầu thay đổi field (VD: thêm Address, cmnd...), Developer bắt buộc phải sửa đổi lại các file Test Model tương ứng trong thư mục này trước khi đưa vào Production.
