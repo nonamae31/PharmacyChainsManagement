@@ -10,13 +10,15 @@ class StaffHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // TODO: Replace with actual HomeBloc state
-    const bool isLoading = false; 
+    const bool isLoading = false;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Staff Dashboard'),
         actions: [
-          IconButton(key: const Key('logoutButton'), tooltip: 'Logout', 
+          IconButton(
+            key: const Key('logoutButton'),
+            tooltip: 'Logout',
             icon: const Icon(Icons.logout),
             onPressed: () {
               context.read<AuthBloc>().add(LogoutRequested());
@@ -31,13 +33,6 @@ class StaffHomeScreen extends StatelessWidget {
           key: const Key('home_dashboard'),
           padding: const EdgeInsets.all(16.0),
           children: const [
-            Card(
-              child: ListTile(
-                title: Text('New Prescriptions'),
-                subtitle: Text('12 pending'),
-                leading: Icon(Icons.receipt),
-              ),
-            ),
             Card(
               child: ListTile(
                 title: Text('My Shifts'),

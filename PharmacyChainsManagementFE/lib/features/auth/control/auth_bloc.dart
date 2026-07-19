@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
 import '../entity/login_request_dto.dart';
@@ -14,7 +13,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthApiClient authApiClient;
   final LocalAuthentication localAuth;
 
-  AuthBloc({required this.authApiClient, required this.localAuth}) : super(AuthInitial()) {
+  AuthBloc({required this.authApiClient, required this.localAuth})
+    : super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<LoginRequested>(_onLoginRequested);
     on<RegisterRequested>(_onRegisterRequested);
@@ -32,24 +32,59 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
-      final token = await SecureStorageService.readToken();
+      var token = await SecureStorageService.readToken();
       if (token != null && token.isNotEmpty) {
-        final parts = token.split('.');
-        if (parts.length == 3) {
-          final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
-          final payloadMap = json.decode(payload) as Map<String, dynamic>;
-          final role = payloadMap['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
-              payloadMap['role'];
-          if (role != null) {
-            emit(AuthAuthenticated(role.toString()));
+        var payloadMap = _decodeJwtPayload(token);
+        if (_isTokenExpired(payloadMap)) {
+          final refreshed = await authApiClient.refreshSession();
+          if (!refreshed) {
+            await SecureStorageService.clearAll();
+            emit(AuthInitial());
             return;
           }
+          token = await SecureStorageService.readToken();
+          payloadMap = token == null ? null : _decodeJwtPayload(token);
+        }
+
+        final role =
+            payloadMap?['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
+            payloadMap?['role'];
+        if (role != null) {
+          emit(AuthAuthenticated(role.toString()));
+          return;
         }
       }
     } catch (error) {
       AppLogger.error('Auth check error', error);
+      await SecureStorageService.clearAll();
     }
     emit(AuthInitial());
+  }
+
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) {
+      return null;
+    }
+    final payload = utf8.decode(
+      base64Url.decode(base64Url.normalize(parts[1])),
+    );
+    final decoded = json.decode(payload);
+    return decoded is Map<String, dynamic> ? decoded : null;
+  }
+
+  bool _isTokenExpired(Map<String, dynamic>? payload) {
+    final expiresAt = payload?['exp'];
+    if (expiresAt is! num) {
+      return true;
+    }
+    final expiration = DateTime.fromMillisecondsSinceEpoch(
+      expiresAt.toInt() * 1000,
+      isUtc: true,
+    );
+    return !expiration.isAfter(
+      DateTime.now().toUtc().add(const Duration(seconds: 30)),
+    );
   }
 
   Future<void> _onPasswordResetRequested(
@@ -112,16 +147,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
+  Future<void> _onLoginRequested(
+    LoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
-      final request = LoginRequestDto(email: event.email, password: event.password);
+      final request = LoginRequestDto(
+        email: event.email,
+        password: event.password,
+      );
       final result = await authApiClient.login(request);
-      
+
       await SecureStorageService.saveToken(result.accessToken);
       await SecureStorageService.saveRefreshToken(result.refreshToken);
-      AppLogger.info('Auth success, token prefix: ${AppLogger.maskToken(result.accessToken)}');
-      
+      AppLogger.info(
+        'Auth success, token prefix: ${AppLogger.maskToken(result.accessToken)}',
+      );
+
       emit(AuthAuthenticated(result.role));
     } catch (e) {
       AppLogger.error('Login request failed', e);
@@ -129,16 +172,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onRegisterRequested(RegisterRequested event, Emitter<AuthState> emit) async {
+  Future<void> _onRegisterRequested(
+    RegisterRequested event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
-      final request = LoginRequestDto(email: event.email, password: event.password);
+      final request = LoginRequestDto(
+        email: event.email,
+        password: event.password,
+      );
       final result = await authApiClient.register(request);
-      
+
       await SecureStorageService.saveToken(result.accessToken);
       await SecureStorageService.saveRefreshToken(result.refreshToken);
-      AppLogger.info('Register success, token prefix: ${AppLogger.maskToken(result.accessToken)}');
-      
+      AppLogger.info(
+        'Register success, token prefix: ${AppLogger.maskToken(result.accessToken)}',
+      );
+
       emit(AuthAuthenticated(result.role));
     } catch (e) {
       AppLogger.error('Register request failed', e);
@@ -146,25 +197,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onGoogleLoginRequested(GoogleLoginRequested event, Emitter<AuthState> emit) async {
+  Future<void> _onGoogleLoginRequested(
+    GoogleLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      final userCredential = await FirebaseAuth.instance.signInWithPopup(googleProvider);
-      
+      final userCredential = await FirebaseAuth.instance.signInWithPopup(
+        googleProvider,
+      );
+
       final idToken = await userCredential.user?.getIdToken();
-      
       if (idToken == null) {
         emit(const AuthError('Không thể lấy Firebase ID token.'));
         return;
       }
-      
+
       final result = await authApiClient.googleLogin(idToken);
-      
+
       await SecureStorageService.saveToken(result.accessToken);
       await SecureStorageService.saveRefreshToken(result.refreshToken);
-      AppLogger.info('Firebase Google auth success, token prefix: ${AppLogger.maskToken(result.accessToken)}');
-      
+      AppLogger.info(
+        'Firebase Google auth success, token prefix: ${AppLogger.maskToken(result.accessToken)}',
+      );
       emit(AuthAuthenticated(result.role));
     } catch (e) {
       AppLogger.error('Firebase Google auth failed', e);
@@ -172,27 +228,38 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onBiometricLoginRequested(BiometricLoginRequested event, Emitter<AuthState> emit) async {
+  Future<void> _onBiometricLoginRequested(
+    BiometricLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
       final canCheckBiometrics = await localAuth.canCheckBiometrics;
       final isDeviceSupported = await localAuth.isDeviceSupported();
-      
+
       if (!canCheckBiometrics || !isDeviceSupported) {
-        emit(const AuthError('Biometric authentication not supported on this device.'));
+        emit(
+          const AuthError(
+            'Biometric authentication not supported on this device.',
+          ),
+        );
         return;
       }
-      
+
       final authenticated = await localAuth.authenticate(
         localizedReason: 'Please authenticate to login',
       );
-      
+
       if (authenticated) {
         final token = await SecureStorageService.readToken();
         if (token != null && token.isNotEmpty) {
           emit(const AuthAuthenticated('User'));
         } else {
-          emit(const AuthError('No active session found. Please login with credentials first.'));
+          emit(
+            const AuthError(
+              'No active session found. Please login with credentials first.',
+            ),
+          );
         }
       } else {
         emit(const AuthError('Biometric authentication failed.'));
@@ -203,7 +270,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
+  Future<void> _onLogoutRequested(
+    LogoutRequested event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
       await SecureStorageService.clearAll();

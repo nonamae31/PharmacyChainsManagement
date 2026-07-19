@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../auth/control/auth_bloc.dart';
+import '../../../auth/control/auth_event.dart';
 
 enum StaffWorkspaceSection {
   dashboard,
   medicines,
   invoices,
-  prescriptions,
   payments,
 }
 
@@ -46,22 +49,18 @@ class StaffWorkspaceShell extends StatelessWidget {
       '/staff/invoices',
     ),
     (
-      StaffWorkspaceSection.prescriptions,
-      'Prescriptions',
-      Icons.description_outlined,
-      '/staff/prescriptions',
-    ),
-    (
       StaffWorkspaceSection.payments,
       'Payments',
       Icons.payments_outlined,
       '/staff/payments',
     ),
   ];
-
   @override
   Widget build(BuildContext context) {
     final desktop = MediaQuery.sizeOf(context).width >= _desktopBreakpoint;
+    final selectedMobileIndex = _navItems.indexWhere(
+      (item) => item.$1 == section,
+    );
     final content = Column(
       children: [
         _TopBar(actions: actions),
@@ -109,16 +108,21 @@ class StaffWorkspaceShell extends StatelessWidget {
     }
     return Scaffold(
       body: SafeArea(child: content),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _navItems.indexWhere((item) => item.$1 == section),
-        onDestinationSelected: (index) => context.go(_navItems[index].$4),
-        destinations: _navItems
-            .map(
-              (item) =>
-                  NavigationDestination(icon: Icon(item.$3), label: item.$2),
-            )
-            .toList(),
-      ),
+      bottomNavigationBar: selectedMobileIndex < 0
+          ? null
+          : NavigationBar(
+              selectedIndex: selectedMobileIndex,
+              onDestinationSelected: (index) =>
+                  context.go(_navItems[index].$4),
+              destinations: _navItems
+                  .map(
+                    (item) => NavigationDestination(
+                      icon: Icon(item.$3),
+                      label: item.$2,
+                    ),
+                  )
+                  .toList(),
+            ),
     );
   }
 }
@@ -156,6 +160,11 @@ class _TopBar extends StatelessWidget {
         const IconButton(onPressed: null, icon: Icon(Icons.notifications_none)),
         const IconButton(onPressed: null, icon: Icon(Icons.help_outline)),
         const IconButton(onPressed: null, icon: Icon(Icons.settings_outlined)),
+        IconButton(
+          tooltip: 'Log out',
+          onPressed: () => context.read<AuthBloc>().add(LogoutRequested()),
+          icon: const Icon(Icons.logout),
+        ),
       ],
     ),
   );
@@ -215,17 +224,12 @@ class _Sidebar extends StatelessWidget {
         const Spacer(),
         const Divider(),
         ListTile(
-          leading: const Icon(Icons.monitor_heart_outlined),
-          title: const Text('System status'),
-          onTap: () {},
-        ),
-        ListTile(
           leading: const Icon(Icons.logout, color: Color(0xFFB42318)),
           title: const Text(
             'Log out',
             style: TextStyle(color: Color(0xFFB42318)),
           ),
-          onTap: () => context.go('/login'),
+          onTap: () => context.read<AuthBloc>().add(LogoutRequested()),
         ),
       ],
     ),

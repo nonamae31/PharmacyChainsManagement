@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 
+import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../control/auth_bloc.dart';
 import '../control/auth_event.dart';
 import '../control/auth_state.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -144,7 +143,9 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
       context: context,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.borderRadiusXl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.borderRadiusXl),
+        ),
       ),
       builder: (context) => const ForgotPasswordScreen(),
     );
@@ -177,7 +178,12 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
-      padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: bottomInset + 24),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: bottomInset + 24,
+      ),
       child: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {},
         builder: (context, state) {
@@ -189,7 +195,10 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
               children: [
                 Text(
                   isLogin ? 'Welcome Back' : 'Create Account',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 TextField(
@@ -197,7 +206,10 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
                   controller: _emailController,
                   focusNode: _emailFocus,
                   autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(),
+                  ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   onSubmitted: (_) {
@@ -210,10 +222,14 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
                   controller: _passwordController,
                   focusNode: _passwordFocus,
                   decoration: InputDecoration(
-                    labelText: 'Password', 
+                    labelText: 'Password',
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
                       onPressed: () {
                         setState(() {
                           _obscurePassword = !_obscurePassword;
@@ -258,9 +274,15 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
                         ? const SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
-                        : Text(isLogin ? 'Login' : 'Register', style: const TextStyle(fontSize: 16)),
+                        : Text(
+                            isLogin ? 'Login' : 'Register',
+                            style: const TextStyle(fontSize: 16),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -277,7 +299,7 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
                 const SizedBox(height: 16),
                 InkWell(
                   onTap: isLoading ? null : _onGoogleLogin,
-                  child: isLoading 
+                  child: isLoading
                       ? Shimmer.fromColors(
                           baseColor: Colors.grey[300]!,
                           highlightColor: Colors.grey[100]!,
@@ -285,7 +307,6 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
                         )
                       : _buildGoogleButton(),
                 ),
-
               ],
             ),
           );
@@ -307,7 +328,10 @@ class _AuthBottomSheetContentState extends State<AuthBottomSheetContent> {
         children: [
           Icon(Icons.g_mobiledata, size: 32, color: Colors.red[600]),
           const SizedBox(width: 8),
-          const Text('Continue with Google', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const Text(
+            'Continue with Google',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

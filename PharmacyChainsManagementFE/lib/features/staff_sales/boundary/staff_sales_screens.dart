@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../injection_container.dart';
+import '../../../shared/shared_components/app_error_snack_bar.dart';
 import '../control/staff_sales_bloc.dart';
 import '../control/staff_sales_event.dart';
 import '../control/staff_sales_state.dart';
 import '../entity/staff_sales_dto.dart';
+import 'widgets/invoice_medicine_table.dart';
+import 'widgets/medicine_selection_dialog.dart';
+import 'widgets/payment_qr_card.dart';
 import 'widgets/staff_workspace_shell.dart';
 
 class StaffDashboardScreen extends StatelessWidget {
@@ -86,11 +91,6 @@ class _DashboardContent extends StatelessWidget {
                     onPressed: () => context.go('/staff/medicines'),
                     icon: const Icon(Icons.medication_outlined),
                     label: const Text('Search medicine'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () => context.go('/staff/prescriptions'),
-                    icon: const Icon(Icons.description_outlined),
-                    label: const Text('View prescriptions'),
                   ),
                 ],
               ),
@@ -226,7 +226,7 @@ class InvoiceGenerationScreen extends StatelessWidget {
   const InvoiceGenerationScreen({super.key, this.medicine});
   @override
   Widget build(BuildContext context) => BlocProvider(
-    create: (_) => sl<StaffSalesBloc>(),
+    create: (_) => sl<StaffSalesBloc>()..add(InvoiceDraftStarted(medicine)),
     child: _InvoiceGenerationView(medicine: medicine),
   );
 }
@@ -239,45 +239,27 @@ class _InvoiceGenerationView extends StatefulWidget {
 }
 
 class _InvoiceGenerationViewState extends State<_InvoiceGenerationView> {
-  final _medicineIdController = TextEditingController();
-  final _quantityController = TextEditingController(text: '1');
-  @override
-  void initState() {
-    super.initState();
-    _medicineIdController.text = widget.medicine?.medicineId ?? '';
-  }
-
-  @override
-  void dispose() {
-    _medicineIdController.dispose();
-    _quantityController.dispose();
-    super.dispose();
+  Future<void> _addMedicine() async {
+    final medicine = await showMedicineSelectionDialog(context);
+    if (medicine != null && mounted) {
+      context.read<StaffSalesBloc>().add(InvoiceMedicineAdded(medicine));
+    }
   }
 
   void _submit() {
-    final quantity = int.tryParse(_quantityController.text);
-    if (_medicineIdController.text.isEmpty ||
-        quantity == null ||
-        quantity < 1) {
-      _show(context, 'Enter a medicine and valid quantity.');
-      return;
-    }
-    context.read<StaffSalesBloc>().add(
-      InvoiceSubmitted([
-        InvoiceLineRequestDto(
-          medicineId: _medicineIdController.text,
-          quantity: quantity,
-        ),
-      ]),
-    );
+    context.read<StaffSalesBloc>().add(const InvoiceSubmitted());
   }
 
   @override
   Widget build(BuildContext context) =>
       BlocConsumer<StaffSalesBloc, StaffSalesState>(
         listener: (context, state) {
-          _listen(context, state);
-          if (state is InvoiceSubmitSuccess)
+          if (state is InvoiceDraftValidationFailure) {
+            _show(context, state.message);
+          } else if (state is InvoiceSubmitFailure) {
+            _show(context, state.message);
+          }
+          if (state is InvoiceSubmitSuccess) {
             context.go(
               '/staff/payments/process',
               extra: InvoiceSummaryDto(
@@ -289,60 +271,73 @@ class _InvoiceGenerationViewState extends State<_InvoiceGenerationView> {
                 itemCount: state.invoice.items.length,
               ),
             );
+          }
         },
-        builder: (context, state) => StaffWorkspaceShell(
-          title: 'Prescription invoice',
-          subtitle: 'Create an invoice for medicine supplied by this branch.',
-          section: StaffWorkspaceSection.invoices,
-          actions: [
-            OutlinedButton(
-              onPressed: () => context.go('/staff/invoices'),
-              child: const Text('Cancel'),
+        builder: (context, state) {
+          final lines = _invoiceDraftLines(state);
+          final total = _invoiceDraftTotal(state);
+          return StaffWorkspaceShell(
+            title: AppStrings.invoiceGeneration,
+            subtitle: AppStrings.invoiceGenerationDescription,
+            section: StaffWorkspaceSection.invoices,
+            actions: [
+              OutlinedButton(
+                onPressed: () => context.go('/staff/invoices'),
+                child: const Text(AppStrings.cancel),
+              ),
+            ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final desktop = constraints.maxWidth >= 800;
+                final form = _InvoiceForm(
+                  lines: lines,
+                  loading: state is InvoiceSubmitting,
+                  onAddMedicine: _addMedicine,
+                  onQuantityChanged: (medicineId, quantity) =>
+                      context.read<StaffSalesBloc>().add(
+                        InvoiceMedicineQuantityChanged(medicineId, quantity),
+                      ),
+                  onRemove: (medicineId) => context.read<StaffSalesBloc>().add(
+                    InvoiceMedicineRemoved(medicineId),
+                  ),
+                  onSubmit: _submit,
+                );
+                final summary = _InvoiceSummary(
+                  itemCount: lines.length,
+                  totalAmount: total,
+                );
+                return desktop
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 3, child: form),
+                          const SizedBox(width: 20),
+                          Expanded(flex: 1, child: summary),
+                        ],
+                      )
+                    : ListView(
+                        children: [form, const SizedBox(height: 16), summary],
+                      );
+              },
             ),
-          ],
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final desktop = constraints.maxWidth >= 800;
-              final form = _InvoiceForm(
-                medicine: widget.medicine,
-                medicineIdController: _medicineIdController,
-                quantityController: _quantityController,
-                loading: state is StaffSalesLoading,
-                onSubmit: _submit,
-              );
-              final summary = _InvoiceSummary(
-                medicine: widget.medicine,
-                quantity: _quantityController.text,
-              );
-              return desktop
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 3, child: form),
-                        const SizedBox(width: 20),
-                        Expanded(flex: 1, child: summary),
-                      ],
-                    )
-                  : ListView(
-                      children: [form, const SizedBox(height: 16), summary],
-                    );
-            },
-          ),
-        ),
+          );
+        },
       );
 }
 
 class _InvoiceForm extends StatelessWidget {
-  final MedicineDto? medicine;
-  final TextEditingController medicineIdController;
-  final TextEditingController quantityController;
+  final List<InvoiceDraftLineModel> lines;
   final bool loading;
+  final VoidCallback onAddMedicine;
+  final void Function(String medicineId, String quantity) onQuantityChanged;
+  final ValueChanged<String> onRemove;
   final VoidCallback onSubmit;
   const _InvoiceForm({
-    required this.medicine,
-    required this.medicineIdController,
-    required this.quantityController,
+    required this.lines,
     required this.loading,
+    required this.onAddMedicine,
+    required this.onQuantityChanged,
+    required this.onRemove,
     required this.onSubmit,
   });
   @override
@@ -352,37 +347,34 @@ class _InvoiceForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Prescribed medicines',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  AppStrings.invoiceMedicines,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: loading ? null : onAddMedicine,
+                icon: const Icon(Icons.add),
+                label: const Text(AppStrings.addMedicine),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
-          TextField(
-            controller: medicineIdController,
-            readOnly: medicine != null,
-            decoration: const InputDecoration(labelText: 'Medicine ID'),
+          InvoiceMedicineTable(
+            lines: lines,
+            onQuantityChanged: onQuantityChanged,
+            onRemove: onRemove,
           ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: quantityController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Quantity'),
-          ),
-          if (medicine != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                medicine!.medicineName,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: loading ? null : onSubmit,
+            onPressed: loading || lines.isEmpty ? null : onSubmit,
             icon: const Icon(Icons.receipt_long_outlined),
-            label: const Text('Generate invoice'),
+            label: const Text(AppStrings.generateInvoice),
           ),
         ],
       ),
@@ -391,9 +383,9 @@ class _InvoiceForm extends StatelessWidget {
 }
 
 class _InvoiceSummary extends StatelessWidget {
-  final MedicineDto? medicine;
-  final String quantity;
-  const _InvoiceSummary({required this.medicine, required this.quantity});
+  final int itemCount;
+  final double totalAmount;
+  const _InvoiceSummary({required this.itemCount, required this.totalAmount});
   @override
   Widget build(BuildContext context) => Card(
     color: const Color(0xFF0B4979),
@@ -405,19 +397,19 @@ class _InvoiceSummary extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Invoice summary',
+              AppStrings.invoiceSummary,
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 28),
-            const Text('Selected medicine'),
+            const Text(AppStrings.selectedItems),
             Text(
-              medicine?.medicineName ?? 'Choose medicine from search',
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              '$itemCount',
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 16),
-            const Text('Quantity'),
+            const Text(AppStrings.subtotal),
             Text(
-              quantity,
+              totalAmount.toStringAsFixed(2),
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
             ),
           ],
@@ -426,6 +418,23 @@ class _InvoiceSummary extends StatelessWidget {
     ),
   );
 }
+
+List<InvoiceDraftLineModel> _invoiceDraftLines(StaffSalesState state) =>
+    switch (state) {
+      InvoiceDraftReady(:final lines) => lines,
+      InvoiceDraftValidationFailure(:final lines) => lines,
+      InvoiceSubmitting(:final lines) => lines,
+      InvoiceSubmitFailure(:final lines) => lines,
+      _ => const <InvoiceDraftLineModel>[],
+    };
+
+double _invoiceDraftTotal(StaffSalesState state) => switch (state) {
+  InvoiceDraftReady(:final total) => total,
+  InvoiceDraftValidationFailure(:final total) => total,
+  InvoiceSubmitting(:final total) => total,
+  InvoiceSubmitFailure(:final total) => total,
+  _ => 0,
+};
 
 class InvoiceHistoryScreen extends StatelessWidget {
   const InvoiceHistoryScreen({super.key});
@@ -481,6 +490,11 @@ class _InvoiceList extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               Chip(label: Text(invoice.paymentStatus)),
+              OutlinedButton(
+                onPressed: () =>
+                    context.push('/staff/invoices/${invoice.invoiceId}'),
+                child: const Text(AppStrings.viewDetails),
+              ),
               if (pending)
                 FilledButton(
                   onPressed: () =>
@@ -515,117 +529,170 @@ class _PaymentProcessingView extends StatefulWidget {
 class _PaymentProcessingViewState extends State<_PaymentProcessingView> {
   String _method = 'CARD';
   @override
-  Widget build(BuildContext context) =>
-      BlocConsumer<StaffSalesBloc, StaffSalesState>(
-        listener: (context, state) {
-          _listen(context, state);
-          if (state is PaymentSubmitSuccess) context.go('/staff/payments');
-        },
-        builder: (context, state) => StaffWorkspaceShell(
-          title: 'Checkout',
-          subtitle: 'Confirm the payment method for this invoice.',
-          section: StaffWorkspaceSection.payments,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final methods = ['CARD', 'CASH', 'QR'];
-              final selection = Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Payment method',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ...methods.map(
-                        (method) => RadioListTile<String>(
-                          value: method,
-                          groupValue: _method,
-                          title: Text(
-                            method == 'CARD'
-                                ? 'Credit / Debit card'
-                                : method == 'CASH'
-                                ? 'Cash payment'
-                                : 'QR payment',
-                          ),
-                          subtitle: Text(
-                            method == 'CARD'
-                                ? 'Visa, Mastercard, Amex'
-                                : method == 'CASH'
-                                ? 'Physical currency at terminal'
-                                : 'Scan QR code',
-                          ),
-                          onChanged: (value) =>
-                              setState(() => _method = value!),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: state is StaffSalesLoading
-                            ? null
-                            : () => context.read<StaffSalesBloc>().add(
-                                PaymentSubmitted(
-                                  widget.invoice.invoiceId,
-                                  _method,
-                                ),
-                              ),
-                        icon: const Icon(Icons.lock_outline),
-                        label: const Text('Confirm payment'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-              final invoiceCard = Card(
-                color: const Color(0xFF0B4979),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: DefaultTextStyle(
-                    style: const TextStyle(color: Colors.white),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Total payable'),
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.invoice.totalAmount.toStringAsFixed(0),
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text('Invoice ${widget.invoice.invoiceCode}'),
-                        Text('${widget.invoice.itemCount} items'),
-                      ],
+  Widget build(
+    BuildContext context,
+  ) => BlocConsumer<StaffSalesBloc, StaffSalesState>(
+    listener: (context, state) {
+      _listen(context, state);
+      if (state is PaymentSubmitSuccess &&
+          state.payment.paymentStatus == 'PAID') {
+        context.go('/staff/payments');
+      }
+      if (state is PaymentStatusLoadSuccess &&
+          state.payment.paymentStatus == 'PAID') {
+        context.go('/staff/payments');
+      }
+    },
+    builder: (context, state) => StaffWorkspaceShell(
+      title: 'Checkout',
+      subtitle: 'Confirm the payment method for this invoice.',
+      section: StaffWorkspaceSection.payments,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final methods = ['CARD', 'CASH', 'QR'];
+          final selection = Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Payment method',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  RadioGroup<String>(
+                    groupValue: _method,
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _method = value);
+                      }
+                    },
+                    child: Column(
+                      children: methods
+                          .map(
+                            (method) => RadioListTile<String>(
+                              value: method,
+                              title: Text(
+                                method == 'CARD'
+                                    ? 'Credit / Debit card'
+                                    : method == 'CASH'
+                                    ? 'Cash payment'
+                                    : AppStrings.qrPayment,
+                              ),
+                              subtitle: Text(
+                                method == 'CARD'
+                                    ? 'Visa, Mastercard, Amex'
+                                    : method == 'CASH'
+                                    ? 'Physical currency at terminal'
+                                    : AppStrings.qrPaymentDescription,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: state is StaffSalesLoading
+                        ? null
+                        : () => context.read<StaffSalesBloc>().add(
+                            PaymentSubmitted(widget.invoice.invoiceId, _method),
+                          ),
+                    icon: const Icon(Icons.lock_outline),
+                    label: Text(
+                      _method == 'QR'
+                          ? AppStrings.generatePaymentQr
+                          : 'Confirm payment',
+                    ),
+                  ),
+                  if (_qrPaymentFrom(state) case final payment?)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: PaymentQrCard(
+                        payment: payment,
+                        isRefreshing: state is PaymentStatusRefreshInProgress,
+                        onRefresh: () => context.read<StaffSalesBloc>().add(
+                          PaymentStatusRequested(payment),
+                        ),
+                        onRegenerate: () => context.read<StaffSalesBloc>().add(
+                          PaymentSubmitted(widget.invoice.invoiceId, 'QR'),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+          final invoiceCard = Card(
+            color: const Color(0xFF0B4979),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: DefaultTextStyle(
+                style: const TextStyle(color: Colors.white),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Total payable'),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.invoice.totalAmount.toStringAsFixed(0),
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text('Invoice ${widget.invoice.invoiceCode}'),
+                    Text('${widget.invoice.itemCount} items'),
+                  ],
                 ),
-              );
-              return constraints.maxWidth >= 760
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 3, child: selection),
-                        const SizedBox(width: 20),
-                        Expanded(flex: 2, child: invoiceCard),
-                      ],
-                    )
-                  : ListView(
-                      children: [
-                        invoiceCard,
-                        const SizedBox(height: 16),
-                        selection,
-                      ],
-                    );
-            },
-          ),
-        ),
-      );
+              ),
+            ),
+          );
+          return constraints.maxWidth >= 760
+              ? SingleChildScrollView(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 3, child: selection),
+                      const SizedBox(width: 20),
+                      Expanded(flex: 2, child: invoiceCard),
+                    ],
+                  ),
+                )
+              : ListView(
+                  children: [
+                    invoiceCard,
+                    const SizedBox(height: 16),
+                    selection,
+                  ],
+                );
+        },
+      ),
+    ),
+  );
+
+  PaymentDto? _qrPaymentFrom(StaffSalesState state) {
+    if (state is PaymentSubmitSuccess && state.payment.paymentMethod == 'QR') {
+      return state.payment;
+    }
+    if (state is PaymentStatusLoadSuccess &&
+        state.payment.paymentMethod == 'QR') {
+      return state.payment;
+    }
+    if (state is PaymentStatusRefreshInProgress &&
+        state.payment.paymentMethod == 'QR') {
+      return state.payment;
+    }
+    if (state is PaymentStatusRefreshFailure &&
+        state.payment.paymentMethod == 'QR') {
+      return state.payment;
+    }
+    return null;
+  }
 }
 
 class PaymentTransactionsScreen extends StatelessWidget {
@@ -727,8 +794,8 @@ class _EmptyState extends StatelessWidget {
 
 void _listen(BuildContext context, StaffSalesState state) {
   if (state is StaffSalesLoadFailure) _show(context, state.message);
+  if (state is PaymentStatusRefreshFailure) _show(context, state.message);
 }
 
-void _show(BuildContext context, String message) => ScaffoldMessenger.of(
-  context,
-).showSnackBar(SnackBar(content: Text(message)));
+void _show(BuildContext context, String message) =>
+    showAppErrorSnackBar(context, message: message);

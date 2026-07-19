@@ -12,10 +12,10 @@ import '../../features/business_admin/boundary/business_admin_shell_screen.dart'
 import '../../features/cash_flow/presentation/screens/cash_flow_screen.dart';
 import '../../features/founder_admin/presentation/screens/founder_layout_screen.dart';
 import '../../features/inventory/boundary/inventory_dashboard_screen.dart';
-import '../../features/prescription/boundary/prescription_detail_screen.dart';
-import '../../features/prescription/boundary/prescription_list_screen.dart';
+import '../../features/staff_sales/boundary/invoice_detail_screen.dart';
 import '../../features/staff_sales/boundary/staff_sales_screens.dart';
 import '../../features/staff_sales/entity/staff_sales_dto.dart';
+import '../app_logger.dart';
 import '../theme/branch_manager_app_theme.dart';
 
 class AppRouter {
@@ -31,8 +31,11 @@ class AppRouter {
       final isLoggingIn = state.uri.toString() == '/login';
       final isForgotPassword = state.uri.toString() == '/forgot-password';
       final isPublicAuthRoute = isLoggingIn || isForgotPassword;
-      
-      print('AppRouter redirect triggered: route=${state.uri.toString()}, authState=$authState');
+
+      AppLogger.info(
+        'AppRouter redirect triggered: '
+        'route=${state.uri}, authState=$authState',
+      );
 
       if (authState is! AuthAuthenticated) {
         return isPublicAuthRoute ? null : '/login';
@@ -60,7 +63,7 @@ class AppRouter {
       }
 
       if (isLoggingIn || isForgotPassword) {
-        print('AppRouter navigating to home for role: $role');
+        AppLogger.info('AppRouter navigating to home for role: $role');
         return targetPath;
       }
 
@@ -111,7 +114,8 @@ class AppRouter {
       ),
       GoRoute(
         path: '/staff/medicines',
-        builder: (_, __) => const MedicineSearchScreen(),
+        pageBuilder: (context, state) =>
+            _buildTransition(context, state, const MedicineSearchScreen()),
       ),
       GoRoute(
         path: '/staff/invoices/new',
@@ -120,21 +124,21 @@ class AppRouter {
       ),
       GoRoute(
         path: '/staff/invoices',
-        builder: (_, __) => const InvoiceHistoryScreen(),
+        pageBuilder: (context, state) =>
+            _buildTransition(context, state, const InvoiceHistoryScreen()),
       ),
       GoRoute(
-        path: '/staff/prescriptions',
-        builder: (_, __) => const PrescriptionListScreen(),
-      ),
-      GoRoute(
-        path: '/staff/prescriptions/:prescriptionId',
-        builder: (_, state) => PrescriptionDetailScreen(
-          prescriptionId: state.pathParameters['prescriptionId']!,
+        path: '/staff/invoices/:invoiceId',
+        pageBuilder: (context, state) => _buildTransition(
+          context,
+          state,
+          InvoiceDetailScreen(invoiceId: state.pathParameters['invoiceId']!),
         ),
       ),
       GoRoute(
         path: '/staff/payments',
-        builder: (_, __) => const PaymentTransactionsScreen(),
+        pageBuilder: (context, state) =>
+            _buildTransition(context, state, const PaymentTransactionsScreen()),
       ),
       GoRoute(
         path: '/staff/payments/process',
@@ -175,9 +179,7 @@ class AppRouter {
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
-    _subscription = stream.listen(
-      (dynamic _) => notifyListeners(),
-    );
+    _subscription = stream.listen((dynamic _) => notifyListeners());
   }
 
   late final StreamSubscription<dynamic> _subscription;

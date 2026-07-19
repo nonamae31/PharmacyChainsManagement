@@ -36,6 +36,9 @@ public sealed class StaffSalesController : ControllerBase
     [HttpGet("payments")]
     public Task<IReadOnlyList<PaymentTransactionResponseDto>> GetPayments([FromQuery] string? paymentStatus, CancellationToken cancellationToken) => _service.GetPaymentsAsync(GetStaffId(), paymentStatus, cancellationToken);
 
+    [HttpGet("payments/{paymentId:guid}")]
+    public Task<PaymentTransactionResponseDto> GetPayment(Guid paymentId, CancellationToken cancellationToken) => _service.GetPaymentAsync(GetStaffId(), paymentId, cancellationToken);
+
     [HttpGet("dashboard")]
     public Task<StaffDashboardResponseDto> GetDashboard(CancellationToken cancellationToken) => _service.GetDashboardAsync(GetStaffId(), cancellationToken);
 

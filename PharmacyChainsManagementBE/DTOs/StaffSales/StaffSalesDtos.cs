@@ -56,7 +56,13 @@ public sealed record PaymentTransactionResponseDto(
     string PaymentMethod,
     string PaymentStatus,
     DateTime? PaymentDate,
-    string? GatewayReference);
+    string? GatewayReference,
+    string? QrCodeUrl,
+    string? BankName,
+    string? AccountName,
+    string? AccountNumber,
+    string? TransferContent,
+    DateTime? ExpiresAt);
 
 public sealed record StaffDashboardResponseDto(
     decimal TodayRevenue,

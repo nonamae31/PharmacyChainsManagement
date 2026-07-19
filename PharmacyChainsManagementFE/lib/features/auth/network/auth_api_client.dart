@@ -33,7 +33,7 @@ class AuthApiClient {
         onError: (DioException error, handler) async {
           if (error.response?.statusCode == 401) {
             AppLogger.info('401 detected, attempting to refresh token');
-            final success = await _refreshToken();
+            final success = await refreshSession();
             if (success) {
               final newToken = await SecureStorageService.readToken();
               final opts = error.requestOptions;
@@ -152,13 +152,12 @@ class AuthApiClient {
 
   Future<void> forgotPassword(String email) async {
     try {
-      await _dio.post(
-        '/api/v1/auth/forgot-password',
-        data: {'email': email},
-      );
+      await _dio.post('/api/v1/auth/forgot-password', data: {'email': email});
     } catch (e) {
       AppLogger.error('Forgot password error', e);
-      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+      if (e is DioException &&
+          e.response?.data != null &&
+          e.response?.data is Map) {
         final data = e.response!.data as Map;
         if (data.containsKey('message') && data['message'] != null) {
           throw ServerException(data['message'].toString());
@@ -166,7 +165,9 @@ class AuthApiClient {
           throw ServerException(data['title'].toString());
         }
       }
-      throw const ServerException('Không thể gửi yêu cầu khôi phục mật khẩu. Vui lòng thử lại.');
+      throw const ServerException(
+        'Không thể gửi yêu cầu khôi phục mật khẩu. Vui lòng thử lại.',
+      );
     }
   }
 
@@ -190,24 +191,26 @@ class AuthApiClient {
     }
   }
 
-  Future<String> resetPassword(String email, String token, String newPassword) async {
+  Future<String> resetPassword(
+    String email,
+    String token,
+    String newPassword,
+  ) async {
     try {
       final response = await _dio.post(
         '/api/v1/auth/reset-password',
-        data: {
-          'email': email,
-          'token': token,
-          'newPassword': newPassword,
-        },
+        data: {'email': email, 'token': token, 'newPassword': newPassword},
       );
-      final data = response?.data;
+      final data = response.data;
       if (data is Map && data['message'] != null) {
         return data['message'].toString();
       }
       return 'Your password has been successfully reset.';
     } catch (e) {
       AppLogger.error('Reset password error', e);
-      if (e is DioException && e.response?.data != null && e.response?.data is Map) {
+      if (e is DioException &&
+          e.response?.data != null &&
+          e.response?.data is Map) {
         final data = e.response!.data as Map;
         if (data.containsKey('message') && data['message'] != null) {
           throw ServerException(data['message'].toString());
@@ -219,22 +222,39 @@ class AuthApiClient {
     }
   }
 
-  Future<bool> _refreshToken() async {
+  Future<bool> refreshSession() async {
     try {
+      final accessToken = await SecureStorageService.readToken();
       final refreshToken = await SecureStorageService.readRefreshToken();
-      if (refreshToken == null) return false;
+      if (accessToken == null ||
+          accessToken.isEmpty ||
+          refreshToken == null ||
+          refreshToken.isEmpty) {
+        return false;
+      }
 
       final dio = Dio(
-        BaseOptions(baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl()),
+        BaseOptions(
+          baseUrl: dotenv.env['BASE_URL'] ?? resolveApiBaseUrl(),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Client-Type': 'Mobile',
+          },
+        ),
       );
       final response = await dio.post(
         '/api/v1/auth/refresh',
-        data: {'refresh_token': refreshToken},
+        data: {'accessToken': accessToken, 'refreshToken': refreshToken},
       );
 
       final result = AuthResultDto.fromJson(response.data);
+      if (result.accessToken.isEmpty) {
+        return false;
+      }
       await SecureStorageService.saveToken(result.accessToken);
-      await SecureStorageService.saveRefreshToken(result.refreshToken);
+      if (result.refreshToken.isNotEmpty) {
+        await SecureStorageService.saveRefreshToken(result.refreshToken);
+      }
       return true;
     } catch (e) {
       AppLogger.error('Failed to refresh token', e);

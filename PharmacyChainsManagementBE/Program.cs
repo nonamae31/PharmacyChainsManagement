@@ -62,6 +62,8 @@ try
 
     builder.Services.Configure<FounderSettings>(builder.Configuration.GetSection(FounderSettings.SectionName));
     builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+    builder.Services.Configure<QrPaymentSettings>(builder.Configuration.GetSection(QrPaymentSettings.SectionName));
+    builder.Services.Configure<SePayWebhookSettings>(builder.Configuration.GetSection(SePayWebhookSettings.SectionName));
     builder.Services.AddMemoryCache();
 
     builder.Services.AddRateLimiter(options =>

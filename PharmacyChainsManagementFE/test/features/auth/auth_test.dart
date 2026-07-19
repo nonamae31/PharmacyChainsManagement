@@ -47,5 +47,45 @@ void main() {
       expect(authResult.role, equals('ADMIN'));
       expect(authResult.userId, equals('USER-1122'));
     });
+
+    test('fromJson() parses camelCase tokens and nested user and role', () {
+      final jsonResponse = {
+        'accessToken': 'staff_access_token',
+        'refreshToken': 'staff_refresh_token',
+        'user': {'userId': 'STAFF-001'},
+        'role': {
+          'roleId': 3,
+          'roleCode': 'STAFF',
+          'roleName': 'Staff',
+        },
+      };
+
+      final authResult = AuthResultDto.fromJson(jsonResponse);
+
+      expect(authResult.accessToken, equals('staff_access_token'));
+      expect(authResult.refreshToken, equals('staff_refresh_token'));
+      expect(authResult.role, equals('STAFF'));
+      expect(authResult.userId, equals('STAFF-001'));
+    });
+
+    test('fromJson() unwraps an ApiResponse data payload', () {
+      final jsonResponse = {
+        'success': true,
+        'message': 'Token refreshed successfully',
+        'data': {
+          'accessToken': 'refreshed_access_token',
+          'refreshToken': 'refreshed_refresh_token',
+          'user': {'userId': 'STAFF-002'},
+          'role': {'roleCode': 'STAFF'},
+        },
+      };
+
+      final authResult = AuthResultDto.fromJson(jsonResponse);
+
+      expect(authResult.accessToken, equals('refreshed_access_token'));
+      expect(authResult.refreshToken, equals('refreshed_refresh_token'));
+      expect(authResult.role, equals('STAFF'));
+      expect(authResult.userId, equals('STAFF-002'));
+    });
   });
 }

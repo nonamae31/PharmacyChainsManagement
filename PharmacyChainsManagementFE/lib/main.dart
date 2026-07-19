@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -31,13 +30,14 @@ import 'injection_container.dart' as di;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await di.init();
 
   try {
     await dotenv.load(fileName: '.env');
   } catch (error) {
     debugPrint('Could not load .env file: $error');
   }
+
+  await di.init();
 
   try {
     if (Firebase.apps.isEmpty) {

@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using PharmacyChainsManagementBE.Common.Settings;
 using PharmacyChainsManagementBE.Common.Exceptions;
 using PharmacyChainsManagementBE.DTOs.StaffSales;
 using PharmacyChainsManagementBE.Models;
@@ -13,8 +16,13 @@ namespace PharmacyChainsManagementBE.Services;
 public sealed class StaffSalesService : IStaffSalesService
 {
     private readonly PharmacyDbContext _context;
+    private readonly QrPaymentSettings _qrPaymentSettings;
 
-    public StaffSalesService(PharmacyDbContext context) => _context = context;
+    public StaffSalesService(PharmacyDbContext context, IOptions<QrPaymentSettings> qrPaymentSettings)
+    {
+        _context = context;
+        _qrPaymentSettings = qrPaymentSettings.Value;
+    }
 
     public async Task<IReadOnlyList<MedicineSearchResponseDto>> SearchMedicinesAsync(Guid staffId, string? search, string? category, string? availability, CancellationToken cancellationToken)
     {
@@ -102,14 +110,103 @@ public sealed class StaffSalesService : IStaffSalesService
         var invoice = await _context.Invoices.SingleOrDefaultAsync(item => item.InvoiceId == invoiceId && item.BranchId == branchId, cancellationToken) ?? throw new DataNotFoundException("Invoice was not found.");
         if (invoice.PaymentStatus == "PAID") throw new InvalidOperationException("This invoice has already been paid.");
         var methods = new[] { "CASH", "CARD", "QR" };
-        if (!methods.Contains(request.PaymentMethod.ToUpperInvariant())) throw new InvalidOperationException("Unsupported payment method.");
+        var paymentMethod = request.PaymentMethod.ToUpperInvariant();
+        if (!methods.Contains(paymentMethod)) throw new InvalidOperationException("Unsupported payment method.");
         var now = DateTime.UtcNow;
-        var payment = new PaymentTransaction { PaymentId = Guid.NewGuid(), InvoiceId = invoice.InvoiceId, Amount = invoice.TotalAmount, PaymentMethod = request.PaymentMethod.ToUpperInvariant(), PaymentStatus = "PAID", PaymentDate = now, GatewayReference = $"MOCK-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}", CreatedAt = now, UpdatedAt = now };
-        invoice.PaymentStatus = "PAID";
+        if (paymentMethod == "QR") ValidateQrSettings();
+        var payment = new PaymentTransaction
+        {
+            PaymentId = Guid.NewGuid(),
+            InvoiceId = invoice.InvoiceId,
+            Amount = invoice.TotalAmount,
+            PaymentMethod = paymentMethod,
+            PaymentStatus = paymentMethod == "QR" ? "PENDING" : "PAID",
+            PaymentDate = paymentMethod == "QR" ? null : now,
+            GatewayReference = paymentMethod == "QR"
+                ? $"PCMS{Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()}"
+                : $"MOCK-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        if (paymentMethod != "QR") invoice.PaymentStatus = "PAID";
         invoice.UpdatedAt = now;
         _context.PaymentTransactions.Add(payment);
         await _context.SaveChangesAsync(cancellationToken);
         return ToPaymentDto(payment, invoice.InvoiceCode);
+    }
+
+    public async Task<PaymentTransactionResponseDto> GetPaymentAsync(Guid staffId, Guid paymentId, CancellationToken cancellationToken)
+    {
+        var branchId = await GetStaffBranchIdAsync(staffId, cancellationToken);
+        var payment = await _context.PaymentTransactions
+            .Include(item => item.Invoice)
+            .SingleOrDefaultAsync(
+                item => item.PaymentId == paymentId && item.Invoice.BranchId == branchId,
+                cancellationToken)
+            ?? throw new DataNotFoundException("Payment transaction was not found.");
+
+        if (payment.PaymentMethod == "QR"
+            && payment.PaymentStatus == "PENDING"
+            && payment.CreatedAt.AddMinutes(_qrPaymentSettings.ExpirationMinutes) <= DateTime.UtcNow)
+        {
+            payment.PaymentStatus = "EXPIRED";
+            payment.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        return ToPaymentDto(payment, payment.Invoice.InvoiceCode);
+    }
+
+    public async Task ProcessSePayWebhookAsync(
+        SePayWebhookRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(request.TransferType, "in", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(request.Code))
+        {
+            return;
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+        var payment = await _context.PaymentTransactions
+            .Include(item => item.Invoice)
+            .SingleOrDefaultAsync(
+                item => item.PaymentMethod == "QR"
+                    && item.GatewayReference != null
+                    && item.GatewayReference.StartsWith(request.Code),
+                cancellationToken);
+
+        if (payment is null || payment.PaymentStatus == "PAID")
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return;
+        }
+
+        if (!string.Equals(
+                request.AccountNumber,
+                _qrPaymentSettings.AccountNumber,
+                StringComparison.Ordinal)
+            || request.TransferAmount != payment.Amount)
+        {
+            payment.PaymentStatus = "AMOUNT_MISMATCH";
+            payment.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        payment.PaymentStatus = "PAID";
+        payment.PaymentDate = now;
+        payment.GatewayReference =
+            $"{request.Code}|{request.Id}|{request.ReferenceCode ?? request.Gateway}";
+        payment.UpdatedAt = now;
+        payment.Invoice.PaymentStatus = "PAID";
+        payment.Invoice.UpdatedAt = now;
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<PaymentTransactionResponseDto>> GetPaymentsAsync(Guid staffId, string? paymentStatus, CancellationToken cancellationToken)
@@ -135,6 +232,47 @@ public sealed class StaffSalesService : IStaffSalesService
         await _context.Users.AsNoTracking().Where(user => user.UserId == staffId && user.Status == "ACTIVE").Select(user => user.BranchId).SingleOrDefaultAsync(cancellationToken)
         ?? throw new InvalidOperationException("The staff account is not assigned to an active branch.");
 
-    private static PaymentTransactionResponseDto ToPaymentDto(PaymentTransaction payment, string invoiceCode) =>
-        new(payment.PaymentId, payment.InvoiceId, invoiceCode, payment.Amount, payment.PaymentMethod, payment.PaymentStatus, payment.PaymentDate, payment.GatewayReference);
+    private PaymentTransactionResponseDto ToPaymentDto(PaymentTransaction payment, string invoiceCode)
+    {
+        if (payment.PaymentMethod != "QR")
+        {
+            return new PaymentTransactionResponseDto(
+                payment.PaymentId, payment.InvoiceId, invoiceCode, payment.Amount,
+                payment.PaymentMethod, payment.PaymentStatus, payment.PaymentDate,
+                payment.GatewayReference, null, null, null, null, null, null);
+        }
+
+        ValidateQrSettings();
+        var transferContent = payment.GatewayReference?.Split('|')[0] ?? invoiceCode;
+        var amount = payment.Amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        var qrCodeUrl =
+            $"https://img.vietqr.io/image/{Uri.EscapeDataString(_qrPaymentSettings.BankBin)}-" +
+            $"{Uri.EscapeDataString(_qrPaymentSettings.AccountNumber)}-compact2.png" +
+            $"?amount={amount}" +
+            $"&addInfo={Uri.EscapeDataString(transferContent)}" +
+            $"&accountName={Uri.EscapeDataString(_qrPaymentSettings.AccountName)}";
+
+        return new PaymentTransactionResponseDto(
+            payment.PaymentId, payment.InvoiceId, invoiceCode, payment.Amount,
+            payment.PaymentMethod, payment.PaymentStatus, payment.PaymentDate,
+            payment.GatewayReference, qrCodeUrl, _qrPaymentSettings.BankName,
+            _qrPaymentSettings.AccountName, MaskAccountNumber(_qrPaymentSettings.AccountNumber),
+            transferContent, payment.CreatedAt.AddMinutes(_qrPaymentSettings.ExpirationMinutes));
+    }
+
+    private void ValidateQrSettings()
+    {
+        if (string.IsNullOrWhiteSpace(_qrPaymentSettings.BankBin)
+            || string.IsNullOrWhiteSpace(_qrPaymentSettings.BankName)
+            || string.IsNullOrWhiteSpace(_qrPaymentSettings.AccountNumber)
+            || string.IsNullOrWhiteSpace(_qrPaymentSettings.AccountName))
+        {
+            throw new InvalidOperationException("QR payment has not been configured for this environment.");
+        }
+    }
+
+    private static string MaskAccountNumber(string accountNumber) =>
+        accountNumber.Length <= 4
+            ? accountNumber
+            : new string('*', accountNumber.Length - 4) + accountNumber[^4..];
 }
