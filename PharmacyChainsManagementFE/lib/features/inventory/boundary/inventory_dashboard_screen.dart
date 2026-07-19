@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import '../../../shared/shared_components/app_error_dialog.dart';
 import '../../../shared/shared_components/app_loading_indicator.dart';
-import '../../auth/control/auth_bloc.dart';
-import '../../auth/control/auth_event.dart';
 import '../control/inventory_dashboard_bloc.dart';
 import '../control/inventory_dashboard_event.dart';
 import '../control/inventory_dashboard_state.dart';
@@ -20,6 +17,11 @@ import 'stocktake_screen.dart';
 import 'expired_stock_management_screen.dart';
 import 'batch_expiry_management_screen.dart';
 import 'inventory_report_screen.dart';
+import '../../auth/control/auth_bloc.dart';
+import '../../auth/control/auth_event.dart';
+import '../../auth/control/auth_state.dart';
+import '../../auth/boundary/login_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class InventoryDashboardScreen extends StatefulWidget {
   final String branchId;
@@ -273,49 +275,125 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     }
   }
 
+  void _confirmAndLogout() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.logout, color: Color(0xFFEF4444), size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Text('Xác nhận đăng xuất', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          ],
+        ),
+        content: const Text(
+          'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Quản lý kho (Inventory) không?',
+          style: TextStyle(fontSize: 14, color: Color(0xFF475569)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Hủy bỏ (Cancel)', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              try {
+                context.read<AuthBloc>().add(LogoutRequested());
+              } catch (_) {}
+              try {
+                context.go('/login');
+              } catch (_) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            icon: const Icon(Icons.logout, size: 18),
+            label: const Text('Đăng xuất (Logout)'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth > 800;
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthInitial) {
+          try {
+            context.go('/login');
+          } catch (_) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (route) => false,
+            );
+          }
+        }
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth > 800;
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
-          appBar: isDesktop
-              ? null
-              : AppBar(
-                  backgroundColor: Colors.white,
-                  elevation: 0.5,
-                  iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
-                  title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Pharmacy Chains Management • ${_getMenuTitle(_selectedIndex).split(' (')[0]}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)), overflow: TextOverflow.ellipsis),
-                      const Text('Central Warehouse 01', style: TextStyle(fontSize: 11, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.notifications_outlined, color: Color(0xFF64748B), size: 22),
-                      onPressed: _showNotificationsDialog,
+          return Scaffold(
+            backgroundColor: const Color(0xFFF8FAFC),
+            appBar: isDesktop
+                ? null
+                : AppBar(
+                    backgroundColor: Colors.white,
+                    elevation: 0.5,
+                    iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Pharmacy Chains Management • ${_getMenuTitle(_selectedIndex).split(' (')[0]}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)), overflow: TextOverflow.ellipsis),
+                        const Text('Central Warehouse 01', style: TextStyle(fontSize: 11, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                      ],
                     ),
-                    InkWell(
-                      onTap: _showUserProfileDialog,
-                      borderRadius: BorderRadius.circular(18),
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12, left: 4),
-                        child: CircleAvatar(
-                          radius: 15,
-                          backgroundColor: const Color(0xFF3B82F6),
-                          child: Text(_userName.isNotEmpty ? _userName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, color: Color(0xFF64748B), size: 22),
+                        onPressed: _showNotificationsDialog,
+                      ),
+                      InkWell(
+                        onTap: _showUserProfileDialog,
+                        borderRadius: BorderRadius.circular(18),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8, left: 4),
+                          child: CircleAvatar(
+                            radius: 15,
+                            backgroundColor: const Color(0xFF3B82F6),
+                            child: Text(_userName.isNotEmpty ? _userName[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-          body: Row(
-            children: [
-              if (isDesktop) _buildSidebar(),
+                      IconButton(
+                        key: const Key('mobileDashboardLogoutButton'),
+                        tooltip: 'Đăng xuất (Logout)',
+                        icon: const Icon(Icons.logout_outlined, color: Color(0xFFEF4444), size: 22),
+                        onPressed: _confirmAndLogout,
+                      ),
+                    ],
+                  ),
+            body: Row(
+              children: [
+                if (isDesktop) _buildSidebar(),
               Expanded(
                 child: Column(
                   children: [
@@ -348,9 +426,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               ),
             ],
           ),
-          bottomNavigationBar: isDesktop ? null : _buildMobileBottomNav(),
-        );
-      },
+            bottomNavigationBar: isDesktop ? null : _buildMobileBottomNav(),
+          );
+        },
+      ),
     );
   }
 
@@ -426,10 +505,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             child: Column(
               children: [
                 _buildBottomSidebarItem('Profile (Hồ sơ)', Icons.person_outline, _showUserProfileDialog),
-                _buildBottomSidebarItem('Logout (Đăng xuất)', Icons.logout_outlined, () {
-                  context.read<AuthBloc>().add(LogoutRequested());
-                  context.go('/login');
-                }),
+                _buildBottomSidebarItem('Logout (Đăng xuất)', Icons.logout_outlined, _confirmAndLogout),
               ],
             ),
           ),
@@ -670,6 +746,13 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
+              IconButton(
+                key: const Key('desktopTopBarLogoutButton'),
+                tooltip: 'Đăng xuất (Logout)',
+                icon: const Icon(Icons.logout_outlined, color: Color(0xFFEF4444)),
+                onPressed: _confirmAndLogout,
+              ),
             ],
           ),
         ],
@@ -812,7 +895,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     const SizedBox(width: 8),
                     OutlinedButton(
                       onPressed: () => setState(() {
-                        for (var item in _inventoryList) item['selected'] = false;
+                        for (var item in _inventoryList) {
+                          item['selected'] = false;
+                        }
                       }),
                       child: const Text('Clear Selection'),
                     ),
@@ -835,7 +920,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 1050),
+              constraints: const BoxConstraints(minWidth: 1100),
               child: Column(
                 children: [
                   // Table Header
@@ -854,7 +939,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         value: items.isNotEmpty && items.every((e) => e['selected'] == true),
                         onChanged: (val) {
                           setState(() {
-                            for (var item in items) item['selected'] = val ?? false;
+                            for (var item in items) {
+                              item['selected'] = val ?? false;
+                            }
                           });
                         },
                       ),
@@ -876,7 +963,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     ),
                     SizedBox(width: 160, child: _buildTableHeaderText('AI DEMAND FORECAST')),
                     SizedBox(width: 120, child: _buildTableHeaderText('STATUS')),
-                    SizedBox(width: 170, child: _buildTableHeaderText('ACTIONS', alignRight: true)),
+                    SizedBox(width: 220, child: _buildTableHeaderText('ACTIONS', alignRight: true)),
                   ],
                 ),
               ),
@@ -1010,21 +1097,27 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             ),
           ),
           SizedBox(
-            width: 170,
+            width: 220,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                ElevatedButton(
+                ElevatedButton.icon(
                   onPressed: () => _showQuickOrderDialog(item),
+                  icon: const Icon(Icons.inbox_outlined, size: 14),
+                  label: const Text('Nhập/Ảnh', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEFF6FF),
                     foregroundColor: const Color(0xFF2563EB),
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   ),
-                  child: const Text('Order', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.outbox_outlined, size: 18, color: Color(0xFFF59E0B)),
+                  onPressed: () => _showPickAdjustDialog(item),
+                  tooltip: 'Cấu hình xuất kho (Pick / Issue)',
+                ),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
                   onPressed: () => _showStockAdjustDialog(item),
@@ -1632,6 +1725,16 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     label: const Text('Đổi mật khẩu tài khoản (Change Password)'),
                     style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB)),
                   ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _confirmAndLogout();
+                    },
+                    icon: const Icon(Icons.logout, size: 18),
+                    label: const Text('Đăng xuất tài khoản (Logout)'),
+                    style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFEF4444)),
+                  ),
                 ],
               ),
             ),
@@ -1840,18 +1943,17 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 16,
+                runSpacing: 12,
                 children: [
                   const Text('📦 Advance Shipping Notice (ASN) & Vendor Schedule', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                  Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () => _showShortageDiscrepancyModal(),
-                        icon: const Icon(Icons.report_problem_outlined, size: 18, color: Color(0xFFEF4444)),
-                        label: const Text('Report Shortage / Over Delivery', style: TextStyle(color: Color(0xFFEF4444))),
-                      ),
-                    ],
+                  OutlinedButton.icon(
+                    onPressed: () => _showShortageDiscrepancyModal(),
+                    icon: const Icon(Icons.report_problem_outlined, size: 18, color: Color(0xFFEF4444)),
+                    label: const Text('Report Shortage / Over Delivery', style: TextStyle(color: Color(0xFFEF4444))),
                   ),
                 ],
               ),
@@ -1859,8 +1961,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFCBD5E1))),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: const Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 16,
+                  runSpacing: 8,
                   children: [
                     Text('🟢 ASN #ASN-20260718-01: 5 Pallets arrived from GSK Pharma (ETA: 08:30 AM) - Status: Offloading & Temperature Verified', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
                     Text('Putaway Recommendation: Zone A - Rack 04', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
@@ -1883,54 +1988,68 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               const SizedBox(height: 16),
               ..._inventoryList.map((item) {
                 final receiveQty = item['receiveBatchQty'] ?? ((item['reorderPt'] as int) - (item['currentStock'] as int) > 0 ? (item['reorderPt'] as int) - (item['currentStock'] as int) : 100);
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  title: Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text('Current Stock: ${item['currentStock']} ${item['unit']} | Vendor: ${item['supplier']}'),
-                      const SizedBox(height: 2),
-                      Text('📍 WMS Putaway Recommendation: ${item['wmsLocation'] ?? "Zone A - Rack 01 - Bin B"}', style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600)),
-                      if (item['proofImage'] != null) ...[
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF22C55E))),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.verified_outlined, size: 14, color: Color(0xFF15803D)),
-                              const SizedBox(width: 4),
-                              Text('📸 Minh chứng: ${item['proofImage']} (Chờ Admin duyệt)', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 16,
+                    runSpacing: 14,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () => _showQuickOrderDialog(item),
-                        icon: Icon(item['proofImage'] != null ? Icons.photo_camera : Icons.add_a_photo_outlined, size: 16, color: const Color(0xFF2563EB)),
-                        label: Text(item['proofImage'] != null ? '📸 Đổi ảnh xác minh' : '📸 Gửi ảnh xác minh'),
-                        style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), side: const BorderSide(color: Color(0xFF2563EB))),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${item['name']} (${item['sku']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 4),
+                          Text('Current Stock: ${item['currentStock']} ${item['unit']} | Vendor: ${item['supplier']}'),
+                          const SizedBox(height: 2),
+                          Text('📍 WMS Putaway Recommendation: ${item['wmsLocation'] ?? "Zone A - Rack 01 - Bin B"}', style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600)),
+                          if (item['proofImage'] != null) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF22C55E))),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.verified_outlined, size: 14, color: Color(0xFF15803D)),
+                                  const SizedBox(width: 4),
+                                  Text('📸 Minh chứng: ${item['proofImage']} (Chờ Admin duyệt)', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () => _showQuickOrderDialog(item),
-                        icon: const Icon(Icons.add_box, size: 18),
-                        label: Text('Receive Batch / Nhập lô (+$receiveQty)'),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        tooltip: 'Đổi con số lô nhập (+X) & gửi ảnh',
-                        icon: const Icon(Icons.edit_note, color: Color(0xFF2563EB), size: 24),
-                        onPressed: () => _showQuickOrderDialog(item),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => _showQuickOrderDialog(item),
+                            icon: Icon(item['proofImage'] != null ? Icons.photo_camera : Icons.add_a_photo_outlined, size: 16, color: const Color(0xFF2563EB)),
+                            label: Text(item['proofImage'] != null ? '📸 Đổi ảnh xác minh' : '📸 Gửi ảnh xác minh'),
+                            style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF2563EB), side: const BorderSide(color: Color(0xFF2563EB))),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => _showQuickOrderDialog(item),
+                            icon: const Icon(Icons.add_box, size: 18),
+                            label: Text('Receive Batch / Nhập lô (+$receiveQty)'),
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+                          ),
+                          IconButton(
+                            tooltip: 'Đổi con số lô nhập (+X) & gửi ảnh',
+                            icon: const Icon(Icons.edit_note, color: Color(0xFF2563EB), size: 24),
+                            onPressed: () => _showQuickOrderDialog(item),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1954,8 +2073,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 16,
+                runSpacing: 12,
                 children: [
                   const Text('🚚 FEFO Engine Allocation & WMS Picking List', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
                   ElevatedButton.icon(
@@ -1992,8 +2114,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 16,
+                runSpacing: 12,
                 children: [
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2015,10 +2140,14 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                         _branchDispatchOrders[1]['status'] = 'Chờ xuất kho (Pending Dispatch)';
                         _branchDispatchOrders[2]['items'][0]['issuedQty'] = 0;
                         _branchDispatchOrders[2]['status'] = 'Chờ xuất kho (Pending Dispatch)';
+                        // Reset inventory quantities
+                        _inventoryList[0]['currentStock'] = 450;
+                        _inventoryList[1]['currentStock'] = 320;
+                        _inventoryList[2]['currentStock'] = 60;
                       });
-                      _showToast('Đã làm mới danh sách phiếu yêu cầu từ Branch/Store!');
+                      _showToast('🔄 Đã làm mới các phiếu Yêu cầu và Tồn kho về trạng thái ban đầu!');
                     },
-                    icon: const Icon(Icons.refresh, size: 16),
+                    icon: const Icon(Icons.refresh, size: 18, color: Color(0xFF2563EB)),
                     label: const Text('Làm mới phiếu Yêu cầu'),
                   ),
                 ],
@@ -2045,39 +2174,40 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                           color: isCompleted ? const Color(0xFFDCFCE7) : (isUrgent ? const Color(0xFFFEE2E2) : const Color(0xFFE2E8F0)),
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 12,
+                          runSpacing: 8,
                           children: [
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 10,
+                              runSpacing: 4,
                               children: [
                                 Icon(
                                   isCompleted ? Icons.check_circle : (isUrgent ? Icons.error_outline : Icons.local_shipping),
                                   color: isCompleted ? const Color(0xFF16A34A) : (isUrgent ? const Color(0xFFDC2626) : const Color(0xFF334155)),
                                   size: 20,
                                 ),
-                                const SizedBox(width: 10),
                                 Text(
                                   'Mã yêu cầu: ${order['orderId']} • ${order['targetStore']}',
                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isUrgent && !isCompleted ? const Color(0xFF991B1B) : const Color(0xFF1E293B)),
                                 ),
                               ],
                             ),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isCompleted
-                                        ? const Color(0xFF15803D)
-                                        : (isUrgent ? const Color(0xFFEF4444) : const Color(0xFF3B82F6)),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    isCompleted ? '✅ Đã nhặt đủ - Sẵn sàng giao Store' : '${order['priority']} | ${order['status']}',
-                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isCompleted
+                                    ? const Color(0xFF15803D)
+                                    : (isUrgent ? const Color(0xFFEF4444) : const Color(0xFF3B82F6)),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                isCompleted ? '✅ Đã nhặt đủ - Sẵn sàng giao Store' : '${order['priority']} | ${order['status']}',
+                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ],
                         ),
@@ -2118,8 +2248,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  Wrap(
+                                    alignment: WrapAlignment.spaceBetween,
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
                                       Text(
                                         '📦 ${subItem['name']} (${subItem['sku']})',
@@ -2139,12 +2272,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Row(
+                                  Wrap(
+                                    spacing: 16,
+                                    runSpacing: 6,
                                     children: [
                                       Text('📍 Vị trí WMS: $wmsBin', style: const TextStyle(fontSize: 13, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
-                                      const SizedBox(width: 16),
                                       Text('🏷️ Lô FEFO ưu tiên: $fefoBatch', style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
-                                      const SizedBox(width: 16),
                                       Text('📊 Tồn kho thực tế: $currentStock ${subItem['unit']}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: currentStock < remainingQty ? const Color(0xFFEF4444) : const Color(0xFF10B981))),
                                     ],
                                   ),
@@ -2160,11 +2293,13 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                   ),
                                   if (!isItemFulfilled) ...[
                                     const SizedBox(height: 14),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
+                                    Wrap(
+                                      alignment: WrapAlignment.end,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      spacing: 10,
+                                      runSpacing: 8,
                                       children: [
                                         const Text('Hạn mức xuất theo Store: ', style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Color(0xFF64748B))),
-                                        const SizedBox(width: 8),
                                         OutlinedButton.icon(
                                           onPressed: () {
                                             final pickAmt = remainingQty >= 10 ? 10 : remainingQty;
@@ -2192,7 +2327,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                           label: Text('Nhặt phần (-${remainingQty >= 10 ? 10 : remainingQty})'),
                                           style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFD97706), side: const BorderSide(color: Color(0xFFD97706))),
                                         ),
-                                        const SizedBox(width: 10),
                                         ElevatedButton.icon(
                                           onPressed: () {
                                             if (currentStock < remainingQty) {
@@ -2331,20 +2465,32 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   // ---------------------------------------------------------------------------
   Widget _buildMobileBottomNav() {
     int bottomIndex = 0;
-    if (_selectedIndex == 0) bottomIndex = 0;
-    else if (_selectedIndex == 1) bottomIndex = 1;
-    else if (_selectedIndex == 3) bottomIndex = 2;
-    else if (_selectedIndex == 5) bottomIndex = 3;
-    else bottomIndex = 4;
+    if (_selectedIndex == 0) {
+      bottomIndex = 0;
+    } else if (_selectedIndex == 1) {
+      bottomIndex = 1;
+    } else if (_selectedIndex == 3) {
+      bottomIndex = 2;
+    } else if (_selectedIndex == 5) {
+      bottomIndex = 3;
+    } else {
+      bottomIndex = 4;
+    }
 
     return NavigationBar(
       selectedIndex: bottomIndex,
       onDestinationSelected: (index) {
-        if (index == 0) setState(() => _selectedIndex = 0);
-        else if (index == 1) setState(() => _selectedIndex = 1);
-        else if (index == 2) setState(() => _selectedIndex = 3);
-        else if (index == 3) setState(() => _selectedIndex = 5);
-        else if (index == 4) _showMobileMoreMenuBottomSheet();
+        if (index == 0) {
+          setState(() => _selectedIndex = 0);
+        } else if (index == 1) {
+          setState(() => _selectedIndex = 1);
+        } else if (index == 2) {
+          setState(() => _selectedIndex = 3);
+        } else if (index == 3) {
+          setState(() => _selectedIndex = 5);
+        } else if (index == 4) {
+          _showMobileMoreMenuBottomSheet();
+        }
       },
       destinations: const [
         NavigationDestination(
@@ -2412,7 +2558,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                 title: const Text('Logout (Đăng xuất)', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xFFEF4444))),
                 onTap: () {
                   Navigator.pop(ctx);
-                  Navigator.of(context).pop();
+                  _confirmAndLogout();
                 },
               ),
             ],

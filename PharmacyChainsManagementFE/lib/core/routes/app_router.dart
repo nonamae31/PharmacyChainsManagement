@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/boundary/forgot_password_screen.dart';
 import '../../features/auth/boundary/login_screen.dart';
 import '../../features/auth/control/auth_bloc.dart';
 import '../../features/auth/control/auth_state.dart';
@@ -28,9 +29,11 @@ class AppRouter {
     redirect: (BuildContext context, GoRouterState state) {
       final authState = authBloc.state;
       final isLoggingIn = state.matchedLocation == '/login';
+      final isForgotPassword = state.matchedLocation == '/forgot-password';
+      final isPublicAuthRoute = isLoggingIn || isForgotPassword;
 
       if (authState is! AuthAuthenticated) {
-        return isLoggingIn ? null : '/login';
+        return isPublicAuthRoute ? null : '/login';
       }
 
       if (isLoggingIn) {
@@ -38,27 +41,33 @@ class AppRouter {
       }
 
       final role = authState.role.toUpperCase();
-
       String targetPath = '/login';
-      switch (role) {
-        case 'FOUNDER':
+      switch (role.toLowerCase()) {
+        case 'founder':
           targetPath = '/founder_home';
           break;
-        case 'BUSINESS_ADMIN':
+        case 'business_admin':
           targetPath = '/business_admin_home';
           break;
-        case 'BRANCH_MANAGER':
+        case 'branch_manager':
           targetPath = '/branch_manager_home';
           break;
-        case 'STAFF':
+        case 'staff':
           targetPath = '/staff_home';
           break;
-        case 'INVENTORY_MANAGER':
+        case 'inventory':
+        case 'inventory_manager':
           targetPath = '/inventory_home';
           break;
       }
 
-      if (state.matchedLocation != targetPath) {
+      if (isForgotPassword) {
+        return targetPath;
+      }
+
+      final isStaffWorkspaceRoute =
+          role == 'STAFF' && state.matchedLocation.startsWith('/staff/');
+      if (state.matchedLocation != targetPath && !isStaffWorkspaceRoute) {
         return targetPath;
       }
       return null;
@@ -68,6 +77,11 @@ class AppRouter {
         path: '/login',
         builder: (BuildContext context, GoRouterState state) =>
             const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (BuildContext context, GoRouterState state) =>
+            const ForgotPasswordScreen(),
       ),
       GoRoute(
         path: '/founder_home',
@@ -161,7 +175,7 @@ class AppRouter {
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
-    _subscription = stream.asBroadcastStream().listen(
+    _subscription = stream.listen(
       (dynamic _) => notifyListeners(),
     );
   }

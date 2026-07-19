@@ -38,6 +38,13 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(state.message)));
+        } else if (state is StaffPerformanceOperationFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.danger,
+            ),
+          );
         }
       },
       builder: (context, state) {

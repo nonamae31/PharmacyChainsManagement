@@ -21,6 +21,8 @@ public static class BranchManagerDataService
     private const string ApprovedStatus = "APPROVED";
     private const string DailyRevenueAction = "DAILY_REVENUE_CONFIRMED";
     private const string DailyRevenueEntity = "BRANCH_DAILY_REVENUE";
+    private const string ScheduledShiftStatus = "SCHEDULED";
+    private static readonly TimeZoneInfo VietnamTimeZone = ResolveVietnamTimeZone();
     private static readonly JsonSerializerOptions AuditJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -240,15 +242,18 @@ public static class BranchManagerDataService
 
         var blocks = new[]
         {
-            new { Label = "08:00 - 10:00 (Opening)", Start = 8, End = 11 },
-            new { Label = "11:00 - 14:00 (Peak Lunch)", Start = 11, End = 15 },
-            new { Label = "15:00 - 17:00 (Afternoon)", Start = 15, End = 18 },
-            new { Label = "18:00 - 21:00 (Evening Rush)", Start = 18, End = 22 }
+            new { Label = "08:00 - 12:00 (Morning)", Start = 8, End = 12 },
+            new { Label = "12:00 - 17:00 (Afternoon)", Start = 12, End = 17 },
+            new { Label = "17:00 - 22:00 (Evening)", Start = 17, End = 22 }
         };
         var performance = blocks.Select(block =>
         {
             var blockInvoices = invoices
-                .Where(invoice => invoice.CreatedAt.Hour >= block.Start && invoice.CreatedAt.Hour < block.End)
+                .Where(invoice =>
+                {
+                    var localHour = ConvertToVietnamTime(invoice.CreatedAt).Hour;
+                    return localHour >= block.Start && localHour < block.End;
+                })
                 .ToList();
             var revenue = blockInvoices.Sum(invoice => invoice.TotalAmount);
             var status = blockInvoices.Count switch
@@ -470,12 +475,18 @@ public static class BranchManagerDataService
             return null;
         }
 
+        var normalizedStatus = request.Status.Trim().ToUpperInvariant();
         var now = DateTime.UtcNow;
         var shift = await dbContext.StaffShifts.SingleOrDefaultAsync(
             item => item.BranchId == branchId
                 && item.StaffId == request.StaffId
                 && item.ShiftDate == request.ShiftDate,
             cancellationToken);
+        if (shift is null && normalizedStatus != ScheduledShiftStatus)
+        {
+            return null;
+        }
+
         if (shift is null)
         {
             shift = new StaffShift
@@ -490,9 +501,12 @@ public static class BranchManagerDataService
             dbContext.StaffShifts.Add(shift);
         }
 
-        shift.StartTime = request.StartTime;
-        shift.EndTime = request.EndTime;
-        shift.Status = request.Status.Trim().ToUpperInvariant();
+        if (normalizedStatus == ScheduledShiftStatus)
+        {
+            shift.StartTime = request.StartTime;
+            shift.EndTime = request.EndTime;
+        }
+        shift.Status = normalizedStatus;
         shift.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
         shift.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -873,5 +887,41 @@ public static class BranchManagerDataService
         }
 
         return "In Stock";
+    }
+
+    private static DateTime ConvertToVietnamTime(DateTime value)
+    {
+        var utcValue = value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
+        return TimeZoneInfo.ConvertTimeFromUtc(utcValue, VietnamTimeZone);
+    }
+
+    private static TimeZoneInfo ResolveVietnamTimeZone()
+    {
+        foreach (var timeZoneId in new[] { "Asia/Ho_Chi_Minh", "SE Asia Standard Time" })
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                // Try the platform-specific fallback identifier.
+            }
+            catch (InvalidTimeZoneException)
+            {
+                // Try the platform-specific fallback identifier.
+            }
+        }
+
+        return TimeZoneInfo.CreateCustomTimeZone(
+            "UTC+07",
+            TimeSpan.FromHours(7),
+            "UTC+07",
+            "UTC+07");
     }
 }

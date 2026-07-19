@@ -40,7 +40,7 @@ Future<void> main() async {
   }
 
   try {
-    if (!kIsWeb && Firebase.apps.isEmpty) {
+    if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );

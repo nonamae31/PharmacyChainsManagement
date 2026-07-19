@@ -179,8 +179,25 @@ public class AuthController : BaseApiController
 
         var result = await _authService.RequestPasswordResetAsync(request, cancellationToken);
         
-        return result.IsSuccess 
-            ? Ok(ApiResponse<object>.Ok(null, "If the email exists in our system, a password reset link has been sent.")) 
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(null, "Verification code has been sent successfully."))
+            : BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
+    }
+
+    [HttpPost("verify-code")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyCode([FromBody] VerifyCodeRequest request, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("Validation failed", ModelState));
+        }
+
+        var result = await _authService.VerifyCodeAsync(request, cancellationToken);
+        
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(null, "Verification code is valid."))
             : BadRequest(ApiResponse<object>.ErrorResponse(result.Error.Message));
     }
 
@@ -203,7 +220,7 @@ public class AuthController : BaseApiController
 
     [EnableRateLimiting("LoginPolicy")]
     [HttpPost("google-login")]
-    [ProducesResponseType(typeof(ApiResponse<AuthResultResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
@@ -246,6 +263,7 @@ public class AuthController : BaseApiController
             authResult = authResult with { RefreshToken = string.Empty };
         }
 
-        return Ok(ApiResponse<AuthResultResponse>.Ok(authResult, "Google login successful"));
+        var loginResponse = new LoginResponseDTO(authResult.AccessToken, authResult.Role.RoleCode);
+        return Ok(loginResponse);
     }
 }
