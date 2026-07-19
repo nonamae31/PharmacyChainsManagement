@@ -232,14 +232,18 @@ class _InternalTransferApprovalScreenState extends State<InternalTransferApprova
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 12,
+                        runSpacing: 8,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                                decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                                 child: Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13)),
                               ),
                               const SizedBox(width: 12),
@@ -254,7 +258,7 @@ class _InternalTransferApprovalScreenState extends State<InternalTransferApprova
                         children: [
                           const Icon(Icons.storefront, color: AppColors.info, size: 20),
                           const SizedBox(width: 8),
-                          Text('From (Từ): ${item['fromBranch']}  ➔  To (Đến): ${item['toBranch']}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+                          Flexible(child: Text('From (Từ): ${item['fromBranch']}  ➔  To (Đến): ${item['toBranch']}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.primaryDark))),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -301,8 +305,10 @@ class _InternalTransferApprovalScreenState extends State<InternalTransferApprova
                       }),
                       const SizedBox(height: 16),
                       if (status == 'Pending Approval')
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                        Wrap(
+                          alignment: WrapAlignment.end,
+                          spacing: 12,
+                          runSpacing: 8,
                           children: [
                             OutlinedButton.icon(
                               onPressed: () => _processTransfer(idx, 'Reject'),
@@ -310,7 +316,6 @@ class _InternalTransferApprovalScreenState extends State<InternalTransferApprova
                               label: const Text('Reject Request (Từ chối phiếu)'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
                             ),
-                            const SizedBox(width: 12),
                             ElevatedButton.icon(
                               onPressed: () => _processTransfer(idx, 'Approve'),
                               icon: const Icon(Icons.check, size: 18),

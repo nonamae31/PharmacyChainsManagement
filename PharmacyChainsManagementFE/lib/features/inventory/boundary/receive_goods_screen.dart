@@ -8,6 +8,7 @@ import '../control/receive_goods_bloc.dart';
 import '../control/receive_goods_event.dart';
 import '../control/receive_goods_state.dart';
 import '../entity/receive_goods_request_dto.dart';
+import 'widgets/verification_photos_modal.dart';
 
 class _ReceiveItemModel {
   String medicineId;
@@ -18,6 +19,7 @@ class _ReceiveItemModel {
   String unit;
   String wmsLocation;
   String? proofImage;
+  Map<String, String>? verificationPhotos;
 
   _ReceiveItemModel({
     required this.medicineId,
@@ -28,6 +30,7 @@ class _ReceiveItemModel {
     required this.unit,
     required this.wmsLocation,
     this.proofImage,
+    this.verificationPhotos,
   });
 }
 
@@ -194,41 +197,17 @@ class _ReceiveGoodsScreenState extends State<ReceiveGoodsScreen> {
   void _attachProof(_ReceiveItemModel item) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Đính kèm ảnh/phiếu cho ${item.medicineId}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-              title: const Text('Chụp ảnh thực tế kiện hàng (Camera Proof)'),
-              subtitle: const Text('Chụp nguyên seal kiện thuốc khi bốc dỡ'),
-              onTap: () {
-                Navigator.pop(ctx);
-                setState(() {
-                  item.proofImage = 'IMG_${DateTime.now().millisecondsSinceEpoch}_Pallet.jpg';
-                });
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📸 Đã chụp và đính kèm ảnh kiện hàng!'), behavior: SnackBarBehavior.floating));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.picture_as_pdf, color: AppColors.success),
-              title: const Text('Tải lên COA (Certificate of Analysis) Lab'),
-              subtitle: const Text('Phiếu kiểm nghiệm chất lượng đạt chuẩn GSP'),
-              onTap: () {
-                Navigator.pop(ctx);
-                setState(() {
-                  item.proofImage = 'COA_${item.batchNo}_Verified.pdf';
-                });
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📄 Đã đính kèm phiếu kiểm nghiệm COA đạt chuẩn!'), behavior: SnackBarBehavior.floating));
-              },
-            ),
-          ],
-        ),
+      builder: (ctx) => VerificationPhotosModal(
+        medicineTitle: '${item.medicineName} (${item.medicineId})',
+        initialPhotos: item.verificationPhotos != null ? Map<String, dynamic>.from(item.verificationPhotos!) : null,
+        onSubmitted: (photos) {
+          setState(() {
+            item.verificationPhotos = photos;
+            item.proofImage = 'Đã gửi đủ 3 ảnh (Front, Back, Label)';
+          });
+        },
       ),
     );
   }
@@ -455,11 +434,12 @@ class _ReceiveGoodsScreenState extends State<ReceiveGoodsScreen> {
                                             Text('Batch: ${item.batchNo} • Expiry: ${item.expiryDate}', style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
                                             Text('Qty: ${item.quantity} ${item.unit} • WMS Bin: ${item.wmsLocation}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
                                             const SizedBox(height: 8),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.end,
+                                            Wrap(
+                                              alignment: WrapAlignment.end,
+                                              spacing: 8,
+                                              runSpacing: 8,
                                               children: [
-                                                OutlinedButton.icon(onPressed: () => _attachProof(item), icon: const Icon(Icons.camera_alt, size: 16), label: Text(item.proofImage != null ? '📸 Đã có ảnh' : '📸 Gửi ảnh COA')),
-                                                const SizedBox(width: 8),
+                                                OutlinedButton.icon(onPressed: () => _attachProof(item), icon: const Icon(Icons.photo_library, size: 16), label: Text(item.proofImage != null ? '🖼️ Đã gửi 3 ảnh' : '🖼️ Gửi ảnh xác minh (3 ảnh)')),
                                                 ElevatedButton.icon(onPressed: () => _editItem(item), icon: const Icon(Icons.edit, size: 16), label: const Text('Sửa')),
                                               ],
                                             ),
@@ -521,8 +501,8 @@ class _ReceiveGoodsScreenState extends State<ReceiveGoodsScreen> {
                                                     mainAxisAlignment: MainAxisAlignment.end,
                                                     children: [
                                                       IconButton(
-                                                        icon: Icon(item.proofImage != null ? Icons.verified : Icons.camera_alt_outlined, color: item.proofImage != null ? AppColors.success : AppColors.primary, size: 20),
-                                                        tooltip: item.proofImage != null ? 'Minh chứng: ${item.proofImage}' : 'Đính kèm ảnh / COA',
+                                                        icon: Icon(item.proofImage != null ? Icons.verified : Icons.photo_library_outlined, color: item.proofImage != null ? AppColors.success : AppColors.primary, size: 20),
+                                                        tooltip: item.proofImage != null ? 'Minh chứng: ${item.proofImage}' : 'Đính kèm ảnh từ thư viện',
                                                         onPressed: () => _attachProof(item),
                                                       ),
                                                       IconButton(
