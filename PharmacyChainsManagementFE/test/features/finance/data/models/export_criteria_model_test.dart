@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:PharmacyChainsManagementFE/features/finance/data/models/export_criteria_model.dart';
+import 'package:pharmacy_chains_management_fe/features/finance/data/models/export_criteria_model.dart';
 
 void main() {
   group('ExportCriteriaModel', () {

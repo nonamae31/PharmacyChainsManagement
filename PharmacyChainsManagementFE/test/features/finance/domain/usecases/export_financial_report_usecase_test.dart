@@ -2,10 +2,10 @@ import 'dart:typed_data';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:PharmacyChainsManagementFE/core/error/failures.dart';
-import 'package:PharmacyChainsManagementFE/features/finance/data/models/export_criteria_model.dart';
-import 'package:PharmacyChainsManagementFE/features/finance/domain/repositories/financial_repository.dart';
-import 'package:PharmacyChainsManagementFE/features/finance/domain/usecases/export_financial_report_usecase.dart';
+import 'package:pharmacy_chains_management_fe/core/error/failures.dart';
+import 'package:pharmacy_chains_management_fe/features/finance/data/models/export_criteria_model.dart';
+import 'package:pharmacy_chains_management_fe/features/finance/domain/repositories/financial_repository.dart';
+import 'package:pharmacy_chains_management_fe/features/finance/domain/usecases/export_financial_report_usecase.dart';
 
 class MockFinancialRepository extends Mock implements FinancialRepository {}
 
