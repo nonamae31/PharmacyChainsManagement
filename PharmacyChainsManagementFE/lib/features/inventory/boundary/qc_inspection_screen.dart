@@ -150,7 +150,7 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                       maxLines: 3,
                       decoration: const InputDecoration(
                         hintText: 'Nhập mô tả cụ thể về tình trạng lỗi, hình thức chụp ảnh xác nhận hoặc biên bản trả hàng...',
-                        border: const OutlineInputBorder(),
+                        border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.all(12),
                       ),
                     ),
@@ -313,19 +313,23 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 12,
+                        runSpacing: 8,
                         children: [
-                          Row(
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 12,
+                            runSpacing: 4,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
                                 child: Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13)),
                               ),
-                              const SizedBox(width: 12),
                               Text(item['batchNo'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
-                              const SizedBox(width: 12),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(4)),
@@ -339,14 +343,19 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                       const SizedBox(height: 12),
                       Text(item['medicineName'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
                       const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 12,
+                        runSpacing: 8,
                         children: [
                           Text('Supplier (Nhà cung cấp): ${item['supplier']}', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-                          Row(
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 16,
+                            runSpacing: 4,
                             children: [
                               Text('🧪 Sample Retention (Lưu mẫu): ${item['retainedSample']} boxes', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD97706), fontSize: 13)),
-                              const SizedBox(width: 16),
                               OutlinedButton.icon(
                                 onPressed: () => _showCoaViewer(item['coaFile'], item['batchNo']),
                                 icon: const Icon(Icons.picture_as_pdf, size: 16, color: Color(0xFFEF4444)),
@@ -357,12 +366,12 @@ class _QcInspectionScreenState extends State<QcInspectionScreen> {
                         ],
                       ),
                       const Divider(height: 24, color: AppColors.divider),
-                      Row(
+                      Wrap(
+                        spacing: 24,
+                        runSpacing: 8,
                         children: [
                           _buildCheckItem('GSP Temperature Compliance (Nhiệt độ bảo quản GSP)', item['tempCompliance']),
-                          const SizedBox(width: 24),
                           _buildCheckItem('Intact Packaging (Bao bì nguyên vẹn)', item['packagingIntact']),
-                          const SizedBox(width: 24),
                           _buildCheckItem('Valid COA Verified (COA hợp lệ)', item['coaVerified']),
                         ],
                       ),

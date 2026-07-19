@@ -220,7 +220,7 @@ public class AuthController : BaseApiController
 
     [EnableRateLimiting("LoginPolicy")]
     [HttpPost("google-login")]
-    [ProducesResponseType(typeof(ApiResponse<AuthResultResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
@@ -263,6 +263,7 @@ public class AuthController : BaseApiController
             authResult = authResult with { RefreshToken = string.Empty };
         }
 
-        return Ok(ApiResponse<AuthResultResponse>.Ok(authResult, "Google login successful"));
+        var loginResponse = new LoginResponseDTO(authResult.AccessToken, authResult.Role.RoleCode);
+        return Ok(loginResponse);
     }
 }

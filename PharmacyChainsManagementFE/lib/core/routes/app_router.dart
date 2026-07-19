@@ -28,32 +28,40 @@ class AppRouter {
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (BuildContext context, GoRouterState state) {
       final authState = authBloc.state;
-      final isPublicAuthRoute = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/forgot-password';
+      final isLoggingIn = state.uri.toString() == '/login';
+      final isForgotPassword = state.uri.toString() == '/forgot-password';
+      final isPublicAuthRoute = isLoggingIn || isForgotPassword;
+      
+      print('AppRouter redirect triggered: route=${state.uri.toString()}, authState=$authState');
 
       if (authState is! AuthAuthenticated) {
         return isPublicAuthRoute ? null : '/login';
       }
 
       final role = authState.role.toUpperCase();
-
       String targetPath = '/login';
-      switch (role) {
-        case 'FOUNDER':
+      switch (role.toLowerCase()) {
+        case 'founder':
           targetPath = '/founder_home';
           break;
-        case 'BUSINESS_ADMIN':
+        case 'business_admin':
           targetPath = '/business_admin_home';
           break;
-        case 'BRANCH_MANAGER':
+        case 'branch_manager':
           targetPath = '/branch_manager_home';
           break;
-        case 'STAFF':
+        case 'staff':
           targetPath = '/staff_home';
           break;
-        case 'INVENTORY_MANAGER':
+        case 'inventory':
+        case 'inventory_manager':
           targetPath = '/inventory_home';
           break;
+      }
+
+      if (isLoggingIn || isForgotPassword) {
+        print('AppRouter navigating to home for role: $role');
+        return targetPath;
       }
 
       final isStaffWorkspaceRoute =
@@ -167,7 +175,7 @@ class AppRouter {
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
-    _subscription = stream.asBroadcastStream().listen(
+    _subscription = stream.listen(
       (dynamic _) => notifyListeners(),
     );
   }

@@ -728,7 +728,6 @@ app.*.map.json
 *.pdf
 /.agent_workspace
 PharmacyChainsManagementBE/appsettings.json
-PharmacyChainsManagementBE/appsettings.Development.json
 /PharmacyChainsManagementFE/.agent_workspace
 PharmacyChainsManagementFE/.env.example
 /PharmacyChainsManagementFE/integration_test
@@ -737,12 +736,14 @@ scrcpy.zip
 PharmacyChainsManagementFE/android/app/src/main/res/values/strings.xml
 /.swarm-backend
 /.swarm-flutter
+/PharmacyChainsManagementFE/test
 /.swarm-workspace
 *.docx
 /docs/uat
-/PharmacyChainsManagementFE/test
 /screenshots
 /seed
+/PharmacyChainsManagementFE/web
 /PharmacyChainsManagementFE/linux
-P h a r m a c y C h a i n s M a n a g e m e n t F E / l i b / f i r e b a s e _ o p t i o n s . d a r t  
- 
+/PharmacyChainsManagementFE/windows/flutter
+PharmacyChainsManagementBE/appsettings.Development.json
+PharmacyChainsManagementFE/lib/firebase_options.dart
