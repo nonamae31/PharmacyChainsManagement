@@ -134,7 +134,12 @@ class _FounderLayoutScreenState extends State<FounderLayoutScreen> {
                 child: Column(
                   children: [
                     if (isDesktop) _buildTopHeader(),
-                    Expanded(child: _pages[_selectedIndex]),
+                    Expanded(
+                      child: IndexedStack(
+                        index: _selectedIndex,
+                        children: _pages,
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../cubit/founder_profile_cubit.dart';
 import '../cubit/founder_profile_state.dart';
 import '../../domain/entities/founder_profile.dart';
@@ -288,7 +288,9 @@ class _FounderProfileScreenState extends State<FounderProfileScreen> {
             backgroundImage: profile.profilePhotoUri != null && profile.profilePhotoUri!.isNotEmpty
                 ? (profile.profilePhotoUri!.startsWith('http')
                     ? CachedNetworkImageProvider(profile.profilePhotoUri!)
-                    : FileImage(File(profile.profilePhotoUri!)) as ImageProvider)
+                    : (kIsWeb 
+                        ? NetworkImage(profile.profilePhotoUri!)
+                        : null) as ImageProvider?)
                 : null,
             child: profile.profilePhotoUri == null || profile.profilePhotoUri!.isEmpty
                 ? Icon(Icons.person, size: radius, color: Colors.grey)
