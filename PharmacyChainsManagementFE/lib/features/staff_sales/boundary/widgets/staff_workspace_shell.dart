@@ -166,9 +166,6 @@ class _TopBar extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         ...(actions ?? const []),
-        const IconButton(onPressed: null, icon: Icon(Icons.notifications_none)),
-        const IconButton(onPressed: null, icon: Icon(Icons.help_outline)),
-        const IconButton(onPressed: null, icon: Icon(Icons.settings_outlined)),
         IconButton(
           tooltip: AppStrings.profile,
           onPressed: () => context.go('/staff/profile'),
@@ -236,15 +233,6 @@ class _Sidebar extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.logout, color: Color(0xFFB42318)),
-          title: const Text(
-            'Log out',
-            style: TextStyle(color: Color(0xFFB42318)),
-          ),
-          onTap: () => context.read<AuthBloc>().add(LogoutRequested()),
-        ),
       ],
     ),
   );
