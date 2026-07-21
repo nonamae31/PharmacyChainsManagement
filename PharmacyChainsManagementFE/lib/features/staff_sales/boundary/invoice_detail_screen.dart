@@ -108,7 +108,7 @@ class _InvoiceInformationCard extends StatelessWidget {
             label: AppStrings.totalAmount,
             value:
                 '${CurrencyConstants.usdSymbol}'
-                '${invoice.totalAmount.toStringAsFixed(0)}',
+                '${invoice.totalAmount.toStringAsFixed(2)}',
           ),
         ],
       ),

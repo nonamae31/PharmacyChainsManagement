@@ -49,7 +49,7 @@ class _DashboardContent extends StatelessWidget {
         children: [
           _MetricCard(
             'Daily revenue',
-            dashboard.todayRevenue.toStringAsFixed(0),
+            dashboard.todayRevenue.toStringAsFixed(2),
             Icons.payments_outlined,
           ),
           _MetricCard(
@@ -530,7 +530,7 @@ class _MobileInvoiceCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             '${CurrencyConstants.usdSymbol}'
-            '${invoice.totalAmount.toStringAsFixed(0)}',
+            '${invoice.totalAmount.toStringAsFixed(2)}',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -569,7 +569,7 @@ class _DesktopInvoiceTile extends StatelessWidget {
       children: [
         Text(
           '${CurrencyConstants.usdSymbol}'
-          '${invoice.totalAmount.toStringAsFixed(0)}',
+          '${invoice.totalAmount.toStringAsFixed(2)}',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         AppStatusChip(label: invoice.paymentStatus),
@@ -832,7 +832,7 @@ class PaymentTransactionsScreen extends StatelessWidget {
                         '${payment.paymentMethod} • ${payment.paymentStatus}',
                       ),
                       trailing: Text(
-                        payment.amount.toStringAsFixed(0),
+                        payment.amount.toStringAsFixed(2),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     );
