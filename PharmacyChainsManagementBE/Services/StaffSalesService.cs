@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Data;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -256,8 +257,9 @@ public sealed class StaffSalesService : IStaffSalesService
         SePayWebhookRequestDto request,
         CancellationToken cancellationToken)
     {
+        var transferCode = GetSePayTransferCode(request);
         if (!string.Equals(request.TransferType, "in", StringComparison.OrdinalIgnoreCase)
-            || string.IsNullOrWhiteSpace(request.Code))
+            || string.IsNullOrWhiteSpace(transferCode))
         {
             return;
         }
@@ -271,7 +273,7 @@ public sealed class StaffSalesService : IStaffSalesService
             .SingleOrDefaultAsync(
                 item => item.PaymentMethod == "QR"
                     && item.GatewayReference != null
-                    && item.GatewayReference.StartsWith(request.Code),
+                    && item.GatewayReference.StartsWith(transferCode),
                 cancellationToken);
 
         if (payment is null
@@ -318,12 +320,26 @@ public sealed class StaffSalesService : IStaffSalesService
         payment.PaymentStatus = "PAID";
         payment.PaymentDate = now;
         payment.GatewayReference =
-            $"{request.Code}|{request.Id}|{request.ReferenceCode ?? request.Gateway}";
+            $"{transferCode}|{request.Id}|{request.ReferenceCode ?? request.Gateway}";
         payment.UpdatedAt = now;
         payment.Invoice.PaymentStatus = "PAID";
         payment.Invoice.UpdatedAt = now;
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    private static string? GetSePayTransferCode(SePayWebhookRequestDto request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.Code))
+        {
+            return request.Code.Trim();
+        }
+
+        var match = Regex.Match(
+            request.Content ?? string.Empty,
+            @"\bPCMS[A-Z0-9]+\b",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        return match.Success ? match.Value.ToUpperInvariant() : null;
     }
 
     public async Task<IReadOnlyList<PaymentTransactionResponseDto>> GetPaymentsAsync(Guid staffId, string? paymentStatus, CancellationToken cancellationToken)
