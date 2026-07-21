@@ -78,8 +78,36 @@ public class AuthService : IAuthService
                 return Result.Failure<AuthResultResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Invalid email or password."));
             }
 
-            userId = Guid.Empty;
-            userDto = new UserResponse(Guid.Empty, "Founder", _founderSettings.Email, null, null, "ACTIVE");
+            var founderUser = await _userRepository.FindActiveByEmailAsync(request.Email, cancellationToken)
+                ?? await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
+
+            var role = await _userRepository.GetRoleByCodeAsync("FOUNDER", cancellationToken);
+            short founderRoleId = role?.RoleId ?? 5;
+
+            if (founderUser == null)
+            {
+                founderUser = new User
+                {
+                    UserId = Guid.NewGuid(),
+                    FullName = "Founder",
+                    Email = request.Email,
+                    PasswordHash = _passwordHashingStrategy.HashPassword(_founderSettings.Password ?? "Founder@1234"),
+                    Status = "ACTIVE",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    RoleId = founderRoleId
+                };
+                await _userRepository.AddAsync(founderUser, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            else if (founderUser.RoleId != founderRoleId)
+            {
+                founderUser.RoleId = founderRoleId;
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+
+            userId = founderUser.UserId;
+            userDto = new UserResponse(userId, founderUser.FullName, founderUser.Email, founderUser.Phone, founderUser.ProfilePhotoUri, founderUser.Status);
             roleDto = new RoleResponse(0, "FOUNDER", "Founder");
             _logger.LogInformation("Founder logged in successfully from IP: {IpAddress}", ipAddress);
         }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PharmacyChainsManagementBE.Models;
@@ -11,9 +12,11 @@ using PharmacyChainsManagementBE.Models;
 namespace PharmacyChainsManagementBE.Migrations
 {
     [DbContext(typeof(PharmacyDbContext))]
-    partial class PharmacyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719153031_AddStockReplenishmentRequests")]
+    partial class AddStockReplenishmentRequests
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1503,10 +1506,6 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<DateTime?>("DispatchedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("dispatched_at");
-
                     b.Property<string>("InventoryNote")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -1531,14 +1530,6 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("processed_by");
 
-                    b.Property<DateTime?>("ReceivedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("received_at");
-
-                    b.Property<Guid?>("ReceivedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("received_by");
-
                     b.Property<DateOnly>("RequestDate")
                         .HasColumnType("date")
                         .HasColumnName("request_date");
@@ -1559,10 +1550,6 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
-                    b.Property<Guid?>("TransferId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("transfer_id");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -1573,15 +1560,10 @@ namespace PharmacyChainsManagementBE.Migrations
 
                     b.HasIndex("ProcessedBy");
 
-                    b.HasIndex("ReceivedBy");
-
                     b.HasIndex("RequestNo")
                         .IsUnique();
 
                     b.HasIndex("RequestedBy");
-
-                    b.HasIndex("TransferId")
-                        .IsUnique();
 
                     b.ToTable("STOCK_REPLENISHMENT_REQUEST");
                 });
@@ -2603,30 +2585,16 @@ namespace PharmacyChainsManagementBE.Migrations
                         .HasForeignKey("ProcessedBy")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("PharmacyChainsManagementBE.Models.User", "ReceivedByNavigation")
-                        .WithMany()
-                        .HasForeignKey("ReceivedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("PharmacyChainsManagementBE.Models.User", "RequestedByNavigation")
                         .WithMany()
                         .HasForeignKey("RequestedBy")
                         .IsRequired();
 
-                    b.HasOne("PharmacyChainsManagementBE.Models.StockTransfer", "Transfer")
-                        .WithMany()
-                        .HasForeignKey("TransferId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Branch");
 
                     b.Navigation("ProcessedByNavigation");
 
-                    b.Navigation("ReceivedByNavigation");
-
                     b.Navigation("RequestedByNavigation");
-
-                    b.Navigation("Transfer");
                 });
 
             modelBuilder.Entity("PharmacyChainsManagementBE.Models.StockReplenishmentRequestDetail", b =>

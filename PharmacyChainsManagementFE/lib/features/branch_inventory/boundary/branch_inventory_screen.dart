@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/branch_manager_app_strings.dart';
+import '../../../core/constants/stock_replenishment_app_strings.dart';
 import '../../../core/network/csv_download_service.dart';
 import '../../../core/theme/branch_manager_app_theme.dart';
 import '../../../shared/shared_components/app_error_view.dart';
@@ -10,6 +13,8 @@ import '../../../shared/shared_components/app_page_header.dart';
 import '../control/branch_inventory_bloc.dart';
 import '../control/branch_inventory_event.dart';
 import '../control/branch_inventory_state.dart';
+import '../../stock_replenishment/boundary/branch_replenishment_screen.dart';
+import '../../stock_replenishment/control/branch_replenishment_bloc.dart';
 import 'widgets/branch_inventory_content.dart';
 
 class BranchInventoryScreen extends StatefulWidget {
@@ -57,6 +62,15 @@ class _BranchInventoryScreenState extends State<BranchInventoryScreen> {
                   searchHint: AppStrings.searchInventory,
                   onSearchChanged: (value) => _search(state, value),
                   actions: [
+                    FilledButton.icon(
+                      onPressed: state is BranchInventoryLoadSuccess
+                          ? _openReplenishmentRequests
+                          : null,
+                      icon: const Icon(Icons.add_shopping_cart_outlined),
+                      label: const Text(
+                        StockReplenishmentAppStrings.requestMedicine,
+                      ),
+                    ),
                     OutlinedButton.icon(
                       onPressed: state is BranchInventoryLoadSuccess
                           ? () => context.read<BranchInventoryBloc>().add(
@@ -128,6 +142,30 @@ class _BranchInventoryScreenState extends State<BranchInventoryScreen> {
         category: state.category,
         status: state.status,
         page: page,
+      ),
+    );
+  }
+
+  void _openReplenishmentRequests() {
+    final bloc = context.read<BranchReplenishmentBloc>();
+    final size = MediaQuery.sizeOf(context);
+    showDialog<void>(
+      context: context,
+      builder: (_) => BlocProvider.value(
+        value: bloc,
+        child: Dialog(
+          child: SizedBox(
+            width: math.min(
+              size.width - AppSpacing.lg,
+              AppSpacing.replenishmentDialogWidth,
+            ),
+            height: math.min(
+              size.height - AppSpacing.lg,
+              AppSpacing.replenishmentDialogHeight,
+            ),
+            child: const BranchReplenishmentScreen(),
+          ),
+        ),
       ),
     );
   }

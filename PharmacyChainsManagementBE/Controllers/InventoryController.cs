@@ -18,16 +18,117 @@ namespace PharmacyChainsManagementBE.Controllers;
 public class InventoryController : BaseApiController
 {
     private readonly IInventoryService _inventoryService;
+    private readonly IStockReplenishmentService _stockReplenishmentService;
 
-    public InventoryController(IInventoryService inventoryService)
+    public InventoryController(
+        IInventoryService inventoryService,
+        IStockReplenishmentService stockReplenishmentService)
     {
         _inventoryService = inventoryService;
+        _stockReplenishmentService = stockReplenishmentService;
     }
 
     private Guid GetCurrentUserId()
     {
         var userIdString = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(userIdString, out Guid userId) ? userId : Guid.Empty;
+    }
+
+    [HttpGet("replenishment-requests")]
+    [Authorize(Roles = "InventoryManager,INVENTORY_MANAGER")]
+    [ProducesResponseType(typeof(IReadOnlyList<StockReplenishmentRequestDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReplenishmentRequests(
+        [FromQuery] string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Ok(await _stockReplenishmentService.GetInventoryQueueAsync(
+            status,
+            cancellationToken));
+    }
+
+    [HttpPatch("replenishment-requests/{requestId:guid}/status")]
+    [Authorize(Roles = "InventoryManager,INVENTORY_MANAGER")]
+    [ProducesResponseType(typeof(StockReplenishmentRequestDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateReplenishmentRequestStatus(
+        Guid requestId,
+        [FromBody] UpdateStockReplenishmentStatusDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var result = await _stockReplenishmentService.UpdateStatusAsync(
+            requestId,
+            GetCurrentUserId(),
+            request,
+            cancellationToken);
+        if (result.IsSuccess)
+        {
+            return Ok(result.Value);
+        }
+
+        return result.Error.Type switch
+        {
+            ErrorType.NotFound => NotFound(new { message = result.Error.Message }),
+            ErrorType.Conflict => Conflict(new { message = result.Error.Message }),
+            _ => BadRequest(new { message = result.Error.Message })
+        };
+    }
+
+    [HttpGet("replenishment-requests/{requestId:guid}/dispatch-sources")]
+    [Authorize(Roles = "InventoryManager,INVENTORY_MANAGER")]
+    [ProducesResponseType(typeof(IReadOnlyList<StockReplenishmentSourceDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReplenishmentDispatchSources(
+        Guid requestId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _stockReplenishmentService.GetDispatchSourcesAsync(
+            requestId,
+            cancellationToken);
+        if (result.IsSuccess)
+        {
+            return Ok(result.Value);
+        }
+
+        return result.Error.Type switch
+        {
+            ErrorType.NotFound => NotFound(new { message = result.Error.Message }),
+            ErrorType.Conflict => Conflict(new { message = result.Error.Message }),
+            _ => BadRequest(new { message = result.Error.Message })
+        };
+    }
+
+    [HttpPost("replenishment-requests/{requestId:guid}/dispatch")]
+    [Authorize(Roles = "InventoryManager,INVENTORY_MANAGER")]
+    [ProducesResponseType(typeof(StockReplenishmentRequestDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DispatchReplenishmentRequest(
+        Guid requestId,
+        [FromBody] DispatchStockReplenishmentDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var result = await _stockReplenishmentService.DispatchAsync(
+            requestId,
+            GetCurrentUserId(),
+            request,
+            cancellationToken);
+        if (result.IsSuccess)
+        {
+            return Ok(result.Value);
+        }
+
+        return result.Error.Type switch
+        {
+            ErrorType.NotFound => NotFound(new { message = result.Error.Message }),
+            ErrorType.Conflict => Conflict(new { message = result.Error.Message }),
+            _ => BadRequest(new { message = result.Error.Message })
+        };
     }
 
     [HttpPost("receive-goods")]

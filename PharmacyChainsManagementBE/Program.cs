@@ -190,6 +190,7 @@ try
 
     // Inventory Services
     builder.Services.AddScoped<IInventoryService, InventoryService>();
+    builder.Services.AddScoped<IStockReplenishmentService, StockReplenishmentService>();
     builder.Services.AddHostedService<ExpiredStockBackgroundService>();
 
     // Business Admin & Finance Services
