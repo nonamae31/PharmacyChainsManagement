@@ -74,18 +74,36 @@ class _MedicineSelectionDialogState extends State<_MedicineSelectionDialog> {
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: AppTextField(
-                      label: AppStrings.searchMedicine,
-                      controller: _searchController,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  PrimaryButton(text: AppStrings.search, onPressed: _search),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final searchField = AppTextField(
+                    label: AppStrings.searchMedicine,
+                    controller: _searchController,
+                  );
+                  final searchButton = PrimaryButton(
+                    text: AppStrings.search,
+                    onPressed: _search,
+                  );
+                  if (constraints.maxWidth <
+                      AppSpacing.mobileContentBreakpoint) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        searchField,
+                        const SizedBox(height: AppSpacing.sm),
+                        searchButton,
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: searchField),
+                      const SizedBox(width: AppSpacing.md),
+                      searchButton,
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: AppSpacing.sm),
               Expanded(
@@ -125,50 +143,134 @@ class _MedicineTable extends StatelessWidget {
     if (medicines.isEmpty) {
       return const Center(child: Text(AppStrings.noMedicinesFound));
     }
-    return Scrollbar(
-      child: SingleChildScrollView(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text(AppStrings.medicine)),
-              DataColumn(label: Text(AppStrings.category)),
-              DataColumn(label: Text(AppStrings.unit)),
-              DataColumn(label: Text(AppStrings.unitPrice), numeric: true),
-              DataColumn(label: Text(AppStrings.availableStock), numeric: true),
-              DataColumn(label: Text(AppStrings.action)),
-            ],
-            rows: medicines
-                .map(
-                  (medicine) => DataRow(
-                    cells: [
-                      DataCell(Text(medicine.medicineName)),
-                      DataCell(
-                        Text(medicine.category ?? AppStrings.notAvailable),
-                      ),
-                      DataCell(Text(medicine.unit)),
-                      DataCell(
-                        Text(
-                          '${CurrencyConstants.usdSymbol}'
-                          '${medicine.unitPrice.toStringAsFixed(2)}',
-                        ),
-                      ),
-                      DataCell(Text('${medicine.availableQuantity}')),
-                      DataCell(
-                        FilledButton(
-                          onPressed: medicine.availableQuantity > 0
-                              ? () => Navigator.pop(context, medicine)
-                              : null,
-                          child: const Text(AppStrings.choose),
-                        ),
-                      ),
-                    ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < AppSpacing.mobileContentBreakpoint) {
+          return ListView.separated(
+            key: const Key('medicine-selection-mobile-list'),
+            itemCount: medicines.length,
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+            itemBuilder: (context, index) =>
+                _MedicineSelectionCard(medicine: medicines[index]),
+          );
+        }
+        return Scrollbar(
+          child: SingleChildScrollView(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: const [
+                  DataColumn(label: Text(AppStrings.medicine)),
+                  DataColumn(label: Text(AppStrings.category)),
+                  DataColumn(label: Text(AppStrings.unit)),
+                  DataColumn(label: Text(AppStrings.unitPrice), numeric: true),
+                  DataColumn(
+                    label: Text(AppStrings.availableStock),
+                    numeric: true,
                   ),
-                )
-                .toList(),
+                  DataColumn(label: Text(AppStrings.action)),
+                ],
+                rows: medicines
+                    .map(
+                      (medicine) => DataRow(
+                        cells: [
+                          DataCell(Text(medicine.medicineName)),
+                          DataCell(
+                            Text(medicine.category ?? AppStrings.notAvailable),
+                          ),
+                          DataCell(Text(medicine.unit)),
+                          DataCell(
+                            Text(
+                              '${CurrencyConstants.usdSymbol}'
+                              '${medicine.unitPrice.toStringAsFixed(2)}',
+                            ),
+                          ),
+                          DataCell(Text('${medicine.availableQuantity}')),
+                          DataCell(
+                            FilledButton(
+                              onPressed: medicine.availableQuantity > 0
+                                  ? () => Navigator.pop(context, medicine)
+                                  : null,
+                              child: const Text(AppStrings.choose),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+}
+
+class _MedicineSelectionCard extends StatelessWidget {
+  final MedicineDto medicine;
+
+  const _MedicineSelectionCard({required this.medicine});
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: EdgeInsets.zero,
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            medicine.medicineName,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _MedicineDetailRow(
+            label: AppStrings.category,
+            value: medicine.category ?? AppStrings.notAvailable,
+          ),
+          _MedicineDetailRow(label: AppStrings.unit, value: medicine.unit),
+          _MedicineDetailRow(
+            label: AppStrings.unitPrice,
+            value:
+                '${CurrencyConstants.usdSymbol}'
+                '${medicine.unitPrice.toStringAsFixed(2)}',
+          ),
+          _MedicineDetailRow(
+            label: AppStrings.availableStock,
+            value: '${medicine.availableQuantity}',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FilledButton(
+            onPressed: medicine.availableQuantity > 0
+                ? () => Navigator.pop(context, medicine)
+                : null,
+            child: const Text(AppStrings.choose),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _MedicineDetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MedicineDetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: Text(label)),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: Text(value, textAlign: TextAlign.end, softWrap: true)),
+      ],
+    ),
+  );
 }

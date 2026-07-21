@@ -63,12 +63,6 @@ class StaffWorkspaceShell extends StatelessWidget {
       Icons.fact_check_outlined,
       '/staff/attendance',
     ),
-    (
-      StaffWorkspaceSection.profile,
-      AppStrings.profile,
-      Icons.person_outline,
-      '/staff/profile',
-    ),
   ];
   @override
   Widget build(BuildContext context) {

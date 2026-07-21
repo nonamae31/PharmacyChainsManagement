@@ -106,7 +106,9 @@ class _InvoiceInformationCard extends StatelessWidget {
           ),
           _InformationItem(
             label: AppStrings.totalAmount,
-            value: invoice.totalAmount.toStringAsFixed(0),
+            value:
+                '${CurrencyConstants.usdSymbol}'
+                '${invoice.totalAmount.toStringAsFixed(0)}',
           ),
         ],
       ),
@@ -155,43 +157,128 @@ class _InvoiceItemsCard extends StatelessWidget {
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: AppSpacing.md),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text(AppStrings.medicine)),
-                DataColumn(label: Text(AppStrings.batchNumber)),
-                DataColumn(label: Text(AppStrings.quantity), numeric: true),
-                DataColumn(label: Text(AppStrings.unitPrice), numeric: true),
-                DataColumn(label: Text(AppStrings.itemTotal), numeric: true),
-              ],
-              rows: items
-                  .map(
-                    (item) => DataRow(
-                      cells: [
-                        DataCell(Text(item.medicineName)),
-                        DataCell(Text(item.batchNumber)),
-                        DataCell(Text('${item.quantity}')),
-                        DataCell(
-                          Text(
-                            '${CurrencyConstants.usdSymbol}'
-                            '${item.unitPrice.toStringAsFixed(2)}',
-                          ),
-                        ),
-                        DataCell(
-                          Text(
-                            '${CurrencyConstants.usdSymbol}'
-                            '${item.lineTotal.toStringAsFixed(2)}',
-                          ),
-                        ),
-                      ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < AppSpacing.mobileContentBreakpoint) {
+                return ListView.separated(
+                  key: const Key('invoice-items-mobile-list'),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => const Divider(),
+                  itemBuilder: (context, index) =>
+                      _InvoiceItemCard(item: items[index]),
+                );
+              }
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text(AppStrings.medicine)),
+                    DataColumn(label: Text(AppStrings.batchNumber)),
+                    DataColumn(label: Text(AppStrings.quantity), numeric: true),
+                    DataColumn(
+                      label: Text(AppStrings.unitPrice),
+                      numeric: true,
                     ),
-                  )
-                  .toList(),
-            ),
+                    DataColumn(
+                      label: Text(AppStrings.itemTotal),
+                      numeric: true,
+                    ),
+                  ],
+                  rows: items
+                      .map(
+                        (item) => DataRow(
+                          cells: [
+                            DataCell(Text(item.medicineName)),
+                            DataCell(Text(item.batchNumber)),
+                            DataCell(Text('${item.quantity}')),
+                            DataCell(
+                              Text(
+                                '${CurrencyConstants.usdSymbol}'
+                                '${item.unitPrice.toStringAsFixed(2)}',
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                '${CurrencyConstants.usdSymbol}'
+                                '${item.lineTotal.toStringAsFixed(2)}',
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .toList(),
+                ),
+              );
+            },
           ),
         ],
       ),
+    ),
+  );
+}
+
+class _InvoiceItemCard extends StatelessWidget {
+  final InvoiceLineDto item;
+
+  const _InvoiceItemCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          item.medicineName,
+          softWrap: true,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _InvoiceItemDetail(
+          label: AppStrings.batchNumber,
+          value: item.batchNumber,
+        ),
+        _InvoiceItemDetail(
+          label: AppStrings.quantity,
+          value: '${item.quantity}',
+        ),
+        _InvoiceItemDetail(
+          label: AppStrings.unitPrice,
+          value:
+              '${CurrencyConstants.usdSymbol}'
+              '${item.unitPrice.toStringAsFixed(2)}',
+        ),
+        _InvoiceItemDetail(
+          label: AppStrings.itemTotal,
+          value:
+              '${CurrencyConstants.usdSymbol}'
+              '${item.lineTotal.toStringAsFixed(2)}',
+        ),
+      ],
+    ),
+  );
+}
+
+class _InvoiceItemDetail extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InvoiceItemDetail({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: Text(label)),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: Text(value, textAlign: TextAlign.end, softWrap: true)),
+      ],
     ),
   );
 }

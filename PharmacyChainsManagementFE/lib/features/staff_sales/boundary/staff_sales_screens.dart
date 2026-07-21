@@ -529,7 +529,8 @@ class _MobileInvoiceCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            invoice.totalAmount.toStringAsFixed(0),
+            '${CurrencyConstants.usdSymbol}'
+            '${invoice.totalAmount.toStringAsFixed(0)}',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -567,7 +568,8 @@ class _DesktopInvoiceTile extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          invoice.totalAmount.toStringAsFixed(0),
+          '${CurrencyConstants.usdSymbol}'
+          '${invoice.totalAmount.toStringAsFixed(0)}',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         AppStatusChip(label: invoice.paymentStatus),

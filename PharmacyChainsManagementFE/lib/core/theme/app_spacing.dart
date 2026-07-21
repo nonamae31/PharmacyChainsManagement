@@ -16,4 +16,6 @@ class AppSpacing {
   static const double borderRadiusMd = 8.0;
   static const double borderRadiusLg = 12.0;
   static const double borderRadiusXl = 16.0;
+
+  static const double mobileContentBreakpoint = 720.0;
 }

@@ -39,7 +39,7 @@ public sealed class QrPaymentExpirationBackgroundService : BackgroundService
                 if (cancelledCount > 0)
                 {
                     _logger.LogInformation(
-                        "Cancelled {InvoiceCount} invoices with expired QR payments.",
+                        "Cancelled {InvoiceCount} expired unpaid invoices.",
                         cancelledCount);
                 }
             }
@@ -51,7 +51,7 @@ public sealed class QrPaymentExpirationBackgroundService : BackgroundService
             {
                 _logger.LogError(
                     exception,
-                    "Error while cancelling invoices with expired QR payments.");
+                    "Error while cancelling expired unpaid invoices.");
             }
 
             await Task.Delay(CheckInterval, stoppingToken);

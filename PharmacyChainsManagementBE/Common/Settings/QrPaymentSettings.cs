@@ -10,4 +10,5 @@ public sealed class QrPaymentSettings
     public string VirtualAccount { get; set; } = string.Empty;
     public string AccountName { get; set; } = string.Empty;
     public int ExpirationMinutes { get; set; } = 15;
+    public int InvoiceExpirationMinutes { get; set; } = 30;
 }
